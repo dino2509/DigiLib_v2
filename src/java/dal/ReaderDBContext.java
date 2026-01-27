@@ -18,8 +18,7 @@ public class ReaderDBContext extends DBContext<Reader> {
         ArrayList<Reader> readers = new ArrayList<>();
         String sql = "SELECT * FROM Reader";
 
-        try (PreparedStatement ps = connection.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 readers.add(mapReader(rs));
@@ -120,6 +119,18 @@ public class ReaderDBContext extends DBContext<Reader> {
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, r.getReaderId());
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            Logger.getLogger(ReaderDBContext.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public void updatePassword(int readerId, String newPasswordHash) {
+        String sql = "UPDATE Reader SET password_hash = ? WHERE reader_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, newPasswordHash);
+            ps.setInt(2, readerId);
             ps.executeUpdate();
         } catch (SQLException ex) {
             Logger.getLogger(ReaderDBContext.class.getName()).log(Level.SEVERE, null, ex);
