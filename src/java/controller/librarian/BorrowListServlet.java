@@ -27,13 +27,22 @@ public class BorrowListServlet extends HttpServlet {
             throws ServletException, IOException {
         
         BorrowDBContext db = new BorrowDBContext();
+        String keyword = request.getParameter("keyword");
+        String searchType = request.getParameter("searchType"); // Lấy loại tìm kiếm
         
-        // Lấy danh sách đầy đủ
-        ArrayList<BorrowedBookDTO> list = db.getActiveBorrows();
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            // Gọi hàm tìm kiếm mới với 2 tham số
+            list = db.searchBorrows(keyword.trim(), searchType);
+        } else {
+            list = db.getActiveBorrows();
+        }
         
         request.setAttribute("borrowList", list);
+        request.setAttribute("currentKeyword", keyword);
+        request.setAttribute("currentType", searchType);
         
         // Chuyển sang file JSP danh sách
         request.getRequestDispatcher("/view/librarian/borrow-list.jsp").forward(request, response);
     }
+
 }
