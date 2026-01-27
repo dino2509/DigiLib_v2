@@ -21,7 +21,7 @@ public class LogoutController extends HttpServlet {
         }
 
         // Redirect về trang login
-        response.sendRedirect(request.getContextPath() + "/login");
+        response.sendRedirect(request.getContextPath() + "/home");
     }
 
     @Override
