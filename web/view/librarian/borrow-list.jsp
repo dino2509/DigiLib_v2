@@ -18,6 +18,32 @@
             <h4 class="mb-0">Danh Sách Sách Đang Được Mượn</h4>
             <span class="badge bg-light text-dark">Tổng: ${borrowList.size()}</span>
         </div>
+     <div class="card-body">
+                    <form action="borrows" method="GET" class="row g-2 mb-4 align-items-center">
+
+                        <div class="col-auto">
+                            <select name="searchType" class="form-select">
+                                <option value="all" ${currentType == 'all' ? 'selected' : ''}>Tất cả</option>
+                                <option value="book" ${currentType == 'book' ? 'selected' : ''}>Tên sách</option>
+                                <option value="reader" ${currentType == 'reader' ? 'selected' : ''}>Người đọc</option>
+                            </select>
+                        </div>
+
+                        <div class="col-auto">
+                            <input type="text" name="keyword" class="form-control" 
+                                   placeholder="Nhập từ khóa..." 
+                                   value="${currentKeyword}">
+                        </div>
+
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-primary">🔍 Tìm kiếm</button>
+                        </div>
+
+                        <div class="col-auto">
+                            <a href="borrows" class="btn btn-outline-secondary">Làm mới</a>
+                        </div>
+                    </form>
+                    <table class="table table-hover table-bordered">
         <div class="card-body">
             <table class="table table-hover table-bordered">
                 <thead class="table-light">
