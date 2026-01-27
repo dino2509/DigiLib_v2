@@ -1,31 +1,33 @@
 package model;
 
+import java.math.BigDecimal;
+import java.sql.Timestamp;
+
 public class Book {
 
-    private int id;
+    private int bookId;
     private String title;
-    private String author;
-    private String cover;     // tên file ảnh, ví dụ: "clean_code.jpg"
-    private double rating;    // ví dụ: 4.5
+    private String summary;
+    private String description;
+    private String coverUrl;
+    private String contentPath;
+    private BigDecimal price;
+    private String currency;
+    private Integer totalPages;
+    private Integer previewPages;
+    private String status;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
+    private Integer authorId;
+    private Integer categoryId;
 
-    public Book() {
+    // ===== GETTER & SETTER =====
+    public int getBookId() {
+        return bookId;
     }
 
-    public Book(int id, String title, String author, String cover, double rating) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.cover = cover;
-        this.rating = rating;
-    }
-
-    // ===== Getters / Setters =====
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
+    public void setBookId(int bookId) {
+        this.bookId = bookId;
     }
 
     public String getTitle() {
@@ -36,27 +38,107 @@ public class Book {
         this.title = title;
     }
 
-    public String getAuthor() {
-        return author;
+    public String getSummary() {
+        return summary;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
-    public String getCover() {
-        return cover;
+    public String getDescription() {
+        return description;
     }
 
-    public void setCover(String cover) {
-        this.cover = cover;
+    public void setDescription(String description) {
+        this.description = description;
     }
 
-    public double getRating() {
-        return rating;
+    public String getCoverUrl() {
+        return coverUrl;
     }
 
-    public void setRating(double rating) {
-        this.rating = rating;
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
+    }
+
+    public String getContentPath() {
+        return contentPath;
+    }
+
+    public void setContentPath(String contentPath) {
+        this.contentPath = contentPath;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public Integer getTotalPages() {
+        return totalPages;
+    }
+
+    public void setTotalPages(Integer totalPages) {
+        this.totalPages = totalPages;
+    }
+
+    public Integer getPreviewPages() {
+        return previewPages;
+    }
+
+    public void setPreviewPages(Integer previewPages) {
+        this.previewPages = previewPages;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public Timestamp getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Timestamp updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
+    public Integer getAuthorId() {
+        return authorId;
+    }
+
+    public void setAuthorId(Integer authorId) {
+        this.authorId = authorId;
+    }
+
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId) {
+        this.categoryId = categoryId;
     }
 }
