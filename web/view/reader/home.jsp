@@ -11,61 +11,157 @@
 
 <jsp:include page="/include/reader/header.jsp"/>
 
-<div class="container">
+<div class="container py-4">
 
-    <!-- 1. Welcome / Summary -->
-    <section class="welcome">
-        <h2>Xin chào, ${user.fullName}</h2>
-
-        <div class="stats">
-            <div class="stat">📘 Đang mượn: <strong>${borrowedCount}</strong></div>
-            <div class="stat">⏰ Sắp hết hạn: <strong>${dueSoonCount}</strong></div>
-            <div class="stat">📚 Đã đọc: <strong>${readTotal}</strong></div>
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
+        <div>
+            <h2 class="mb-1">Xin chào, <span class="text-orange">${user.fullName}</span> 👋</h2>
+            <div class="text-muted">Chọn sách để đọc tiếp, khám phá sách mới hoặc quản lý mượn trả.</div>
         </div>
-    </section>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-orange" href="${pageContext.request.contextPath}/reader/books">📚 Duyệt sách</a>
+            <a class="btn btn-outline-orange" href="${pageContext.request.contextPath}/reader/borrowed">📖 Đang mượn</a>
+        </div>
+    </div>
 
-    <!-- 2. Continue Reading -->
-    <section>
-        <h3>📖 Continue Reading</h3>
-
-        <div class="book-row">
-            <c:forEach var="rp" items="${continueReading}">
-                <div class="book-card">
-                    <img src="/images/books/${rp.book.cover}" alt="">
-                    <h4>${rp.book.title}</h4>
-                    <p>${rp.book.author}</p>
-                    <div class="progress">
-                        <div style="width:${rp.progress}%"></div>
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-muted small">Đang mượn</div>
+                            <div class="stat-number">${borrowedCount}</div>
+                        </div>
+                        <div class="stat-icon">📘</div>
                     </div>
-                    <a class="btn" href="/reader/books/${rp.book.id}">Continue</a>
+                    <div class="mt-2">
+                        <a class="link-orange" href="${pageContext.request.contextPath}/reader/borrowed">Xem danh sách</a>
+                    </div>
                 </div>
-            </c:forEach>
+            </div>
         </div>
-    </section>
-
-    <!-- 3. Recommended -->
-    <section>
-        <h3>✨ Recommended for You</h3>
-
-        <div class="book-grid">
-            <c:forEach var="b" items="${recommendedBooks}">
-                <div class="book-card">
-                    <img src="/images/books/${b.cover}" alt="">
-                    <h4>${b.title}</h4>
-                    <p>⭐ ${b.rating}</p>
-                    <a href="/reader/books/${b.id}">View</a>
+        <div class="col-12 col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-muted small">Sắp hết hạn (3 ngày)</div>
+                            <div class="stat-number">${dueSoonCount}</div>
+                        </div>
+                        <div class="stat-icon">⏰</div>
+                    </div>
+                    <div class="mt-2 text-muted small">Hãy kiểm tra hạn trả để tránh trễ hạn.</div>
                 </div>
-            </c:forEach>
+            </div>
         </div>
-    </section>
+        <div class="col-12 col-md-4">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <div class="text-muted small">Đã đọc</div>
+                            <div class="stat-number">${readTotal}</div>
+                        </div>
+                        <div class="stat-icon">📚</div>
+                    </div>
+                    <div class="mt-2">
+                        <a class="link-orange" href="${pageContext.request.contextPath}/reader/books">Tìm sách mới</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- 4. Quick Navigation -->
-    <section class="quick-nav">
-        <a href="/reader/books">📚 Browse Books</a>
-        <a href="/reader/categories">🗂 Categories</a>
-        <a href="/reader/favorites">❤️ Favorites</a>
-        <a href="/reader/borrowed">📖 Borrowed</a>
-    </section>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <h4 class="section-title">📖 Đọc tiếp</h4>
+        <a class="link-orange" href="${pageContext.request.contextPath}/reader/books">Xem tất cả</a>
+    </div>
+
+    <c:choose>
+        <c:when test="${empty continueReading}">
+            <div class="empty-state">Bạn chưa có lịch sử đọc. Hãy bắt đầu với một cuốn sách bất kỳ.</div>
+        </c:when>
+        <c:otherwise>
+            <div class="row g-3 mb-4">
+                <c:forEach var="rp" items="${continueReading}">
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card book-card h-100">
+                            <div class="book-cover">
+                                <c:choose>
+                                    <c:when test="${not empty rp.book.coverUrl}">
+                                        <div class="cover-placeholder">${rp.book.title}</div>
+                                        <img class="book-cover-img" src="${pageContext.request.contextPath}${rp.book.coverUrl}" alt="${rp.book.title}" onerror="this.style.display='none'">
+                                    </c:when>
+                                    <c:otherwise>
+                                        <div class="cover-placeholder">${rp.book.title}</div>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                            <div class="card-body">
+                                <div class="fw-semibold mb-1 line-clamp-2">${rp.book.title}</div>
+                                <div class="text-muted small mb-2">${rp.book.author}</div>
+                                <div class="progress" style="height:8px;">
+                                    <div class="progress-bar bg-orange" role="progressbar" style="width:${rp.progress}%"></div>
+                                </div>
+                                <div class="d-flex align-items-center justify-content-between mt-2">
+                                    <div class="small text-muted">${rp.progress}%</div>
+                                    <a class="btn btn-sm btn-orange" href="${pageContext.request.contextPath}/reader/books/${rp.book.id}">Tiếp tục</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </c:forEach>
+            </div>
+        </c:otherwise>
+    </c:choose>
+
+    <div class="d-flex align-items-center justify-content-between mb-2">
+        <h4 class="section-title">✨ Gợi ý cho bạn</h4>
+        <a class="link-orange" href="${pageContext.request.contextPath}/reader/books">Duyệt sách</a>
+    </div>
+
+    <div class="row g-3">
+        <c:forEach var="b" items="${recommendedBooks}">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card book-card h-100">
+                    <div class="book-cover">
+                        <c:choose>
+                            <c:when test="${not empty b.coverUrl}">
+                                <div class="cover-placeholder">${b.title}</div>
+                                <img class="book-cover-img" src="${pageContext.request.contextPath}${b.coverUrl}" alt="${b.title}" onerror="this.style.display='none'">
+                            </c:when>
+                            <c:otherwise>
+                                <div class="cover-placeholder">${b.title}</div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                    <div class="card-body">
+                        <div class="fw-semibold mb-1 line-clamp-2">${b.title}</div>
+                        <div class="text-muted small mb-2">${b.author}</div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="small">⭐ <strong>${b.rating}</strong>
+                                <c:if test="${not empty b.reviewCount}">
+                                    <span class="text-muted">(${b.reviewCount})</span>
+                                </c:if>
+                            </div>
+                            <a class="btn btn-sm btn-outline-orange" href="${pageContext.request.contextPath}/reader/books/${b.id}">Xem</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </c:forEach>
+    </div>
+
+    <div class="mt-5">
+        <h4 class="section-title">Đi nhanh</h4>
+        <div class="d-flex flex-wrap gap-2">
+            <a class="btn btn-outline-orange" href="${pageContext.request.contextPath}/reader/books">📚 Books</a>
+            <a class="btn btn-outline-orange" href="${pageContext.request.contextPath}/reader/categories">🗂 Categories</a>
+            <a class="btn btn-outline-orange" href="${pageContext.request.contextPath}/reader/favorites">❤️ Favorites</a>
+            <a class="btn btn-outline-orange" href="${pageContext.request.contextPath}/reader/borrowed">📖 Borrowed</a>
+        </div>
+    </div>
 
 </div>
 

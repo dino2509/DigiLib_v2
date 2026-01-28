@@ -24,18 +24,15 @@
 <nav class="navbar navbar-expand-lg navbar-orange shadow-sm">
     <div class="container">
 
-        <!-- Logo -->
         <a class="navbar-brand" href="${pageContext.request.contextPath}/reader/home">
             📚 Digital Library
         </a>
 
-        <!-- Mobile -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarContent">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Menu -->
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto">
 
@@ -48,21 +45,34 @@
 
                 <li class="nav-item">
                     <a class="nav-link"
-                       href="${pageContext.request.contextPath}/books">
+                       href="${pageContext.request.contextPath}/reader/books">
                         Danh sách sách
                     </a>
                 </li>
 
                 <li class="nav-item">
                     <a class="nav-link"
-                       href="${pageContext.request.contextPath}/reader/borrowed-books">
-                        Sách đang mượn
+                       href="${pageContext.request.contextPath}/reader/categories">
+                        Thể loại
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link"
+                       href="${pageContext.request.contextPath}/reader/favorites">
+                        Yêu thích
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link"
+                       href="${pageContext.request.contextPath}/reader/borrowed">
+                        Đang mượn
                     </a>
                 </li>
 
             </ul>
 
-            <!-- User -->
             <ul class="navbar-nav ms-auto">
                 <c:if test="${not empty sessionScope.user}">
                     <li class="nav-item dropdown">
