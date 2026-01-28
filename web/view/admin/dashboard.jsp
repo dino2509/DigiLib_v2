@@ -56,7 +56,7 @@
         <a href="#"><i class="fa-solid fa-users me-2"></i> Users</a>
         <a href="#"><i class="fa-solid fa-repeat me-2"></i> Borrow Requests</a>
         <a href="#"><i class="fa-solid fa-cart-shopping me-2"></i> Orders</a>
-        <a href="#"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
+        <a href="${pageContext.request.contextPath}/logout"><i class="fa-solid fa-right-from-bracket me-2"></i> Logout</a>
     </div>
 
     <!-- Main content -->
