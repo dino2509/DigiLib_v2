@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-@WebServlet("/author/list")
+@WebServlet("/admin/authors/list")
 public class ListController extends HttpServlet {
 
     @Override
@@ -21,7 +21,7 @@ public class ListController extends HttpServlet {
         ArrayList<Author> authors = adb.list();
 
         request.setAttribute("authors", authors);
-        request.getRequestDispatcher("../view/author/list.jsp")
+        request.getRequestDispatcher("../../view/admin/authors/list.jsp")
                .forward(request, response);
         
         ////
