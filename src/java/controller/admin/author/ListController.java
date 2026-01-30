@@ -23,5 +23,7 @@ public class ListController extends HttpServlet {
         request.setAttribute("authors", authors);
         request.getRequestDispatcher("../view/author/list.jsp")
                .forward(request, response);
+        
+        ////
     }
 }
