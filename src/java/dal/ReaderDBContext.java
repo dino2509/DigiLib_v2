@@ -1,9 +1,11 @@
 package dal;
 
+import java.security.Timestamp;
 import model.Reader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -138,23 +140,22 @@ public class ReaderDBContext extends DBContext<Reader> {
     }
 
     public Reader getByEmail(String email) {
-    String sql = "SELECT * FROM Reader WHERE email = ?";
+        String sql = "SELECT * FROM Reader WHERE email = ?";
 
-    try (PreparedStatement ps = connection.prepareStatement(sql)) {
-        ps.setString(1, email);
-        ResultSet rs = ps.executeQuery();
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
 
-        if (rs.next()) {
-            return mapReader(rs);
+            if (rs.next()) {
+                return mapReader(rs);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ReaderDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
-    } catch (SQLException ex) {
-        Logger.getLogger(ReaderDBContext.class.getName())
-              .log(Level.SEVERE, null, ex);
+        return null;
     }
-    return null;
-}
 
-    
     public int insertId(Reader r) {
         String sql = """
         INSERT INTO Reader
@@ -187,6 +188,29 @@ public class ReaderDBContext extends DBContext<Reader> {
                     .log(Level.SEVERE, null, ex);
         }
         return -1;
+    }
+
+    public void insert(Reader r, String passwordHash) {
+        String sql = """
+        INSERT INTO Reader
+        (full_name, email, password_hash, phone, status, created_at, role_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, r.getFullName());
+            ps.setString(2, r.getEmail());
+            ps.setString(3, passwordHash);
+            ps.setString(4, r.getPhone());
+            ps.setString(5, r.getStatus());
+//            ps.setTimestamp(5, r.getCreatedAt());
+           
+            ps.setObject(5, LocalDateTime.now());
+            ps.setInt(7, r.getRoleId());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // =========================

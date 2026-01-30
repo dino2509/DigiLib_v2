@@ -1,13 +1,16 @@
 package dal;
 
+import java.security.Timestamp;
 import model.Employee;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.Employee;
+import model.Reader;
 
 public class EmployeeDBContext extends DBContext<Employee> {
 
@@ -19,15 +22,14 @@ public class EmployeeDBContext extends DBContext<Employee> {
         ArrayList<Employee> employees = new ArrayList<>();
         String sql = "SELECT * FROM Employee";
 
-        try (PreparedStatement ps = connection.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 employees.add(mapEmployee(rs));
             }
         } catch (SQLException ex) {
             Logger.getLogger(EmployeeDBContext.class.getName())
-                  .log(Level.SEVERE, null, ex);
+                    .log(Level.SEVERE, null, ex);
         }
         return employees;
     }
@@ -48,7 +50,7 @@ public class EmployeeDBContext extends DBContext<Employee> {
             }
         } catch (SQLException ex) {
             Logger.getLogger(EmployeeDBContext.class.getName())
-                  .log(Level.SEVERE, null, ex);
+                    .log(Level.SEVERE, null, ex);
         }
         return null;
     }
@@ -76,7 +78,7 @@ public class EmployeeDBContext extends DBContext<Employee> {
 
         } catch (SQLException ex) {
             Logger.getLogger(EmployeeDBContext.class.getName())
-                  .log(Level.SEVERE, null, ex);
+                    .log(Level.SEVERE, null, ex);
         }
     }
 
@@ -106,7 +108,7 @@ public class EmployeeDBContext extends DBContext<Employee> {
 
         } catch (SQLException ex) {
             Logger.getLogger(EmployeeDBContext.class.getName())
-                  .log(Level.SEVERE, null, ex);
+                    .log(Level.SEVERE, null, ex);
         }
     }
 
@@ -122,7 +124,46 @@ public class EmployeeDBContext extends DBContext<Employee> {
             ps.executeUpdate();
         } catch (SQLException ex) {
             Logger.getLogger(EmployeeDBContext.class.getName())
-                  .log(Level.SEVERE, null, ex);
+                    .log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public boolean existsByEmail(String email) {
+        String sql = "SELECT 1 FROM Employee WHERE email = ?";
+        try {
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setString(1, email);
+            ResultSet rs = stm.executeQuery();
+            return rs.next();
+        } catch (SQLException ex) {
+            Logger.getLogger(EmployeeDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+        return false;
+    }
+
+    public void insertFromReader(Reader r, int librarianRoleId) {
+        String sql = """
+            INSERT INTO Employee
+            (full_name, email, password_hash, status, created_at, role_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """;
+
+        try {
+            PreparedStatement stm = connection.prepareStatement(sql);
+
+            stm.setString(1, r.getFullName());
+            stm.setString(2, r.getEmail());
+            stm.setString(3, r.getPasswordHash());
+            stm.setString(4, "ACTIVE");
+            stm.setObject(5, LocalDateTime.now());
+            stm.setInt(6, librarianRoleId); // LIBRARIAN
+
+            stm.executeUpdate();
+
+        } catch (SQLException ex) {
+            Logger.getLogger(EmployeeDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
     }
 
