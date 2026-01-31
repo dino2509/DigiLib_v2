@@ -20,12 +20,40 @@ public class Book {
     private Timestamp updatedAt;
     private Author author;
     private Category category;
-    
-    private int authorId;
-    private int categoryId;
-    private int createdByEmployeeId;
-    private int updatedByEmployeeId;
+    private Employee create_by;
+    private Employee update_by;
 
+    public Author getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
+    }
+
+    public Category getCategory() {
+        return category;
+    }
+
+    public void setCategory(Category category) {
+        this.category = category;
+    }
+
+    public Employee getCreate_by() {
+        return create_by;
+    }
+
+    public void setCreate_by(Employee create_by) {
+        this.create_by = create_by;
+    }
+
+    public Employee getUpdate_by() {
+        return update_by;
+    }
+
+    public void setUpdate_by(Employee update_by) {
+        this.update_by = update_by;
+    }
 
     // ===== GETTER & SETTER =====
     public int getBookId() {
@@ -132,53 +160,4 @@ public class Book {
         this.updatedAt = updatedAt;
     }
 
-    public int getAuthorId() {
-        return authorId;
-    }
-
-    public void setAuthorId(int authorId) {
-        this.authorId = authorId;
-    }
-
-    public int getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(int categoryId) {
-        this.categoryId = categoryId;
-    }
-    
-      public int getCreatedByEmployeeId() {
-        return createdByEmployeeId;
-    }
-
-    public Author getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(Author author) {
-        this.author = author;
-    }
-
-    public Category getCategory() {
-        return category;
-    }
-
-    public void setCategory(Category category) {
-        this.category = category;
-    }
-      
-      
-
-    public void setCreatedByEmployeeId(int createdByEmployeeId) {
-        this.createdByEmployeeId = createdByEmployeeId;
-    }
-
-    public int getUpdatedByEmployeeId() {
-        return updatedByEmployeeId;
-    }
-
-    public void setUpdatedByEmployeeId(int updatedByEmployeeId) {
-        this.updatedByEmployeeId = updatedByEmployeeId;
-    }
 }
