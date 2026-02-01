@@ -6,6 +6,7 @@ import dal.CategoryDBContext;
 import model.Book;
 import model.Author;
 import model.Category;
+import model.Employee;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -36,8 +37,15 @@ public class CreateController extends HttpServlet {
         request.setAttribute("authors", authors);
         request.setAttribute("categories", categories);
 
-        request.getRequestDispatcher("../../view/admin/books/add.jsp")
-               .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/books/add.jsp")
+//                .forward(request, response);
+        request.setAttribute("pageTitle", "Add Book");
+        request.setAttribute("activeMenu", "book");
+        request.setAttribute("contentPage", "../../view/admin/books/add.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+
     }
 
     // =========================
@@ -47,14 +55,23 @@ public class CreateController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // ===== CHECK LOGIN =====
+        Employee emp = (Employee) request.getSession().getAttribute("user");
+        if (emp == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+
         Book b = new Book();
 
+        // ===== BASIC INFO =====
         b.setTitle(request.getParameter("title"));
         b.setSummary(request.getParameter("summary"));
         b.setDescription(request.getParameter("description"));
         b.setCoverUrl(request.getParameter("cover_url"));
         b.setContentPath(request.getParameter("content_path"));
 
+        // ===== PRICE =====
         String price = request.getParameter("price");
         if (price != null && !price.isEmpty()) {
             b.setPrice(new BigDecimal(price));
@@ -62,19 +79,28 @@ public class CreateController extends HttpServlet {
 
         b.setCurrency(request.getParameter("currency"));
         b.setStatus(request.getParameter("status"));
+
+        // ===== TIME =====
         b.setCreatedAt(new Timestamp(System.currentTimeMillis()));
 
-        // Author
-        int authorId = Integer.parseInt(request.getParameter("author_id"));
-        Author a = new Author();
-        a.setAuthor_id(authorId);
-        b.setAuthor(a);
+        // ===== AUTHOR =====
+        String authorRaw = request.getParameter("author_id");
+        if (authorRaw != null && !authorRaw.isEmpty()) {
+            Author a = new Author();
+            a.setAuthor_id(Integer.parseInt(authorRaw));
+            b.setAuthor(a);
+        }
 
-        // Category
-        int categoryId = Integer.parseInt(request.getParameter("category_id"));
-        Category c = new Category();
-        c.setCategory_id(categoryId);
-        b.setCategory(c);
+        // ===== CATEGORY =====
+        String categoryRaw = request.getParameter("category_id");
+        if (categoryRaw != null && !categoryRaw.isEmpty()) {
+            Category c = new Category();
+            c.setCategory_id(Integer.parseInt(categoryRaw));
+            b.setCategory(c);
+        }
+
+        // ===== CREATED BY (QUAN TRỌNG NHẤT) =====
+        b.setCreate_by(emp);
 
         bookDB.insert(b);
 

@@ -165,8 +165,8 @@ public class BookDBContext extends DBContext<Book> {
             ps.setString(5, b.getContentPath());
             ps.setBigDecimal(6, b.getPrice());
             ps.setString(7, b.getCurrency());
-            ps.setObject(8, b.getTotalPages());
-            ps.setObject(9, b.getPreviewPages());
+            ps.setInt(8, b.getTotalPages());
+            ps.setInt(9, b.getPreviewPages());
             ps.setString(10, b.getStatus());
             ps.setInt(11, b.getAuthor().getAuthor_id());
             ps.setInt(12, b.getCategory().getCategory_id());
@@ -184,21 +184,21 @@ public class BookDBContext extends DBContext<Book> {
     public void update(Book b) {
 
         String sql = """
-            UPDATE Book SET
-                title = ?,
-                summary = ?,
-                description = ?,
-                cover_url = ?,
-                content_path = ?,
-                price = ?,
-                currency = ?,
-                status = ?,
-                author_id = ?,
-                category_id = ?,
-                updated_by = ?,
-                updated_at = GETDATE()
-            WHERE book_id = ?
-        """;
+        UPDATE Book SET
+            title = ?,
+            summary = ?,
+            description = ?,
+            cover_url = ?,
+            content_path = ?,
+            price = ?,
+            currency = ?,
+            status = ?,
+            author_id = ?,
+            category_id = ?,
+            updated_by = ?,
+            updated_at = GETDATE()
+        WHERE book_id = ?
+    """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
@@ -212,7 +212,13 @@ public class BookDBContext extends DBContext<Book> {
             ps.setString(8, b.getStatus());
             ps.setInt(9, b.getAuthor().getAuthor_id());
             ps.setInt(10, b.getCategory().getCategory_id());
+
+            // ===== UPDATED BY (BẮT BUỘC PHẢI CÓ) =====
+            if (b.getUpdate_by() == null) {
+                throw new IllegalStateException("Book.update_by is null");
+            }
             ps.setInt(11, b.getUpdate_by().getEmployeeId());
+
             ps.setInt(12, b.getBookId());
 
             ps.executeUpdate();

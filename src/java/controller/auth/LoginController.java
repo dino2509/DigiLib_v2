@@ -49,6 +49,7 @@ public class LoginController extends HttpServlet {
             // ===== ROLE-BASED REDIRECT =====
             if (user instanceof Employee) {
                  Employee e = (Employee) user;
+//                 session.setAttribute("employee", e);
                 switch (e.getRoleId()) {
                     case 1: // ADMIN
                         response.sendRedirect("admin/dashboard");
@@ -58,9 +59,7 @@ public class LoginController extends HttpServlet {
                         response.sendRedirect("librarian/dashboard");
                         break;
 
-//                    case 3: // SELLER
-//                        response.sendRedirect("view/seller/dashboard.jsp");
-//                        break;
+
 
                     default:
                         response.sendRedirect("view/error/403.jsp");

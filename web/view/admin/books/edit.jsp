@@ -1,197 +1,268 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html lang="vi">
-    <head>
-        <meta charset="UTF-8">
-        <title>Cập nhật sách</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
 
-        <style>
-            body {
-                margin: 0;
-                font-family: Arial, sans-serif;
-                background: #fff7f0;
+<!-- ================= THEME ================= -->
+<style>
+    :root {
+        --primary: #f97316;
+        --primary-soft: #ffedd5;
+        --border: #e5e7eb;
+        --text: #374151;
+        --radius: 12px;
+    }
+
+    body {
+        background: #fff;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: var(--text);
+    }
+
+    .main {
+        padding: 32px 20px;
+    }
+
+    .edit-card {
+        max-width: 720px;
+        margin: auto;
+        border-radius: 16px;
+        padding: 32px;
+        border: 1px solid var(--border);
+    }
+
+    /* ===== HEADER ===== */
+    .edit-title {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: var(--primary);
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 28px;
+        position: relative;
+    }
+
+    .edit-title::after {
+        content: "";
+        position: absolute;
+        bottom: -10px;
+        width: 120px;
+        height: 2px;
+        background: var(--primary);
+        border-radius: 999px;
+    }
+
+    /* ===== FORM ===== */
+    .form-group {
+        margin-bottom: 14px;
+    }
+
+    .form-group label {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .form-control,
+    .form-select {
+        width: 100%;
+        height: 42px;
+        padding: 0 14px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        font-size: 14px;
+    }
+
+    textarea.form-control {
+        height: auto;
+        padding: 10px 14px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(249,115,22,.15);
+    }
+
+    /* ===== ACTIONS ===== */
+    .actions {
+        margin-top: 28px;
+        padding-top: 18px;
+        border-top: 1px dashed #fed7aa;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .btn-save {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 10px 26px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-save:hover {
+        opacity: .9;
+    }
+
+    .btn-back {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--primary);
+        text-decoration: none;
+    }
+
+    .btn-back:hover {
+        text-decoration: underline;
+    }
+
+    /* ===== SELECT2 ===== */
+    .select2-container .select2-selection--single {
+        height: 42px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 10px;
+    }
+    .cover-preview {
+        margin-top: 16px;
+        text-align: center;
+    }
+
+    .cover-preview img {
+        max-width: 160px;
+        max-height: 220px;
+        width: auto;
+        height: auto;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #fed7aa;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        background: #fff;
+    }
+
+</style>
+
+
+<!-- ================= SCRIPTS ================= -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+    $(document).ready(function () {
+        $('.select2').select2({
+            width: '100%',
+            ajax: {
+                url: '/admin/api/authors',
+                dataType: 'json',
+                delay: 250,
+                processResults: data => ({results: data})
             }
+        });
+    });
+</script>
 
-            .layout {
-                display: flex;
-            }
+<!-- ================= CONTENT ================= -->
+<div class="main">
+    <div class="edit-card">
 
-            .main {
-                flex: 1;
-                padding: 30px;
-            }
+        <div class="edit-title">✏️ Cập nhật sách</div>
 
-            .card {
-                background: #fff;
-                max-width: 850px;
-                margin: auto;
-                padding: 30px;
-                border-radius: 10px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-            }
+        <c:if test="${not empty book.coverUrl}">
+            <div class="cover-preview">
+                <img src="${pageContext.request.contextPath}/${book.coverUrl}" alt="Book Cover">
+            </div>
+        </c:if>
 
-            h2 {
-                color: #ff6f00;
-                text-align: center;
-                margin-bottom: 25px;
-            }
+        <form action="${pageContext.request.contextPath}/admin/books/edit" method="post">
+            <input type="hidden" name="book_id" value="${book.bookId}">
 
-            label {
-                font-weight: bold;
-                color: #444;
-            }
+            <div class="row g-4">
 
-            input, textarea, select {
-                width: 100%;
-                padding: 10px;
-                margin-top: 6px;
-                margin-bottom: 16px;
-                border-radius: 6px;
-                border: 1px solid #ddd;
-                font-size: 14px;
-            }
+                <div class="col-md-6 form-group">
+                    <label>Tiêu đề</label>
+                    <input name="title" value="${book.title}" class="form-control" required>
+                </div>
 
-            textarea {
-                resize: vertical;
-            }
+                <div class="col-md-6 form-group">
+                    <label>Giá</label>
+                    <input type="number" step="0.01" name="price" value="${book.price}" class="form-control">
+                </div>
 
-            .cover-preview {
-                text-align: center;
-                margin-bottom: 20px;
-            }
+                <div class="col-12 form-group">
+                    <label>Tóm tắt</label>
+                    <textarea name="summary" rows="3" class="form-control">${book.summary}</textarea>
+                </div>
 
-            .cover-preview img {
-                max-height: 220px;
-                border-radius: 6px;
-                border: 1px solid #eee;
-            }
+                <div class="col-12 form-group">
+                    <label>Mô tả</label>
+                    <textarea name="description" rows="4" class="form-control">${book.description}</textarea>
+                </div>
 
-            .actions {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 20px;
-            }
+                <div class="col-md-4 form-group">
+                    <label>Đơn vị tiền</label>
+                    <input name="currency" value="${book.currency}" class="form-control">
+                </div>
 
-            .btn {
-                padding: 10px 18px;
-                border-radius: 6px;
-                border: none;
-                cursor: pointer;
-                font-size: 14px;
-                text-decoration: none;
-            }
+                <div class="col-md-4 form-group">
+                    <label>Danh mục</label>
+                    <select name="category_id" class="form-select select2">
+                        <c:forEach items="${categories}" var="c">
+                            <option value="${c.category_id}"
+                                    ${book.category != null && c.category_id == book.category.category_id ? 'selected' : ''}>
+                                ${c.category_name}
+                            </option>
+                        </c:forEach>
+                    </select>
+                </div>
 
-            .btn-save {
-                background: #ff6f00;
-                color: #fff;
-            }
+                <div class="col-md-4 form-group">
+                    <label>Tác giả</label>
+                    <select name="author_id" class="form-select select2">
+                        <c:forEach items="${authors}" var="a">
+                            <option value="${a.author_id}"
+                                    ${book.author != null && a.author_id == book.author.author_id ? 'selected' : ''}>
+                                ${a.author_name}
+                            </option>
+                        </c:forEach>
+                    </select>
+                </div>
 
-            .btn-save:hover {
-                background: #e65c00;
-            }
+                <div class="col-md-6 form-group">
+                    <label>Trạng thái</label>
+                    <select name="status" class="form-select">
+                        <option ${book.status == 'Active' ? 'selected' : ''}>Active</option>
+                        <option ${book.status == 'Inactive' ? 'selected' : ''}>Inactive</option>
+                    </select>
+                </div>
 
-            .btn-back {
-                color: #ff6f00;
-                font-weight: bold;
-            }
+                <div class="col-md-6 form-group">
+                    <label>Cover URL</label>
+                    <input name="cover_url" value="${book.coverUrl}" class="form-control">
+                </div>
 
-            .btn-back:hover {
-                text-decoration: underline;
-            }
-        </style>
-    </head>
-
-    <body>
-
-        <div class="layout">
-
-            <!-- ===== ADMIN PANEL ===== -->
-            <jsp:include page="/include/admin/panel.jsp" />
-
-            <!-- ===== MAIN CONTENT ===== -->
-            <div class="main">
-
-                <div class="card">
-                    <h2>✏️ Cập nhật sách</h2>
-
-                    <!-- PREVIEW COVER -->
-                    <c:if test="${not empty book.coverUrl}">
-                        <div class="cover-preview">
-                            <img src="${book.coverUrl}" alt="Cover">
-                        </div>
-                    </c:if>
-
-                    <form action="${pageContext.request.contextPath}/admin/books/edit" method="post">
-
-                        <input type="hidden" name="book_id" value="${book.bookId}">
-
-                        <label>Tiêu đề</label>
-                        <input type="text" name="title" value="${book.title}" required>
-
-                        <label>Tóm tắt</label>
-                        <textarea name="summary">${book.summary}</textarea>
-
-                        <label>Mô tả</label>
-                        <textarea name="description">${book.description}</textarea>
-
-                        <label>Giá</label>
-                        <input type="number" step="0.01" name="price" value="${book.price}">
-
-                        <label>Đơn vị tiền</label>
-                        <input type="text" name="currency" value="${book.currency}">
-
-                        <label>Danh mục</label>
-                        <select name="category_id">
-                            <c:forEach items="${categories}" var="c">
-                                <option value="${c.category_id}"
-                                        ${c.category_id == book.category.category_id ? "selected" : ""}>
-                                    ${c.category_name}
-                                </option>
-                            </c:forEach>
-                        </select>
-
-                        <label>Tác giả</label>
-                        <select name="author_id">
-                            <c:forEach items="${authors}" var="a">
-                                <option value="${a.author_id}"
-                                        ${a.author_id == book.author.author_id ? "selected" : ""}>
-                                    ${a.author_name}
-                                </option>
-                            </c:forEach>
-                        </select>
-
-                        <label>Trạng thái</label>
-                        <select name="status">
-                            <option value="ACTIVE" ${book.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
-                            <option value="INACTIVE" ${book.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
-                        </select>
-
-                        <!-- NEW: COVER URL -->
-                        <label>Cover URL</label>
-                        <input type="text" name="cover_url" value="${book.coverUrl}">
-
-                        <div class="actions">
-                            <button type="submit" class="btn btn-save">💾 Cập nhật</button>
-                            <a href="${pageContext.request.contextPath}/admin/books" class="btn-back">
-                                ⬅ Quay lại
-                            </a>
-                        </div>
-
-                    </form>
+                <div class="col-12 form-group">
+                    <label>Content Path</label>
+                    <input name="content_path" value="${book.contentPath}" class="form-control">
                 </div>
 
             </div>
-        </div>
-    </div> <!-- content -->
-</div> <!-- main -->
-</div> <!-- admin-container -->
+
+            <div class="actions">
+                <button class="btn-save">💾 Cập nhật</button>
+                <a href="${pageContext.request.contextPath}/admin/books" class="btn-back">⬅ Quay lại</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-
-</body>
-</html>

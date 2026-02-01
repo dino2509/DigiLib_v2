@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import model.Employee;
 
 @WebServlet(name = "UpdateController", urlPatterns = {"/admin/books/edit"})
 public class UpdateController extends HttpServlet {
@@ -40,8 +41,12 @@ public class UpdateController extends HttpServlet {
         request.setAttribute("authors", authors);
         request.setAttribute("categories", categories);
 
-        request.getRequestDispatcher("/view/admin/books/edit.jsp")
-               .forward(request, response);
+        request.setAttribute("pageTitle", "Update Book");
+        request.setAttribute("activeMenu", "book");
+        request.setAttribute("contentPage", "../../view/admin/books/edit.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
     }
 
     // =========================
@@ -50,7 +55,11 @@ public class UpdateController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
+        Employee emp = (Employee) request.getSession().getAttribute("user");
+        if (emp == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
         Book b = new Book();
 
         b.setBookId(Integer.parseInt(request.getParameter("book_id")));
@@ -80,6 +89,8 @@ public class UpdateController extends HttpServlet {
         Category c = new Category();
         c.setCategory_id(categoryId);
         b.setCategory(c);
+
+        b.setUpdate_by(emp);
 
         bookDB.update(b);
 

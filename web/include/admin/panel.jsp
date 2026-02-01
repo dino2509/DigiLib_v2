@@ -1,142 +1,155 @@
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
+
 <style>
     :root {
-        --orange: #ff8c00;
-        --orange-dark: #e67600;
-        --bg-light: #f9f9f9;
-        --text-dark: #333;
-    }
-
-    .admin-container {
-        display: flex;
-        min-height: 100vh;
-        background: var(--bg-light);
-        font-family: Arial, sans-serif;
+        --sidebar-bg: #ff8c00;        /* cam chủ đạo */
+        --sidebar-dark: #e67600;      /* cam đậm */
+        --sidebar-hover: #ffa733;     /* cam sáng hover */
+        --sidebar-active: #d65f00;    /* cam active */
+        --sidebar-text: #ffffff;
+        --sidebar-muted: #ffe0b2;
     }
 
     .sidebar {
-        width: 240px;
-        background: var(--orange);
-        color: #fff;
+        width: 260px;
+        min-height: 100vh;
+        background: var(--sidebar-bg);
+        color: var(--sidebar-text);
+        font-family: Arial, sans-serif;
     }
 
-    .sidebar h2 {
+    /* BRAND */
+    .sidebar .brand {
+        padding: 18px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        background: var(--sidebar-dark);
         text-align: center;
-        padding: 20px;
-        margin: 0;
-        background: var(--orange-dark);
-        font-size: 20px;
+        letter-spacing: 1px;
     }
 
+    /* SECTION */
+    .sidebar .section {
+        margin-top: 12px;
+    }
+
+    .sidebar .section-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        padding: 10px 20px;
+        color: var(--sidebar-muted);
+        opacity: 0.9;
+    }
+
+    /* LINK */
     .sidebar a {
-        display: block;
-        padding: 12px 20px;
-        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 20px;
+        margin: 3px 10px;
+        border-radius: 6px;
+        color: var(--sidebar-text);
         text-decoration: none;
-        font-size: 15px;
+        font-size: 14px;
+        transition: background 0.2s ease;
     }
 
     .sidebar a:hover {
-        background: rgba(255,255,255,0.2);
+        background: var(--sidebar-hover);
+        color: #fff;
     }
 
-    .main {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .topbar {
-        background: #fff;
-        padding: 12px 20px;
-        border-bottom: 1px solid #ddd;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .topbar .title {
-        font-size: 18px;
-        color: var(--text-dark);
+    .sidebar a.active {
+        background: var(--sidebar-active);
         font-weight: bold;
+        box-shadow: inset 3px 0 0 #fff;
     }
 
-    .content {
-        padding: 20px;
+    .sidebar hr {
+        border: none;
+        border-top: 1px solid rgba(255,255,255,0.3);
+        margin: 12px 0;
     }
 </style>
 
-<div class="admin-container">
+<div class="sidebar">
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <h2>ADMIN PANEL</h2>
-
-        <a href="${pageContext.request.contextPath}/admin/dashboard">📊 Admin Dashboard</a>
-        <a href="${pageContext.request.contextPath}/admin/notifications">🔔 System Notifications</a>
-
-        <hr>
-
-        <a href="${pageContext.request.contextPath}/admin/books">📚 Book Management</a>
-        <a href="${pageContext.request.contextPath}/admin/book-copies">📖 Book Copy Management</a>
-        <a href="${pageContext.request.contextPath}/admin/authors">✍️ Author Management</a>
-        <a href="${pageContext.request.contextPath}/admin/categories">🗂 Category Management</a>
-
-        <hr>
-
-        <a href="${pageContext.request.contextPath}/admin/readers">👤 Reader Management</a>
-        <a href="${pageContext.request.contextPath}/admin/employees">🧑‍💼 Employee Management</a>
-        <a href="${pageContext.request.contextPath}/admin/roles">🔐 Role Management</a>
-
-        <hr>
-
-        <a href="${pageContext.request.contextPath}/logout">🚪 Logout</a>
+    <!-- BRAND -->
+    <div class="brand">
+        📚 CORE LIBRARY
     </div>
 
-    <!-- MAIN -->
-    <div class="main">
+    <!-- DASHBOARD -->
+    <div class="section">
+        <div class="section-title">Dashboard</div>
+        <a href="${pageContext.request.contextPath}/admin/dashboard"
+           class="${activeMenu == 'dashboard' ? 'active' : ''}">
+            📊 Dashboard
+        </a>
+    </div>
 
-        <div class="topbar">
-            <div class="title">
-                ${pageTitle != null ? pageTitle : "Admin Dashboard"}
-            </div>
+    <!-- SYSTEM -->
+    <div class="section">
+        <div class="section-title">System</div>
+        <a href="${pageContext.request.contextPath}/admin/notifications"
+           class="${activeMenu == 'notification' ? 'active' : ''}">
+            🔔 Notifications
+        </a>
+    </div>
 
-            <!-- USER DROPDOWN -->
-            <ul class="navbar-nav ms-auto">
-                <c:if test="${not empty sessionScope.user}">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle"
-                           href="#" role="button"
-                           data-bs-toggle="dropdown">
-                            👤 ${sessionScope.user.fullName}
-                        </a>
+    <!-- MANAGEMENT -->
+    <div class="section">
+        <div class="section-title">Management</div>
 
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item"
-                                   href="${pageContext.request.contextPath}/admin/profile">
-                                    Hồ sơ cá nhân
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item"
-                                   href="${pageContext.request.contextPath}/change-password">
-                                    Change Password
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item text-danger"
-                                   href="${pageContext.request.contextPath}/logout">
-                                    Đăng xuất
-                                </a>
-                            </li>
-                        </ul>
-                    </li>
-                </c:if>
-            </ul>
-        </div>
+        <a href="${pageContext.request.contextPath}/admin/books"
+           class="${activeMenu == 'book' ? 'active' : ''}">
+            📚 Books
+        </a>
 
-        <div class="content">
+        <a href="${pageContext.request.contextPath}/admin/bookcopies"
+           class="${activeMenu == 'bookcopy' ? 'active' : ''}">
+            📖 Book Copies
+        </a>
+
+        <a href="${pageContext.request.contextPath}/admin/authors"
+           class="${activeMenu == 'author' ? 'active' : ''}">
+            ✍️ Authors
+        </a>
+
+        <a href="${pageContext.request.contextPath}/admin/categories"
+           class="${activeMenu == 'category' ? 'active' : ''}">
+            🗂 Categories
+        </a>
+    </div>
+
+    <!-- USERS -->
+    <div class="section">
+        <div class="section-title">Users</div>
+
+        <a href="${pageContext.request.contextPath}/admin/readers"
+           class="${activeMenu == 'reader' ? 'active' : ''}">
+            👤 Readers
+        </a>
+
+        <a href="${pageContext.request.contextPath}/admin/employees"
+           class="${activeMenu == 'employee' ? 'active' : ''}">
+            🧑‍💼 Employees
+        </a>
+
+        <a href="${pageContext.request.contextPath}/admin/roles"
+           class="${activeMenu == 'role' ? 'active' : ''}">
+            🔐 Roles
+        </a>
+    </div>
+
+    <hr>
+
+    <!-- LOGOUT -->
+    <div class="section">
+        <a href="${pageContext.request.contextPath}/logout">
+            🚪 Logout
+        </a>
+    </div>
+
+</div>
