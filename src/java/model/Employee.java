@@ -1,7 +1,7 @@
 package model;
 
 import java.io.Serializable;
-import java.security.Timestamp;
+
 import java.time.LocalDateTime;
 
 public class Employee implements Serializable {

@@ -28,7 +28,7 @@ public class BookDBContext extends DBContext<Book> {
             FROM Book b
             LEFT JOIN Author a ON b.author_id = a.author_id
             LEFT JOIN Category c ON b.category_id = c.category_id
-            ORDER BY b.book_id DESC
+            ORDER BY b.book_id ASC
         """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
@@ -92,15 +92,21 @@ public class BookDBContext extends DBContext<Book> {
     public Book get(int id) {
 
         String sql = """
-            SELECT 
-                b.*,
-                a.author_name,
-                c.category_name
-            FROM Book b
-            LEFT JOIN Author a ON b.author_id = a.author_id
-            LEFT JOIN Category c ON b.category_id = c.category_id
-            WHERE b.book_id = ?
-        """;
+        SELECT 
+            b.*,
+            a.author_name,
+            c.category_name,
+            e1.employee_id AS create_by_id,
+            e1.full_name  AS create_by_name,
+            e2.employee_id AS update_by_id,
+            e2.full_name  AS update_by_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        LEFT JOIN Employee e1 ON e1.employee_id = b.created_by
+        LEFT JOIN Employee e2 ON e2.employee_id = b.updated_by
+        WHERE b.book_id = ?
+    """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, id);
@@ -122,13 +128,28 @@ public class BookDBContext extends DBContext<Book> {
                 b.setCreatedAt(rs.getTimestamp("created_at"));
                 b.setUpdatedAt(rs.getTimestamp("updated_at"));
 
-                // AUTHOR
+                // ===== CREATED BY (BẮT BUỘC) =====
+                Employee createBy = new Employee();
+                createBy.setEmployeeId(rs.getInt("create_by_id"));
+                createBy.setFullName(rs.getString("create_by_name"));
+                b.setCreate_by(createBy);
+
+                // ===== UPDATED BY (CÓ THỂ NULL) =====
+                int updateById = rs.getInt("update_by_id");
+                if (!rs.wasNull()) {
+                    Employee updateBy = new Employee();
+                    updateBy.setEmployeeId(updateById);
+                    updateBy.setFullName(rs.getString("update_by_name"));
+                    b.setUpdate_by(updateBy);
+                }
+
+                // ===== AUTHOR =====
                 Author a = new Author();
                 a.setAuthor_id(rs.getInt("author_id"));
                 a.setAuthor_name(rs.getString("author_name"));
                 b.setAuthor(a);
 
-                // CATEGORY
+                // ===== CATEGORY =====
                 Category c = new Category();
                 c.setCategory_id(rs.getInt("category_id"));
                 c.setCategory_name(rs.getString("category_name"));
@@ -226,6 +247,91 @@ public class BookDBContext extends DBContext<Book> {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    //====search====
+    public ArrayList<Book> search(String keyword,
+            Integer authorId,
+            Integer categoryId,
+            String status) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1 = 1
+    """;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql += " AND b.title LIKE ? ";
+        }
+        if (authorId != null) {
+            sql += " AND b.author_id = ? ";
+        }
+        if (categoryId != null) {
+            sql += " AND b.category_id = ? ";
+        }
+        if (status != null && !status.isEmpty()) {
+            sql += " AND b.status = ? ";
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            int index = 1;
+
+            if (keyword != null && !keyword.isEmpty()) {
+                ps.setString(index++, "%" + keyword + "%");
+            }
+            if (authorId != null) {
+                ps.setInt(index++, authorId);
+            }
+            if (categoryId != null) {
+                ps.setInt(index++, categoryId);
+            }
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
     }
 
     // ================== DELETE ==================

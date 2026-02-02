@@ -77,7 +77,7 @@
 
     <!-- BRAND -->
     <div class="brand">
-        📚 CORE LIBRARY
+        📚 DLS SYSTEM
     </div>
 
     <!-- DASHBOARD -->
