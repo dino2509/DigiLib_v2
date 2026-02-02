@@ -35,8 +35,13 @@ public class AddController extends HttpServlet {
         request.setAttribute("readers", readers);
         ArrayList<Role> roles = roleDB.list();
         request.setAttribute("roles", roles);
-        request.getRequestDispatcher("../../view/admin/employees/add.jsp")
+        request.setAttribute("pageTitle", "Add Employee");
+        request.setAttribute("activeMenu", "employee");
+        request.setAttribute("contentPage", "../../view/admin/employees/add.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/employees/add.jsp")
+//                .forward(request, response);
     }
 
     @Override
