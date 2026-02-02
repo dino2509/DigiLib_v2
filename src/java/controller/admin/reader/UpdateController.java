@@ -31,8 +31,13 @@ public class UpdateController extends HttpServlet {
         Reader reader = readerDB.get(readerId);
 
         request.setAttribute("reader", reader);
-        request.getRequestDispatcher("../../view/admin/reader/edit.jsp")
-               .forward(request, response);
+        request.setAttribute("pageTitle", "Update Reader");
+        request.setAttribute("activeMenu", "reader");
+        request.setAttribute("contentPage", "../../view/admin/readers/edit.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/reader/edit.jsp")
+//               .forward(request, response);
     }
 
     // =========================
