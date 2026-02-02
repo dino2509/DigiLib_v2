@@ -1,6 +1,10 @@
 package model;
 
 import java.io.Serializable;
+<<<<<<< HEAD
+=======
+import java.security.Timestamp;
+>>>>>>> master
 import java.time.LocalDateTime;
 
 public class Employee implements Serializable {
@@ -12,6 +16,10 @@ public class Employee implements Serializable {
     private String status;
     private LocalDateTime createdAt;
     private int roleId;
+<<<<<<< HEAD
+=======
+    
+>>>>>>> master
 
     // Constructor rỗng (bắt buộc cho JDBC / JavaBean)
     public Employee() {

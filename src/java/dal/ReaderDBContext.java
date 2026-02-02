@@ -1,9 +1,17 @@
 package dal;
 
+<<<<<<< HEAD
+=======
+import java.security.Timestamp;
+>>>>>>> master
 import model.Reader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+<<<<<<< HEAD
+=======
+import java.time.LocalDateTime;
+>>>>>>> master
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -137,13 +145,94 @@ public class ReaderDBContext extends DBContext<Reader> {
         }
     }
 
+<<<<<<< HEAD
+=======
+    public Reader getByEmail(String email) {
+        String sql = "SELECT * FROM Reader WHERE email = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return mapReader(rs);
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ReaderDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    public int insertId(Reader r) {
+        String sql = """
+        INSERT INTO Reader
+        (full_name, email, password_hash, phone, avatar, status, role_id)
+        OUTPUT INSERTED.reader_id
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setNString(1, r.getFullName());
+            ps.setString(2, r.getEmail());
+
+            // ⚠️ BẮT BUỘC cho Google login
+            ps.setString(3,
+                    r.getPasswordHash() != null ? r.getPasswordHash() : "GOOGLE");
+
+            ps.setString(4, r.getPhone());
+            ps.setString(5, r.getAvatar());
+            ps.setString(6, r.getStatus());
+            ps.setInt(7, r.getRoleId());
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("reader_id");
+            }
+
+        } catch (SQLException ex) {
+            Logger.getLogger(ReaderDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+        return -1;
+    }
+
+    public void insert(Reader r, String passwordHash) {
+        String sql = """
+        INSERT INTO Reader
+        (full_name, email, password_hash, phone, status, created_at, role_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, r.getFullName());
+            ps.setString(2, r.getEmail());
+            ps.setString(3, passwordHash);
+            ps.setString(4, r.getPhone());
+            ps.setString(5, r.getStatus());
+//            ps.setTimestamp(5, r.getCreatedAt());
+           
+            ps.setObject(5, LocalDateTime.now());
+            ps.setInt(7, r.getRoleId());
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+>>>>>>> master
     // =========================
     // MAP RESULTSET → READER
     // =========================
     private Reader mapReader(ResultSet rs) throws SQLException {
         Reader r = new Reader();
         r.setReaderId(rs.getInt("reader_id"));
+<<<<<<< HEAD
         r.setFullName(rs.getString("full_name"));
+=======
+        r.setFullName(rs.getNString("full_name"));
+>>>>>>> master
         r.setEmail(rs.getString("email"));
         r.setPasswordHash(rs.getString("password_hash"));
         r.setPhone(rs.getString("phone"));

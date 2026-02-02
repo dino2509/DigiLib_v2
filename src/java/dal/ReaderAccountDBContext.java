@@ -7,6 +7,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+<<<<<<< HEAD
+=======
+import model.Reader;
+>>>>>>> master
 
 public class ReaderAccountDBContext extends DBContext<ReaderAccount> {
 
@@ -166,6 +170,66 @@ public class ReaderAccountDBContext extends DBContext<ReaderAccount> {
     }
 
     // =========================
+<<<<<<< HEAD
+=======
+// GET READER BY GOOGLE ID
+// =========================
+    public Reader getReaderByGoogleId(String googleId) {
+        String sql = """
+        SELECT r.reader_id, r.full_name, r.email, r.phone,
+               r.avatar, r.status, r.role_id, r.created_at
+        FROM Reader r
+        JOIN Reader_Account ra ON r.reader_id = ra.reader_id
+        WHERE ra.provider = 'google'
+          AND ra.provider_user_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, googleId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                Reader r = new Reader();
+                r.setReaderId(rs.getInt("reader_id"));
+                r.setFullName(rs.getNString("full_name"));
+                r.setEmail(rs.getString("email"));
+                r.setPhone(rs.getString("phone"));
+                r.setAvatar(rs.getString("avatar"));
+                r.setStatus(rs.getString("status"));
+                r.setRoleId(rs.getInt("role_id"));
+                r.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                return r;
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(ReaderAccountDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+        return null;
+    }
+
+    // =========================
+// INSERT (QUICK - dùng cho Google login)
+// =========================
+    public void insertGoogle(int readerId, String provider, String providerUserId) {
+        String sql = """
+        INSERT INTO Reader_Account
+        (reader_id, provider, provider_user_id)
+        VALUES (?, ?, ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ps.setString(2, provider);
+            ps.setString(3, providerUserId);
+            ps.executeUpdate();
+        } catch (SQLException ex) {
+            Logger.getLogger(ReaderAccountDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+    }
+
+    // =========================
+>>>>>>> master
     // MAP RESULTSET → READER ACCOUNT
     // =========================
     private ReaderAccount mapReaderAccount(ResultSet rs) throws SQLException {

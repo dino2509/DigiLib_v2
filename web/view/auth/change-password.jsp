@@ -132,8 +132,16 @@
             </c:if>
 
             <div class="back">
+<<<<<<< HEAD
                 <a href="${pageContext.request.contextPath}/reader/home">← Quay lại trang chủ</a>
             </div>
+=======
+                <a href="#" onclick="window.history.back(); return false;">
+                    ← Quay lại trang trước
+                </a>
+            </div>
+
+>>>>>>> master
         </div>
 
     </body>

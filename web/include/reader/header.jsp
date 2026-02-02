@@ -24,15 +24,27 @@
 <nav class="navbar navbar-expand-lg navbar-orange shadow-sm">
     <div class="container">
 
+<<<<<<< HEAD
+=======
+        <!-- Logo -->
+>>>>>>> master
         <a class="navbar-brand" href="${pageContext.request.contextPath}/reader/home">
             📚 Digital Library
         </a>
 
+<<<<<<< HEAD
+=======
+        <!-- Mobile -->
+>>>>>>> master
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarContent">
             <span class="navbar-toggler-icon"></span>
         </button>
 
+<<<<<<< HEAD
+=======
+        <!-- Menu -->
+>>>>>>> master
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto">
 
@@ -45,13 +57,18 @@
 
                 <li class="nav-item">
                     <a class="nav-link"
+<<<<<<< HEAD
                        href="${pageContext.request.contextPath}/reader/books">
+=======
+                       href="${pageContext.request.contextPath}/books">
+>>>>>>> master
                         Danh sách sách
                     </a>
                 </li>
 
                 <li class="nav-item">
                     <a class="nav-link"
+<<<<<<< HEAD
                        href="${pageContext.request.contextPath}/reader/categories">
                         Thể loại
                     </a>
@@ -68,11 +85,19 @@
                     <a class="nav-link"
                        href="${pageContext.request.contextPath}/reader/borrowed">
                         Đang mượn
+=======
+                       href="${pageContext.request.contextPath}/reader/borrowed-books">
+                        Sách đang mượn
+>>>>>>> master
                     </a>
                 </li>
 
             </ul>
 
+<<<<<<< HEAD
+=======
+            <!-- User -->
+>>>>>>> master
             <ul class="navbar-nav ms-auto">
                 <c:if test="${not empty sessionScope.user}">
                     <li class="nav-item dropdown">
