@@ -4,7 +4,7 @@ import org.mindrot.jbcrypt.BCrypt;
 
 public class PasswordUtil {
 
-<<<<<<< HEAD
+
     public static boolean checkPassword(String rawPassword, String hashedPassword) {
         if (rawPassword == null || hashedPassword == null) return false;
 
@@ -28,16 +28,4 @@ public class PasswordUtil {
         return BCrypt.hashpw(rawPassword, BCrypt.gensalt(10));
     }
 }
-=======
-    // Hash password khi đăng ký
-    public static String hashPassword(String plainPassword) {
-        return BCrypt.hashpw(plainPassword, BCrypt.gensalt(10));
-    }
 
-    // Check password khi login
-    public static boolean checkPassword(String plainPassword, String hashed) {
-        if (hashed == null) return false;
-        return BCrypt.checkpw(plainPassword, hashed);
-    }
-}
->>>>>>> master

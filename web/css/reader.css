@@ -11,7 +11,7 @@ body {
     background: #fff4e6;
 }
 
-<<<<<<< HEAD
+HEAD
 /* THEME */
 :root {
     --orange: #ff7a18;
@@ -146,8 +146,8 @@ body {
 
 .bg-orange { background-color: var(--orange) !important; }
 
-=======
->>>>>>> master
+
+master
 /* PROFILE WRAPPER */
 .profile-wrapper {
     display: flex;

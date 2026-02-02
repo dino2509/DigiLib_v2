@@ -7,10 +7,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-<<<<<<< HEAD
-=======
+
 import model.Reader;
->>>>>>> master
+
 
 public class ReaderAccountDBContext extends DBContext<ReaderAccount> {
 
@@ -170,8 +169,7 @@ public class ReaderAccountDBContext extends DBContext<ReaderAccount> {
     }
 
     // =========================
-<<<<<<< HEAD
-=======
+
 // GET READER BY GOOGLE ID
 // =========================
     public Reader getReaderByGoogleId(String googleId) {
@@ -229,7 +227,7 @@ public class ReaderAccountDBContext extends DBContext<ReaderAccount> {
     }
 
     // =========================
->>>>>>> master
+
     // MAP RESULTSET → READER ACCOUNT
     // =========================
     private ReaderAccount mapReaderAccount(ResultSet rs) throws SQLException {

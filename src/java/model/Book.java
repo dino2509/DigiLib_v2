@@ -1,11 +1,13 @@
 package model;
 
-<<<<<<< HEAD
+import java.math.BigDecimal;
+import java.security.Timestamp;
+
 public class Book {
 
     private int id;
     private String title;
-    private String author;      // author_name (join Author)
+    // author_name (join Author)
 
     /**
      * Backward-compatible field used by older JSPs.
@@ -30,40 +32,10 @@ public class Book {
     private Double price;
     private String currency;
     private Integer reviewCount;
-
-    public Book() {
-    }
-
-    public Book(int id, String title, String author, String cover, double rating) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.cover = cover;
-        this.rating = rating;
-    }
-
-    // ===== Getters / Setters =====
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-=======
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-
-public class Book {
-
     private int bookId;
-    private String title;
-    private String summary;
-    private String description;
+
     private String coverUrl;
     private String contentPath;
-    private BigDecimal price;
-    private String currency;
-    private int totalPages;
     private int previewPages;
     private String status;
     private Timestamp createdAt;
@@ -72,6 +44,21 @@ public class Book {
     private Category category;
     private Employee create_by;
     private Employee update_by;
+
+    public Book() {
+    }
+
+    public Book(int id, String title, Author author, String cover, double rating) {
+        this.id = id;
+        this.title = title;
+        this.author = author;
+        this.cover = cover;
+        this.rating = rating;
+    }
+
+
+
+
 
     public Author getAuthor() {
         return author;
@@ -112,7 +99,7 @@ public class Book {
 
     public void setBookId(int bookId) {
         this.bookId = bookId;
->>>>>>> master
+
     }
 
     public String getTitle() {
@@ -123,14 +110,6 @@ public class Book {
         this.title = title;
     }
 
-<<<<<<< HEAD
-    public String getAuthor() {
-        return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
-    }
 
     public String getCover() {
         return cover;
@@ -143,16 +122,6 @@ public class Book {
     /**
      * Alias for cover (DB: cover_url). Prefer using this in new code.
      */
-    public String getCoverUrl() {
-        return cover;
-    }
-
-    /**
-     * Alias for cover (DB: cover_url). Prefer using this in new code.
-     */
-    public void setCoverUrl(String coverUrl) {
-        this.cover = coverUrl;
-    }
 
     public double getRating() {
         return rating;
@@ -162,8 +131,7 @@ public class Book {
         this.rating = rating;
     }
 
-=======
->>>>>>> master
+
     public String getSummary() {
         return summary;
     }
@@ -180,7 +148,7 @@ public class Book {
         this.description = description;
     }
 
-<<<<<<< HEAD
+
     public Integer getTotalPages() {
         return totalPages;
     }
@@ -217,8 +185,8 @@ public class Book {
         return price;
     }
 
-    public void setPrice(Double price) {
-=======
+    public void setPrice(Double price) {}
+
     public String getCoverUrl() {
         return coverUrl;
     }
@@ -235,14 +203,6 @@ public class Book {
         this.contentPath = contentPath;
     }
 
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public void setPrice(BigDecimal price) {
->>>>>>> master
-        this.price = price;
-    }
 
     public String getCurrency() {
         return currency;
@@ -252,7 +212,7 @@ public class Book {
         this.currency = currency;
     }
 
-<<<<<<< HEAD
+
     public Integer getReviewCount() {
         return reviewCount;
     }
@@ -260,10 +220,7 @@ public class Book {
     public void setReviewCount(Integer reviewCount) {
         this.reviewCount = reviewCount;
     }
-=======
-    public int getTotalPages() {
-        return totalPages;
-    }
+
 
     public void setTotalPages(int totalPages) {
         this.totalPages = totalPages;
@@ -301,5 +258,5 @@ public class Book {
         this.updatedAt = updatedAt;
     }
 
->>>>>>> master
+
 }

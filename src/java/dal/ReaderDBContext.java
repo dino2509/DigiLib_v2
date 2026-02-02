@@ -1,17 +1,15 @@
 package dal;
 
-<<<<<<< HEAD
-=======
+
 import java.security.Timestamp;
->>>>>>> master
+
 import model.Reader;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-<<<<<<< HEAD
-=======
+
 import java.time.LocalDateTime;
->>>>>>> master
+
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -145,8 +143,7 @@ public class ReaderDBContext extends DBContext<Reader> {
         }
     }
 
-<<<<<<< HEAD
-=======
+
     public Reader getByEmail(String email) {
         String sql = "SELECT * FROM Reader WHERE email = ?";
 
@@ -221,18 +218,15 @@ public class ReaderDBContext extends DBContext<Reader> {
         }
     }
 
->>>>>>> master
+
     // =========================
     // MAP RESULTSET → READER
     // =========================
     private Reader mapReader(ResultSet rs) throws SQLException {
         Reader r = new Reader();
         r.setReaderId(rs.getInt("reader_id"));
-<<<<<<< HEAD
-        r.setFullName(rs.getString("full_name"));
-=======
+
         r.setFullName(rs.getNString("full_name"));
->>>>>>> master
         r.setEmail(rs.getString("email"));
         r.setPasswordHash(rs.getString("password_hash"));
         r.setPhone(rs.getString("phone"));

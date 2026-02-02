@@ -15,13 +15,9 @@ public class RegisterController extends HttpServlet {
 
     private ReaderDBContext readerDB = new ReaderDBContext();
     String link = "view/auth/register.jsp";
-<<<<<<< HEAD
-    // =========================
-    // GET → HIỂN THỊ REGISTER PAGE
-    // =========================
-=======
+
    
->>>>>>> master
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -29,13 +25,7 @@ public class RegisterController extends HttpServlet {
         request.getRequestDispatcher(link).forward(request, response);
     }
 
-<<<<<<< HEAD
-    // =========================
-    // POST → XỬ LÝ REGISTER
-    // =========================
-=======
-    
->>>>>>> master
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -75,19 +65,13 @@ public class RegisterController extends HttpServlet {
         r.setFullName(fullName);
         r.setEmail(email);
         r.setPasswordHash(hashedPassword);
-<<<<<<< HEAD
-        r.setStatus("active");
-        r.setRoleId(4); // USER
 
-        readerDB.insert(r);
-
-=======
         r.setStatus("ACTIVE");
         r.setRoleId(3); // USER
 
         readerDB.insert(r);
         
->>>>>>> master
+
         // 5️⃣ Redirect login
         response.sendRedirect("login");
     }
