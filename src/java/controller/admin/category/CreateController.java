@@ -22,9 +22,13 @@ public class CreateController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        request.getRequestDispatcher("../../view/admin/categories/add.jsp")
+        request.setAttribute("pageTitle", "Add Category");
+        request.setAttribute("activeMenu", "category");
+        request.setAttribute("contentPage", "../../view/admin/categories/add.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/categories/add.jsp")
+//                .forward(request, response);
     }
 
     // =========================

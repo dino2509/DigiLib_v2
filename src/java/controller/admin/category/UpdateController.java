@@ -28,9 +28,13 @@ public class UpdateController extends HttpServlet {
 
         Category category = categoryDB.get(category_id);
         request.setAttribute("category", category);
-
-        request.getRequestDispatcher("../../view/admin/categories/edit.jsp")
+        request.setAttribute("pageTitle", "Update Category");
+        request.setAttribute("activeMenu", "category");
+        request.setAttribute("contentPage", "../../view/admin/categories/edit.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/categories/edit.jsp")
+//                .forward(request, response);
     }
 
     // =========================

@@ -24,7 +24,12 @@ public class ListController extends HttpServlet {
         ArrayList<Category> categories = categoryDB.list();
 
         request.setAttribute("categories", categories);
-        request.getRequestDispatcher("../../view/admin/categories/list.jsp")
-               .forward(request, response);
+        request.setAttribute("pageTitle", "Category Management");
+        request.setAttribute("activeMenu", "category");
+        request.setAttribute("contentPage", "../../view/admin/categories/list.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/categories/list.jsp")
+//               .forward(request, response);
     }
 }
