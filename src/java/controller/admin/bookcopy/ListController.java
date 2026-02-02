@@ -34,7 +34,13 @@ public class ListController extends HttpServlet {
         }
 
         request.setAttribute("bookCopies", bookCopies);
-        request.getRequestDispatcher("../../view/admin/bookcopies/list.jsp")
+        request.setAttribute("pageTitle", "Book Copy Management");
+        request.setAttribute("activeMenu", "bookcopy");
+        request.setAttribute("contentPage", "../../view/admin/bookcopies/list.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/bookcopies/list.jsp")
+//                .forward(request, response);
     }
 }
