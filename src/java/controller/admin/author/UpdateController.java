@@ -25,8 +25,13 @@ public class UpdateController extends HttpServlet {
         Author author = authorDB.get(authorId);
 
         request.setAttribute("author", author);
-        request.getRequestDispatcher("../../view/admin/authors/edit.jsp")
+        request.setAttribute("pageTitle", "Update Author");
+        request.setAttribute("activeMenu", "author");
+        request.setAttribute("contentPage", "../../view/admin/authors/edit.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/authors/edit.jsp")
+//                .forward(request, response);
     }
 
     // Xử lý update

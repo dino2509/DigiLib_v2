@@ -21,9 +21,15 @@ public class ListController extends HttpServlet {
         ArrayList<Author> authors = adb.list();
 
         request.setAttribute("authors", authors);
-        request.getRequestDispatcher("../../view/admin/authors/list.jsp")
-               .forward(request, response);
-        
+         request.setAttribute("pageTitle", "Author Management");
+        request.setAttribute("activeMenu", "author");
+        request.setAttribute("contentPage", "../../view/admin/authors/list.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/authors/list.jsp")
+//               .forward(request, response);
+//        
         ////
     }
 }
