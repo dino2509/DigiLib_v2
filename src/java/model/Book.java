@@ -1,13 +1,11 @@
 package model;
 
-import java.math.BigDecimal;
-import java.security.Timestamp;
+import java.sql.Timestamp;
 
 public class Book {
 
     private int id;
     private String title;
-    // author_name (join Author)
 
     /**
      * Backward-compatible field used by older JSPs.
@@ -56,10 +54,6 @@ public class Book {
         this.rating = rating;
     }
 
-
-
-
-
     public Author getAuthor() {
         return author;
     }
@@ -99,7 +93,6 @@ public class Book {
 
     public void setBookId(int bookId) {
         this.bookId = bookId;
-
     }
 
     public String getTitle() {
@@ -110,7 +103,6 @@ public class Book {
         this.title = title;
     }
 
-
     public String getCover() {
         return cover;
     }
@@ -119,10 +111,6 @@ public class Book {
         this.cover = cover;
     }
 
-    /**
-     * Alias for cover (DB: cover_url). Prefer using this in new code.
-     */
-
     public double getRating() {
         return rating;
     }
@@ -130,7 +118,6 @@ public class Book {
     public void setRating(double rating) {
         this.rating = rating;
     }
-
 
     public String getSummary() {
         return summary;
@@ -148,12 +135,15 @@ public class Book {
         this.description = description;
     }
 
-
     public Integer getTotalPages() {
         return totalPages;
     }
 
     public void setTotalPages(Integer totalPages) {
+        this.totalPages = totalPages;
+    }
+
+    public void setTotalPages(int totalPages) {
         this.totalPages = totalPages;
     }
 
@@ -185,7 +175,9 @@ public class Book {
         return price;
     }
 
-    public void setPrice(Double price) {}
+    public void setPrice(Double price) {
+        this.price = price;
+    }
 
     public String getCoverUrl() {
         return coverUrl;
@@ -203,7 +195,6 @@ public class Book {
         this.contentPath = contentPath;
     }
 
-
     public String getCurrency() {
         return currency;
     }
@@ -212,18 +203,12 @@ public class Book {
         this.currency = currency;
     }
 
-
     public Integer getReviewCount() {
         return reviewCount;
     }
 
     public void setReviewCount(Integer reviewCount) {
         this.reviewCount = reviewCount;
-    }
-
-
-    public void setTotalPages(int totalPages) {
-        this.totalPages = totalPages;
     }
 
     public int getPreviewPages() {
@@ -257,6 +242,4 @@ public class Book {
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }
-
-
 }

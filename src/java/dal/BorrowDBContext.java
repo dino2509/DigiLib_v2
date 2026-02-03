@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import model.Author;
 import model.Book;
 import model.BorrowedItem;
 
@@ -81,12 +82,16 @@ public class BorrowDBContext extends DBContext<BorrowedItem> {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Book bk = new Book();
-                    bk.setId(rs.getInt("book_id"));
+                    bk.setBookId(rs.getInt("book_id"));
                     bk.setTitle(rs.getString("title"));
-                    bk.setAuthor(rs.getString("author_name"));
+
+                    Author a = new Author();
+                    a.setAuthor_name(rs.getString("author_name"));
+                    bk.setAuthor(a);
+
                     bk.setCoverUrl(rs.getString("cover_url"));
-                    int tp = rs.getInt("total_pages");
-                    bk.setTotalPages(rs.wasNull() ? null : tp);
+                    Object tpObj = rs.getObject("total_pages");
+                    bk.setTotalPages(tpObj == null ? null : rs.getInt("total_pages"));
                     bk.setRating(rs.getDouble("avg_rating"));
 
                     BorrowedItem item = new BorrowedItem();

@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import model.Author;
 import model.Book;
 import model.ReadingProgress;
 
@@ -20,9 +21,15 @@ public class ReadingHistoryDBContext extends DBContext<ReadingProgress> {
 
     public ArrayList<ReadingProgress> listByReader(int readerId, int limit) {
         ArrayList<ReadingProgress> list = new ArrayList<>();
-        if (limit <= 0) limit = 4;
+        if (limit <= 0) {
+            limit = 4;
+        }
 
-        String sql = "\nSELECT TOP (?)\n" +
+        // NOTE (SQL Server): TOP does not accept a bind parameter reliably.
+        // We clamp limit to a safe range and inline it.
+        int safeLimit = Math.min(Math.max(limit, 1), 50);
+
+        String sql = "\nSELECT TOP " + safeLimit + "\n" +
                 "    h.book_id, h.last_read_position, h.last_read_at,\n" +
                 "    b.title, b.cover_url, b.total_pages,\n" +
                 "    a.author_name,\n" +
@@ -36,17 +43,20 @@ public class ReadingHistoryDBContext extends DBContext<ReadingProgress> {
                 "ORDER BY h.last_read_at DESC";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, limit);
-            ps.setInt(2, readerId);
+            ps.setInt(1, readerId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     Book b = new Book();
-                    b.setId(rs.getInt("book_id"));
+                    b.setBookId(rs.getInt("book_id"));
                     b.setTitle(rs.getString("title"));
-                    b.setAuthor(rs.getString("author_name"));
+
+                    Author a = new Author();
+                    a.setAuthor_name(rs.getString("author_name"));
+                    b.setAuthor(a);
+
                     b.setCoverUrl(rs.getString("cover_url"));
-                    int tp = rs.getInt("total_pages");
-                    b.setTotalPages(rs.wasNull() ? null : tp);
+                    Object tpObj = rs.getObject("total_pages");
+                    b.setTotalPages(tpObj == null ? null : rs.getInt("total_pages"));
                     b.setRating(rs.getDouble("avg_rating"));
 
                     int pos = rs.getInt("last_read_position");

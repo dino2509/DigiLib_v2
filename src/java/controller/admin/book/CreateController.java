@@ -13,7 +13,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 
@@ -37,8 +36,6 @@ public class CreateController extends HttpServlet {
         request.setAttribute("authors", authors);
         request.setAttribute("categories", categories);
 
-//        request.getRequestDispatcher("../../view/admin/books/add.jsp")
-//                .forward(request, response);
         request.setAttribute("pageTitle", "Add Book");
         request.setAttribute("activeMenu", "book");
         request.setAttribute("contentPage", "../../view/admin/books/add.jsp");
@@ -74,7 +71,11 @@ public class CreateController extends HttpServlet {
         // ===== PRICE =====
         String price = request.getParameter("price");
         if (price != null && !price.isEmpty()) {
-            b.setPrice(new BigDecimal(price));
+            try {
+                b.setPrice(Double.valueOf(price));
+            } catch (NumberFormatException ignore) {
+                b.setPrice(null);
+            }
         }
 
         b.setCurrency(request.getParameter("currency"));
@@ -99,7 +100,7 @@ public class CreateController extends HttpServlet {
             b.setCategory(c);
         }
 
-        // ===== CREATED BY (QUAN TRỌNG NHẤT) =====
+        // ===== CREATED BY =====
         b.setCreate_by(emp);
 
         bookDB.insert(b);

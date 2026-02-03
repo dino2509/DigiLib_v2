@@ -1,4 +1,4 @@
-package controller.admin;
+package controller.admin.book;
 
 import dal.BookDBContext;
 import dal.AuthorDBContext;
@@ -12,7 +12,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import model.Employee;
@@ -71,7 +70,11 @@ public class UpdateController extends HttpServlet {
 
         String price = request.getParameter("price");
         if (price != null && !price.isEmpty()) {
-            b.setPrice(new BigDecimal(price));
+            try {
+                b.setPrice(Double.valueOf(price));
+            } catch (NumberFormatException ignore) {
+                b.setPrice(null);
+            }
         }
 
         b.setCurrency(request.getParameter("currency"));
