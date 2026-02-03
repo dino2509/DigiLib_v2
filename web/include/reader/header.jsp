@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
 <link
   href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
   rel="stylesheet">
@@ -24,80 +25,50 @@
 <nav class="navbar navbar-expand-lg navbar-orange shadow-sm">
     <div class="container">
 
-<<<<<<< HEAD
-=======
-        <!-- Logo -->
->>>>>>> master
         <a class="navbar-brand" href="${pageContext.request.contextPath}/reader/home">
             📚 Digital Library
         </a>
 
-<<<<<<< HEAD
-=======
-        <!-- Mobile -->
->>>>>>> master
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarContent">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-<<<<<<< HEAD
-=======
-        <!-- Menu -->
->>>>>>> master
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto">
 
                 <li class="nav-item">
-                    <a class="nav-link"
-                       href="${pageContext.request.contextPath}/reader/home">
+                    <a class="nav-link" href="${pageContext.request.contextPath}/reader/home">
                         Trang chủ
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link"
-<<<<<<< HEAD
-                       href="${pageContext.request.contextPath}/reader/books">
-=======
-                       href="${pageContext.request.contextPath}/books">
->>>>>>> master
+                    <a class="nav-link" href="${pageContext.request.contextPath}/reader/books">
                         Danh sách sách
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link"
-<<<<<<< HEAD
-                       href="${pageContext.request.contextPath}/reader/categories">
+                    <a class="nav-link" href="${pageContext.request.contextPath}/reader/categories">
                         Thể loại
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link"
-                       href="${pageContext.request.contextPath}/reader/favorites">
+                    <a class="nav-link" href="${pageContext.request.contextPath}/reader/favorites">
                         Yêu thích
                     </a>
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link"
-                       href="${pageContext.request.contextPath}/reader/borrowed">
+                    <a class="nav-link" href="${pageContext.request.contextPath}/reader/borrowed">
                         Đang mượn
-=======
-                       href="${pageContext.request.contextPath}/reader/borrowed-books">
-                        Sách đang mượn
->>>>>>> master
                     </a>
                 </li>
 
             </ul>
 
-<<<<<<< HEAD
-=======
-            <!-- User -->
->>>>>>> master
             <ul class="navbar-nav ms-auto">
                 <c:if test="${not empty sessionScope.user}">
                     <li class="nav-item dropdown">
@@ -130,6 +101,7 @@
                     </li>
                 </c:if>
             </ul>
+
         </div>
     </div>
 </nav>

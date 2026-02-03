@@ -11,7 +11,6 @@ body {
     background: #fff4e6;
 }
 
-HEAD
 /* THEME */
 :root {
     --orange: #ff7a18;
@@ -59,44 +58,35 @@ HEAD
 .stat-card {
     border: 0;
     border-radius: 14px;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+    box-shadow: 0 10px 25px rgba(0,0,0,.06);
 }
 
 .stat-number {
-    font-size: 32px;
+    font-size: 2rem;
     font-weight: 800;
-    color: var(--orange);
-    line-height: 1;
-    margin-top: 4px;
+    line-height: 1.1;
 }
 
 .stat-icon {
-    font-size: 28px;
-    background: #fff0e5;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 2rem;
+    opacity: .9;
 }
 
 .book-card {
     border: 0;
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.06);
+    box-shadow: 0 10px 25px rgba(0,0,0,.06);
 }
 
 .book-cover {
+    height: 190px;
+    background: linear-gradient(135deg, rgba(255,122,24,.18), rgba(255,159,67,.22));
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: relative;
-    width: 100%;
-    height: 170px;
-    background: #fff0e5;
 }
-
-.book-cover-lg { height: 360px; }
-.book-cover-sm { width: 64px; height: 64px; border-radius: 12px; overflow: hidden; }
 
 .book-cover-img {
     width: 100%;
@@ -107,27 +97,25 @@ HEAD
 .cover-placeholder {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
-    padding: 14px;
     display: flex;
-    align-items: flex-end;
-    justify-content: flex-start;
-    background: linear-gradient(135deg, var(--orange), var(--orange-2));
-    color: #fff;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    text-align: center;
     font-weight: 700;
-    line-height: 1.2;
+    color: rgba(0,0,0,.55);
 }
 
-.cover-placeholder-lg { font-size: 22px; }
-.cover-placeholder-sm { font-size: 10px; align-items: center; justify-content: center; padding: 6px; }
+.bg-orange {
+    background: var(--orange) !important;
+}
 
 .empty-state {
     background: #fff;
+    border: 1px dashed rgba(0,0,0,.15);
     border-radius: 14px;
-    padding: 20px;
-    border: 1px solid #ffe1cc;
-    color: #555;
+    padding: 18px;
+    color: rgba(0,0,0,.65);
 }
 
 .line-clamp-2 {
@@ -135,89 +123,4 @@ HEAD
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-}
-
-.line-clamp-3 {
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.bg-orange { background-color: var(--orange) !important; }
-
-
-master
-/* PROFILE WRAPPER */
-.profile-wrapper {
-    display: flex;
-    justify-content: center;
-    margin: 40px 0;
-}
-
-/* CARD */
-.profile-card {
-    width: 520px;
-    background: white;
-    border-radius: 14px;
-    box-shadow: 0 10px 30px rgba(255, 122, 0, 0.25);
-    overflow: hidden;
-}
-
-/* HEADER */
-.profile-header {
-    background: linear-gradient(135deg, #ff7a00, #ff9f43);
-    color: white;
-    text-align: center;
-    padding: 30px 20px;
-}
-
-.profile-header h2 {
-    margin: 12px 0 6px;
-}
-
-.role-badge {
-    background: rgba(255,255,255,0.3);
-    padding: 5px 14px;
-    border-radius: 20px;
-    font-size: 13px;
-}
-
-/* AVATAR */
-.avatar {
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    border: 4px solid white;
-    object-fit: cover;
-}
-
-/* BODY */
-.profile-body {
-    padding: 25px;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 14px 0;
-    border-bottom: 1px solid #f2f2f2;
-}
-
-.info-row:last-child {
-    border-bottom: none;
-}
-
-.label {
-    font-weight: bold;
-    color: #ff7a00;
-}
-
-.value {
-    color: #444;
-}
-
-.value.status {
-    font-weight: bold;
-    color: #2ecc71;
 }

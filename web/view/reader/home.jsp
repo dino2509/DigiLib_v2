@@ -1,44 +1,27 @@
-<<<<<<< HEAD
-<%@ page contentType="text/html;charset=UTF-8" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>DigiLib | Reader Home</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/reader.css">
-</head>
-=======
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
+<c:set var="u" value="${not empty sessionScope.user ? sessionScope.user : user}" />
 
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <title>Reader Home - Digital Library</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>DigiLib | Reader Home</title>
 
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
-
-    <style>
-        .book-cover {
-            height: 220px;
-            object-fit: cover;
-        }
-    </style>
+    <!-- Custom Reader Theme -->
+    <link rel="stylesheet" href="${pageContext.request.contextPath}/css/reader.css">
 </head>
-
->>>>>>> master
 <body>
 
 <jsp:include page="/include/reader/header.jsp"/>
 
-<<<<<<< HEAD
 <div class="container py-4">
 
     <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 mb-4">
         <div>
-            <h2 class="mb-1">Xin chào, <span class="text-orange">${user.fullName}</span> 👋</h2>
+            <h2 class="mb-1">Xin chào, <span class="text-orange">${u.fullName}</span> 👋</h2>
             <div class="text-muted">Chọn sách để đọc tiếp, khám phá sách mới hoặc quản lý mượn trả.</div>
         </div>
         <div class="d-flex gap-2 flex-wrap">
@@ -64,6 +47,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-12 col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
@@ -78,6 +62,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col-12 col-md-4">
             <div class="card stat-card h-100">
                 <div class="card-body">
@@ -114,7 +99,10 @@
                                 <c:choose>
                                     <c:when test="${not empty rp.book.coverUrl}">
                                         <div class="cover-placeholder">${rp.book.title}</div>
-                                        <img class="book-cover-img" src="${pageContext.request.contextPath}${rp.book.coverUrl}" alt="${rp.book.title}" onerror="this.style.display='none'">
+                                        <img class="book-cover-img"
+                                             src="${pageContext.request.contextPath}${rp.book.coverUrl}"
+                                             alt="${rp.book.title}"
+                                             onerror="this.style.display='none'">
                                     </c:when>
                                     <c:otherwise>
                                         <div class="cover-placeholder">${rp.book.title}</div>
@@ -129,7 +117,10 @@
                                 </div>
                                 <div class="d-flex align-items-center justify-content-between mt-2">
                                     <div class="small text-muted">${rp.progress}%</div>
-                                    <a class="btn btn-sm btn-orange" href="${pageContext.request.contextPath}/reader/books/${rp.book.id}">Tiếp tục</a>
+                                    <a class="btn btn-sm btn-orange"
+                                       href="${pageContext.request.contextPath}/reader/books/${rp.book.id}">
+                                        Tiếp tục
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -152,7 +143,10 @@
                         <c:choose>
                             <c:when test="${not empty b.coverUrl}">
                                 <div class="cover-placeholder">${b.title}</div>
-                                <img class="book-cover-img" src="${pageContext.request.contextPath}${b.coverUrl}" alt="${b.title}" onerror="this.style.display='none'">
+                                <img class="book-cover-img"
+                                     src="${pageContext.request.contextPath}${b.coverUrl}"
+                                     alt="${b.title}"
+                                     onerror="this.style.display='none'">
                             </c:when>
                             <c:otherwise>
                                 <div class="cover-placeholder">${b.title}</div>
@@ -168,76 +162,17 @@
                                     <span class="text-muted">(${b.reviewCount})</span>
                                 </c:if>
                             </div>
-                            <a class="btn btn-sm btn-outline-orange" href="${pageContext.request.contextPath}/reader/books/${b.id}">Xem</a>
+                            <a class="btn btn-sm btn-outline-orange"
+                               href="${pageContext.request.contextPath}/reader/books/${b.id}">
+                                Xem
+                            </a>
                         </div>
                     </div>
-=======
-<div class="container mt-4">
-
-    <!-- Welcome -->
-    <div class="alert alert-warning">
-        👋 Xin chào, <strong>${sessionScope.user.fullName}</strong>!
-        Chúc bạn đọc sách vui vẻ 📚
-    </div>
-
-    <!-- Search -->
-    <form action="${pageContext.request.contextPath}/search" method="get" class="row mb-4">
-        <div class="col-md-10">
-            <input type="text" name="keyword" class="form-control"
-                   placeholder="Tìm kiếm theo tên sách, tác giả...">
-        </div>
-        <div class="col-md-2">
-            <button class="btn btn-warning w-100">🔍 Tìm kiếm</button>
-        </div>
-    </form>
-
-    <!-- Book List -->
-    <h4 class="mb-3">📚 Danh sách sách</h4>
-
-    <!-- DEBUG – XÓA SAU -->
-    <p class="text-danger">DEBUG bookList size: ${bookList.size()}</p>
-
-    <div class="row">
-        <c:forEach var="book" items="${bookList}">
-            <div class="col-md-3 mb-4">
-                <div class="card h-100 shadow-sm">
-
-                    <!-- BOOK COVER -->
-                    <img class="card-img-top book-cover"
-                         src="${pageContext.request.contextPath}/${empty book.coverUrl 
-                                ? 'assets/images/no-cover.png' 
-                                : book.coverUrl}"
-                         alt="${book.title}">
-
-                    <div class="card-body">
-                        <h6 class="card-title">${book.title}</h6>
-
-                        <p class="text-muted mb-0">
-                            <c:choose>
-                                <c:when test="${book.price == null || book.price == 0}">
-                                    Miễn phí
-                                </c:when>
-                                <c:otherwise>
-                                    ${book.price} ${book.currency}
-                                </c:otherwise>
-                            </c:choose>
-                        </p>
-                    </div>
-
-                    <div class="card-footer text-center bg-white">
-                        <a href="${pageContext.request.contextPath}/book/detail?id=${book.bookId}"
-                           class="btn btn-sm btn-warning">
-                            Xem chi tiết
-                        </a>
-                    </div>
-
->>>>>>> master
                 </div>
             </div>
         </c:forEach>
     </div>
 
-<<<<<<< HEAD
     <div class="mt-5">
         <h4 class="section-title">Đi nhanh</h4>
         <div class="d-flex flex-wrap gap-2">
@@ -248,8 +183,6 @@
         </div>
     </div>
 
-=======
->>>>>>> master
 </div>
 
 <jsp:include page="/include/reader/footer.jsp"/>
