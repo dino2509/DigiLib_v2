@@ -21,8 +21,13 @@ public class CreateController extends HttpServlet {
             throws ServletException, IOException {
 
         // Hiển thị form add
-        request.getRequestDispatcher("../../view/admin/authors/add.jsp")
+        request.setAttribute("pageTitle", "Add Author");
+        request.setAttribute("activeMenu", "author");
+        request.setAttribute("contentPage", "../../view/admin/authors/add.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/authors/add.jsp")
+//                .forward(request, response);
     }
 
     @Override

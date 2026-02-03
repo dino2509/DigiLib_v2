@@ -6,29 +6,31 @@
         max-width: 1300px;
         margin: 0 auto;
         background: #ffffff;
-        padding: 30px 32px;
+        padding: 32px 34px;
         border-radius: 18px;
         border: 1px solid #fed7aa;
-        box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+        box-shadow: 0 20px 44px rgba(0,0,0,0.08);
     }
 
+    /* HEADER */
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 24px;
+        margin-bottom: 26px;
     }
 
     .page-header h2 {
         margin: 0;
         font-size: 24px;
         font-weight: 700;
-        color: #c2410c;
+        color: #c2410c; /* cam trầm */
         display: flex;
         align-items: center;
         gap: 10px;
     }
 
+    /* ADD BUTTON */
     .btn-add {
         background: linear-gradient(135deg, #fb923c, #ea580c);
         color: #fff;
@@ -73,7 +75,7 @@
         background: #fff7ed;
     }
 
-    /* BADGE */
+    /* STATUS BADGE */
     .badge-status {
         padding: 6px 16px;
         border-radius: 999px;
@@ -84,9 +86,15 @@
         text-transform: capitalize;
     }
 
-    .ACTIVE { background: #22c55e; }
-    .INACTIVE { background: #9ca3af; }
+    .ACTIVE {
+        background: #22c55e; /* xanh dịu */
+    }
 
+    .INACTIVE {
+        background: #9ca3af;
+    }
+
+    /* ROLE BADGE */
     .badge-role {
         padding: 6px 16px;
         border-radius: 999px;
@@ -94,7 +102,14 @@
         font-weight: 700;
         color: #fff;
         display: inline-block;
-        background: #f97316;
+    }
+
+    .ROLE_ADMIN {
+        background: #ef4444; /* đỏ dịu hơn */
+    }
+
+    .ROLE_READER {
+        background: #f97316; /* cam */
     }
 
     /* ACTION */
@@ -127,23 +142,25 @@
         transform: translateY(-1px);
     }
 
+    /* EMPTY */
     .empty-row {
         text-align: center;
         padding: 34px;
         color: #6b7280;
         font-style: italic;
     }
+
 </style>
 
 <div class="page-wrap">
 
     <!-- HEADER -->
     <div class="page-header">
-        <h2>🧑‍💼 Employee Management</h2>
+        <h2>👤 Reader Management</h2>
 
-        <a href="${pageContext.request.contextPath}/admin/employees?action=add"
+        <a href="${pageContext.request.contextPath}/admin/readers?action=add"
            class="btn-add">
-            + Add Employee
+            + Add Reader
         </a>
     </div>
 
@@ -151,58 +168,63 @@
     <table>
         <thead>
             <tr>
-                <th width="70">#</th>
+                <th width="70">ID</th>
                 <th>Full Name</th>
                 <th>Email</th>
+                <th width="140">Phone</th>
                 <th width="120">Status</th>
-                <th width="180">Role</th>
+                <th width="120">Role</th>
                 <th width="160">Created At</th>
                 <th width="200">Actions</th>
             </tr>
         </thead>
 
         <tbody>
-            <c:forEach items="${employees}" var="e" varStatus="st">
+            <c:forEach items="${readers}" var="r">
                 <tr>
-                    <td>${st.count}</td>
-                    <td><strong>${e.fullName}</strong></td>
-                    <td>${e.email}</td>
+                    <td>${r.readerId}</td>
+                    <td><strong>${r.fullName}</strong></td>
+                    <td>${r.email}</td>
+                    <td>${r.phone}</td>
 
                     <td>
-                        <span class="badge-status ${e.status == 'active' ? 'ACTIVE' : 'INACTIVE'}">
-                            ${e.status}
+                        <span class="badge-status ${r.status == 'active' ? 'ACTIVE' : 'INACTIVE'}">
+                            ${r.status}
                         </span>
                     </td>
 
                     <td>
-                        <c:forEach items="${roles}" var="r">
-                            <c:if test="${r.roleId == e.roleId}">
-                                <span class="badge-role">${r.roleName}</span>
-                            </c:if>
-                        </c:forEach>
+                        <c:choose>
+                            <c:when test="${r.roleId == 1}">
+                                <span class="badge-role ROLE_ADMIN">Admin</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span class="badge-role ROLE_READER">Reader</span>
+                            </c:otherwise>
+                        </c:choose>
                     </td>
 
-                    <td>${e.createdAt}</td>
+                    <td>${r.createdAt}</td>
 
                     <td>
                         <a class="action-btn btn-edit"
-                           href="${pageContext.request.contextPath}/admin/employees?action=edit&id=${e.employeeId}">
+                           href="${pageContext.request.contextPath}/admin/readers?action=edit&id=${r.readerId}">
                             Edit
                         </a>
 
                         <a class="action-btn btn-delete"
-                           href="${pageContext.request.contextPath}/admin/employees?action=delete&id=${e.employeeId}"
-                           onclick="return confirm('Are you sure?');">
+                           href="${pageContext.request.contextPath}/admin/readers?action=delete&id=${r.readerId}"
+                           onclick="return confirm('Bạn có chắc muốn xóa reader này?')">
                             Delete
                         </a>
                     </td>
                 </tr>
             </c:forEach>
 
-            <c:if test="${empty employees}">
+            <c:if test="${empty readers}">
                 <tr>
-                    <td colspan="7" class="empty-row">
-                        No employees found.
+                    <td colspan="8" class="empty-row">
+                        Không có Reader nào
                     </td>
                 </tr>
             </c:if>

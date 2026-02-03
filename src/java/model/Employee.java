@@ -2,8 +2,6 @@ package model;
 
 import java.io.Serializable;
 
-import java.security.Timestamp;
-
 import java.time.LocalDateTime;
 
 public class Employee implements Serializable {
@@ -15,9 +13,7 @@ public class Employee implements Serializable {
     private String status;
     private LocalDateTime createdAt;
     private int roleId;
-
     
-
 
     // Constructor rỗng (bắt buộc cho JDBC / JavaBean)
     public Employee() {

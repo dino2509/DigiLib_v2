@@ -20,6 +20,11 @@ public class ListController extends HttpServlet {
         ArrayList<Reader> readers = readerDB.list();
 
         request.setAttribute("readers", readers);
-        request.getRequestDispatcher("../../view/admin/reader/list.jsp").forward(request, response);
+         request.setAttribute("pageTitle", "Reader Management");
+        request.setAttribute("activeMenu", "reader");
+        request.setAttribute("contentPage", "../../view/admin/readers/list.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/reader/list.jsp").forward(request, response);
     }
 }

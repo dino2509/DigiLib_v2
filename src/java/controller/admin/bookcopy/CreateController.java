@@ -31,9 +31,14 @@ public class CreateController extends HttpServlet {
         // Load danh sách Book để chọn
         ArrayList<Book> books = bookDB.list();
         request.setAttribute("books", books);
+        request.setAttribute("pageTitle", "Add Book Copy");
+        request.setAttribute("activeMenu", "bookcopy");
+        request.setAttribute("contentPage", "../../view/admin/bookcopies/add.jsp");
 
-        request.getRequestDispatcher("../../view/admin/bookcopies/add.jsp")
-               .forward(request, response);
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/bookcopies/add.jsp")
+//                .forward(request, response);
     }
 
     // =========================

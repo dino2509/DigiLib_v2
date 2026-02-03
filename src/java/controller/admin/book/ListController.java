@@ -4,12 +4,17 @@
  */
 package controller.admin.book;
 
+import dal.AuthorDBContext;
+import dal.CategoryDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import model.Author;
+import model.Category;
 
 @WebServlet(urlPatterns = "/admin/books/list")
 public class ListController extends HttpServlet {
@@ -17,6 +22,14 @@ public class ListController extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 //        req.getRequestDispatcher("../../view/admin/books/list.jsp").forward(req, resp);
+
+        CategoryDBContext cateDB = new CategoryDBContext();
+        ArrayList<Category> c = cateDB.list();
+        req.setAttribute("categories", c);
+        AuthorDBContext authDB = new AuthorDBContext();
+        ArrayList<Author> a = authDB.list();
+        req.setAttribute("authors", a);
+
         req.setAttribute("pageTitle", "Book Management");
         req.setAttribute("activeMenu", "book");
         req.setAttribute("contentPage", "../../view/admin/books/list.jsp");

@@ -18,7 +18,12 @@ public class CreateController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         // hiển thị form
-        request.getRequestDispatcher("../../view/admin/reader/add.jsp").forward(request, response);
+         request.setAttribute("pageTitle", "Add Reader");
+        request.setAttribute("activeMenu", "reader");
+        request.setAttribute("contentPage", "../../view/admin/readers/add.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/reader/add.jsp").forward(request, response);
     }
 
     @Override

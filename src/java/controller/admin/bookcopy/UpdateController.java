@@ -27,8 +27,14 @@ public class UpdateController extends HttpServlet {
         BookCopy copy = bookCopyDB.get(copyId);
 
         request.setAttribute("bookCopy", copy);
-        request.getRequestDispatcher("../../view/admin/bookcopies/edit.jsp")
+         request.setAttribute("pageTitle", "Update Book Copy");
+        request.setAttribute("activeMenu", "bookcopy");
+        request.setAttribute("contentPage", "../../view/admin/bookcopies/edit.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/bookcopies/edit.jsp")
+//                .forward(request, response);
     }
 
     // =========================

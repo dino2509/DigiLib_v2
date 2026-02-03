@@ -35,8 +35,13 @@ public class UpdateController extends HttpServlet {
         ArrayList<Role> roles = roleDB.list();
         request.setAttribute("roles", roles);
         request.setAttribute("employee", employee);
-        request.getRequestDispatcher("../../view/admin/employees/edit.jsp")
-               .forward(request, response);
+        request.setAttribute("pageTitle", "Update Employee");
+        request.setAttribute("activeMenu", "employee");
+        request.setAttribute("contentPage", "../../view/admin/employees/edit.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/employees/edit.jsp")
+//               .forward(request, response);
     }
 
     @Override

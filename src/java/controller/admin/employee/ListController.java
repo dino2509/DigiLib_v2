@@ -28,7 +28,12 @@ public class ListController extends HttpServlet {
         ArrayList<Role> roles = roleDB.list();
         request.setAttribute("roles", roles);
         request.setAttribute("employees", employees);
-        request.getRequestDispatcher("../../view/admin/employees/list.jsp")
-               .forward(request, response);
+        request.setAttribute("pageTitle", "Employee Management");
+        request.setAttribute("activeMenu", "employee");
+        request.setAttribute("contentPage", "../../view/admin/employees/list.jsp");
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+//        request.getRequestDispatcher("../../view/admin/employees/list.jsp")
+//               .forward(request, response);
     }
 }
