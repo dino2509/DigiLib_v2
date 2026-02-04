@@ -132,6 +132,7 @@
 
     <body>
 
+
         <header>
             <h2>📚 Digital Library</h2>
             <nav>
@@ -141,6 +142,16 @@
                 <a href="register">Đăng ký</a>
             </nav>
         </header>
+        <form action="${pageContext.request.contextPath}/home/search" method="get">
+            <input type="text" name="keyword" value="${param.keyword}" />
+                    
+
+
+            <button type="submit">
+                Search
+            </button>
+        </form>
+
 
         <section class="banner">
             <h1>Thư viện số dành cho mọi người</h1>

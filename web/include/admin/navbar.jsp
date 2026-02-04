@@ -82,34 +82,62 @@
         object-fit: cover;
     }
 
-    .dropdown {
+    
+
+    /* DROPDOWN */
+    .user-menu .dropdown {
         position: absolute;
         right: 0;
-        top: 45px;
-        background: #fff;
+        top: calc(100% + 8px);
+        min-width: 200px;
+
+        background: #ffffff;
         border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        min-width: 180px;
-        display: none;
-        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        border-radius: 10px;
+
+        box-shadow: 0 16px 36px rgba(0,0,0,0.12);
+        padding: 6px 0;
+
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px);
+        transition: all 0.18s ease;
+
         z-index: 1000;
     }
 
+    /* SHOW */
+    .user-menu:hover .dropdown {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
+    /* ITEM */
     .dropdown a {
-        display: block;
-        padding: 10px 15px;
-        text-decoration: none;
-        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        padding: 10px 16px;
         font-size: 14px;
+        color: #374151;
+        text-decoration: none;
+        transition: background 0.15s;
     }
 
     .dropdown a:hover {
-        background: #f3f4f6;
+        background: #fff7ed;
+        color: #c2410c;
     }
 
-    .user-menu:hover .dropdown {
-        display: block;
+    /* DIVIDER */
+    .dropdown .divider {
+        height: 1px;
+        background: #f1f1f1;
+        margin: 6px 0;
     }
+
 </style>
 
 <div class="topbar">
@@ -146,6 +174,7 @@
                          class="user-avatar" alt="avatar">
                     ${sessionScope.user.fullName}
                 </div>
+
 
                 <div class="dropdown">
                     <a href="${pageContext.request.contextPath}/admin/profile">👤 Profile</a>
