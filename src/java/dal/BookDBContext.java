@@ -10,6 +10,7 @@ import java.util.List;
 import model.Author;
 import model.Book;
 import model.Category;
+import model.Employee;
 
 public class BookDBContext extends DBContext<Book> {
 
@@ -337,7 +338,7 @@ public class BookDBContext extends DBContext<Book> {
                 Book b = new Book();
                 b.setBookId(rs.getInt("book_id"));
                 b.setTitle(rs.getString("title"));
-                b.setPrice(rs.getBigDecimal("price"));
+                b.setPrice(rs.getDouble("price"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
 
