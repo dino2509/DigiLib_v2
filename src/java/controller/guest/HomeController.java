@@ -23,7 +23,7 @@ public class HomeController extends HttpServlet {
         BookDBContext bookDB = new BookDBContext();
 
         // 2. Lấy danh sách sách (KHÔNG filter status để tránh lỗi)
-        ArrayList<Book> books = bookDB.list();
+        ArrayList<Book> books = bookDB.listAll();
 
         // 3. Gửi dữ liệu sang JSP
         request.setAttribute("books", books);

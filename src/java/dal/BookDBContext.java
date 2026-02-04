@@ -217,6 +217,7 @@ public class BookDBContext extends DBContext<Book> {
             author_id = ?,
             category_id = ?,
             updated_by = ?,
+            
             updated_at = GETDATE()
         WHERE book_id = ?
     """;
@@ -303,6 +304,216 @@ public class BookDBContext extends DBContext<Book> {
             if (status != null && !status.isEmpty()) {
                 ps.setString(index++, status);
             }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    public ArrayList<Book> searchByKeyword(String keyword
+    ) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+                 
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1 = 1
+    """;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql += " AND b.title LIKE  ? ";
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            int index = 1;
+
+            if (keyword != null && !keyword.isEmpty()) {
+                ps.setString(index++, "%" + keyword + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    public int countSearch(String keyword,
+            Integer authorId,
+            Integer categoryId,
+            String status) {
+
+        String sql = """
+        SELECT COUNT(*)
+        FROM Book b
+        WHERE 1 = 1
+    """;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql += " AND b.title LIKE ? ";
+        }
+        if (authorId != null) {
+            sql += " AND b.author_id = ? ";
+        }
+        if (categoryId != null) {
+            sql += " AND b.category_id = ? ";
+        }
+        if (status != null && !status.isEmpty()) {
+            sql += " AND b.status = ? ";
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            int i = 1;
+            if (keyword != null && !keyword.isEmpty()) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+            if (authorId != null) {
+                ps.setInt(i++, authorId);
+            }
+            if (categoryId != null) {
+                ps.setInt(i++, categoryId);
+            }
+            if (status != null && !status.isEmpty()) {
+                ps.setString(i++, status);
+            }
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public ArrayList<Book> searchPaging(String keyword,
+            Integer authorId,
+            Integer categoryId,
+            String status,
+            int pageIndex,
+            int pageSize) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1 = 1
+    """;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql += " AND b.title LIKE ? ";
+        }
+        if (authorId != null) {
+            sql += " AND b.author_id = ? ";
+        }
+        if (categoryId != null) {
+            sql += " AND b.category_id = ? ";
+        }
+        if (status != null && !status.isEmpty()) {
+            sql += " AND b.status = ? ";
+        }
+
+        sql += """
+        ORDER BY b.book_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            int i = 1;
+            if (keyword != null && !keyword.isEmpty()) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+            if (authorId != null) {
+                ps.setInt(i++, authorId);
+            }
+            if (categoryId != null) {
+                ps.setInt(i++, categoryId);
+            }
+            if (status != null && !status.isEmpty()) {
+                ps.setString(i++, status);
+            }
+
+            ps.setInt(i++, (pageIndex - 1) * pageSize);
+            ps.setInt(i, pageSize);
 
             ResultSet rs = ps.executeQuery();
 
