@@ -9,15 +9,21 @@ import model.Category;
 import model.Employee;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 
 @WebServlet(name = "CreateController", urlPatterns = {"/admin/books/add"})
+@MultipartConfig(
+        maxFileSize = 5 * 1024 * 1024 // 5MB
+)
 public class CreateController extends HttpServlet {
 
     private BookDBContext bookDB = new BookDBContext();
@@ -31,21 +37,15 @@ public class CreateController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        ArrayList<Author> authors = authorDB.list();
-        ArrayList<Category> categories = categoryDB.list();
+        request.setAttribute("authors", authorDB.list());
+        request.setAttribute("categories", categoryDB.list());
 
-        request.setAttribute("authors", authors);
-        request.setAttribute("categories", categories);
-
-//        request.getRequestDispatcher("../../view/admin/books/add.jsp")
-//                .forward(request, response);
         request.setAttribute("pageTitle", "Add Book");
         request.setAttribute("activeMenu", "book");
         request.setAttribute("contentPage", "../../view/admin/books/add.jsp");
 
         request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
-
     }
 
     // =========================
@@ -68,9 +68,7 @@ public class CreateController extends HttpServlet {
         b.setTitle(request.getParameter("title"));
         b.setSummary(request.getParameter("summary"));
         b.setDescription(request.getParameter("description"));
-        b.setCoverUrl(request.getParameter("cover_url"));
         b.setContentPath(request.getParameter("content_path"));
-
         // ===== PRICE =====
         String price = request.getParameter("price");
         if (price != null && !price.isEmpty()) {
@@ -79,9 +77,8 @@ public class CreateController extends HttpServlet {
 
         b.setCurrency(request.getParameter("currency"));
         b.setStatus(request.getParameter("status"));
-
-        // ===== TIME =====
         b.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        b.setCreate_by(emp);
 
         // ===== AUTHOR =====
         String authorRaw = request.getParameter("author_id");
@@ -99,9 +96,40 @@ public class CreateController extends HttpServlet {
             b.setCategory(c);
         }
 
-        // ===== CREATED BY (QUAN TRỌNG NHẤT) =====
-        b.setCreate_by(emp);
+        // =========================
+        // UPLOAD COVER IMAGE
+        // =========================
+        Part coverPart = request.getPart("cover_url");
+        if (coverPart != null && coverPart.getSize() > 0) {
+//
+//            String uploadDir =
+//                    request.getServletContext()
+//                    .getRealPath("/img/book");
+            String uploadDir = "D:\\FPT University Curriculum\\Spring26\\SWP391\\Git\\DigiLib_v2\\web\\img\\book";
 
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String originalFileName = Paths.get(coverPart.getSubmittedFileName())
+                    .getFileName()
+                    .toString();
+
+            String extension = originalFileName.substring(
+                    originalFileName.lastIndexOf(".")
+            );
+
+
+            String fileName = "book_" + System.currentTimeMillis() + extension;
+
+            coverPart.write(uploadDir + File.separator + fileName);
+
+            // 👉 CHỈ LƯU TÊN FILE
+            b.setCoverUrl(fileName);
+        }
+
+        // ===== INSERT =====
         bookDB.insert(b);
 
         response.sendRedirect(request.getContextPath() + "/admin/books");

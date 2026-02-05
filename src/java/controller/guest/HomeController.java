@@ -12,12 +12,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 
+
 @WebServlet(name = "HomeController", urlPatterns = {"/home"})
 public class HomeController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+       
 
         // 1. Gọi DBContext
         BookDBContext bookDB = new BookDBContext();
@@ -30,7 +32,7 @@ public class HomeController extends HttpServlet {
 
         // 4. Forward sang trang home.jsp (guest)
         request.getRequestDispatcher("/view/guest/home.jsp")
-               .forward(request, response);
+                .forward(request, response);
     }
 
     @Override

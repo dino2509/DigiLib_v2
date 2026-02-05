@@ -167,6 +167,26 @@ public class EmployeeDBContext extends DBContext<Employee> {
         }
     }
 
+    public void updateEmployeePassword(int employeeId, String passwordHash) {
+        String sql = """
+        UPDATE Employee
+        SET password_hash = ?
+        WHERE employee_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, passwordHash);
+            ps.setInt(2, employeeId);
+
+            ps.executeUpdate();
+
+        } catch (SQLException ex) {
+            Logger.getLogger(EmployeeDBContext.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+    }
+
     // =========================
     // MAP RESULTSET → EMPLOYEE
     // =========================

@@ -150,6 +150,26 @@
         background: #fff;
     }
 
+    /* ===== ALERT ===== */
+    .alert-error {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #9f1239;
+        padding: 14px 18px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .alert-error i {
+        color: #e11d48;
+        font-size: 16px;
+    }
+
 </style>
 
 
@@ -169,12 +189,24 @@
 
         <div class="edit-title">✏️ Cập nhật sách</div>
 
+
+
+
         <c:if test="${not empty book.coverUrl}">
             <div class="cover-preview">
-                <img src="${pageContext.request.contextPath}/${book.coverUrl}" alt="Book Cover">
+                <img src="${pageContext.request.contextPath}/img/book/${book.coverUrl}" alt="Book Cover">
             </div>
         </c:if>
-
+        <c:if test="${not empty errors}">
+            <div class="alert-error">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <div>
+                    <c:forEach items="${errors}" var="e">
+                        <div>• ${e}</div>
+                    </c:forEach>
+                </div>
+            </div>
+        </c:if>
         <form action="${pageContext.request.contextPath}/admin/books/edit" method="post">
             <input type="hidden" name="book_id" value="${book.bookId}">
 
@@ -190,6 +222,11 @@
                     <input type="number" step="0.01" name="price" value="${book.price}" class="form-control">
                 </div>
 
+                <div class="col-md-4 form-group">
+                    <label>Đơn vị tiền</label>
+                    <input name="currency" value="${book.currency}" class="form-control">
+                </div>
+
                 <div class="col-12 form-group">
                     <label>Tóm tắt</label>
                     <textarea name="summary" rows="3" class="form-control">${book.summary}</textarea>
@@ -200,10 +237,7 @@
                     <textarea name="description" rows="4" class="form-control">${book.description}</textarea>
                 </div>
 
-                <div class="col-md-4 form-group">
-                    <label>Đơn vị tiền</label>
-                    <input name="currency" value="${book.currency}" class="form-control">
-                </div>
+
 
                 <div class="col-md-4 form-group">
                     <label>Danh mục</label>

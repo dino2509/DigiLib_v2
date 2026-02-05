@@ -204,11 +204,171 @@ public class ReaderDBContext extends DBContext<Reader> {
             ps.setString(4, r.getPhone());
             ps.setString(5, r.getStatus());
 //            ps.setTimestamp(5, r.getCreatedAt());
-           
+
             ps.setObject(5, LocalDateTime.now());
             ps.setInt(7, r.getRoleId());
             ps.executeUpdate();
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static class ResetInfo {
+
+        private int userId;
+        private String userType;
+
+        public ResetInfo(int userId, String userType) {
+            this.userId = userId;
+            this.userType = userType;
+        }
+
+        public int getUserId() {
+            return userId;
+        }
+
+        public String getUserType() {
+            return userType;
+        }
+    }
+
+    /* =========================
+       1. GET READER BY EMAIL
+       ========================= */
+    public Reader getReaderByEmail(String email) {
+        String sql = """
+            SELECT reader_id, full_name, email, password_hash
+            FROM Reader
+            WHERE email = ?
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, email);
+            ResultSet rs = stm.executeQuery();
+
+            if (rs.next()) {
+                Reader r = new Reader();
+                r.setReaderId(rs.getInt("reader_id"));
+                r.setFullName(rs.getString("full_name"));
+                r.setEmail(rs.getString("email"));
+                r.setPasswordHash(rs.getString("password_hash"));
+                return r;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /* =========================
+       2. INSERT RESET TOKEN
+       ========================= */
+    public void insertResetToken(String type, int userId,
+            String token, LocalDateTime expiredAt) {
+
+        String sql = """
+            INSERT INTO Password_Reset
+            (user_type, user_id, token, expired_at, used, created_at)
+            VALUES (?, ?, ?, ?, 0, ?)
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, type);
+            stm.setInt(2, userId);
+            stm.setString(3, token);
+            stm.setObject(5, LocalDateTime.now());
+            stm.setObject(4, expiredAt);
+//            stm.setTimestamp(4, Timestamp.valueOf(expiredAt));
+//            stm.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
+            stm.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* =========================
+       3. CHECK TOKEN VALID
+       ========================= */
+    public boolean isValidToken(String token) {
+        String sql = """
+            SELECT 1
+            FROM Password_Reset
+            WHERE token = ?
+              AND used = 0
+              AND expired_at > SYSDATETIME()
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, token);
+            ResultSet rs = stm.executeQuery();
+            return rs.next();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /* =========================
+       4. GET RESET INFO
+       ========================= */
+    public ResetInfo getResetInfo(String token) {
+        String sql = """
+            SELECT user_id, user_type
+            FROM Password_Reset
+            WHERE token = ?
+              AND used = 0
+              AND expired_at > SYSDATETIME()
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, token);
+            ResultSet rs = stm.executeQuery();
+
+            if (rs.next()) {
+                return new ResetInfo(
+                        rs.getInt("user_id"),
+                        rs.getString("user_type")
+                );
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /* =========================
+       5. UPDATE READER PASSWORD
+       ========================= */
+    public void updateReaderPassword(int readerId, String hash) {
+        String sql = """
+            UPDATE Reader
+            SET password_hash = ?
+            WHERE reader_id = ?
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, hash);
+            stm.setInt(2, readerId);
+            stm.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /* =========================
+       6. MARK TOKEN USED
+       ========================= */
+    public void markTokenUsed(String token) {
+        String sql = """
+            UPDATE Password_Reset
+            SET used = 1
+            WHERE token = ?
+        """;
+
+        try (PreparedStatement stm = connection.prepareStatement(sql)) {
+            stm.setString(1, token);
+            stm.executeUpdate();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }

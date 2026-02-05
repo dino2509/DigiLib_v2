@@ -11,7 +11,13 @@ public class PasswordUtil {
 
     // Check password khi login
     public static boolean checkPassword(String plainPassword, String hashed) {
-        if (hashed == null) return false;
+        if (hashed == null) {
+            return false;
+        }
         return BCrypt.checkpw(plainPassword, hashed);
+    }
+
+    public static String hash(String password) {
+        return BCrypt.hashpw(password, BCrypt.gensalt(12));
     }
 }

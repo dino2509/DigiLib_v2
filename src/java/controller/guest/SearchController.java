@@ -30,26 +30,9 @@ public class SearchController extends HttpServlet {
             throws ServletException, IOException {
 
         // ===== LẤY THAM SỐ SEARCH =====
-        String keyword = request.getParameter("keyword");
-       
-//        String keyResult = "";
-        
-       
+        String keyword = request.getParameter("keyword");             
         String keyResult = keyword.trim().replaceAll("\\s+", " ").toLowerCase();
-        
-       
-//        String[] keywords = normalized.split(" ");
-
-        
-//        StringBuilder sb = new StringBuilder();
-//        for (String key : keywords) {
-//            sb.append(key).append(" ");
-//        }
-
-//        keyResult = sb.toString().trim();
-       
-        
-
+  
         // ===== SEARCH BOOK =====
         ArrayList<Book> books = bookDB.searchByKeyword(
                 keyResult

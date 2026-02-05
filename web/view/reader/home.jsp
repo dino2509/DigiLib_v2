@@ -53,7 +53,7 @@
 
                     <!-- BOOK COVER -->
                     <img class="card-img-top book-cover"
-                         src="${pageContext.request.contextPath}/${empty book.coverUrl 
+                         src="${pageContext.request.contextPath}/img/book/${empty book.coverUrl 
                                 ? 'assets/images/no-cover.png' 
                                 : book.coverUrl}"
                          alt="${book.title}">

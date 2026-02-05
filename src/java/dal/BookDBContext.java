@@ -16,15 +16,12 @@ public class BookDBContext extends DBContext<Book> {
 
         String sql = """
             SELECT 
-                b.book_id,
-                b.title,
-                b.price,
-                b.status,
-                b.created_at,
+                b.*,
                 a.author_id,
                 a.author_name,
                 c.category_id,
                 c.category_name
+              
             FROM Book b
             LEFT JOIN Author a ON b.author_id = a.author_id
             LEFT JOIN Category c ON b.category_id = c.category_id
@@ -40,7 +37,7 @@ public class BookDBContext extends DBContext<Book> {
                 b.setPrice(rs.getBigDecimal("price"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
-
+                b.setCoverUrl(rs.getString("cover_url"));
                 // ===== AUTHOR =====
                 int authorId = rs.getInt("author_id");
                 if (!rs.wasNull()) {
@@ -258,6 +255,8 @@ public class BookDBContext extends DBContext<Book> {
 
         ArrayList<Book> books = new ArrayList<>();
 
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
+
         String sql = """
         SELECT 
             b.book_id,
@@ -275,8 +274,8 @@ public class BookDBContext extends DBContext<Book> {
         WHERE 1 = 1
     """;
 
-        if (keyword != null && !keyword.isEmpty()) {
-            sql += " AND b.title LIKE ? ";
+        if (hasKeyword) {
+            sql += " AND b.title LIKE ? ESCAPE '\\' ";
         }
         if (authorId != null) {
             sql += " AND b.author_id = ? ";
@@ -284,7 +283,7 @@ public class BookDBContext extends DBContext<Book> {
         if (categoryId != null) {
             sql += " AND b.category_id = ? ";
         }
-        if (status != null && !status.isEmpty()) {
+        if (status != null && !status.trim().isEmpty()) {
             sql += " AND b.status = ? ";
         }
 
@@ -292,17 +291,24 @@ public class BookDBContext extends DBContext<Book> {
 
             int index = 1;
 
-            if (keyword != null && !keyword.isEmpty()) {
-                ps.setString(index++, "%" + keyword + "%");
+            if (hasKeyword) {
+                // Escape ký tự đặc biệt cho LIKE
+                String safeKeyword = keyword.trim()
+                        .replace("\\", "\\\\")
+                        .replace("%", "\\%")
+                        .replace("_", "\\_");
+
+                ps.setString(index++, "%" + safeKeyword + "%");
             }
+
             if (authorId != null) {
                 ps.setInt(index++, authorId);
             }
             if (categoryId != null) {
                 ps.setInt(index++, categoryId);
             }
-            if (status != null && !status.isEmpty()) {
-                ps.setString(index++, status);
+            if (status != null && !status.trim().isEmpty()) {
+                ps.setString(index++, status.trim());
             }
 
             ResultSet rs = ps.executeQuery();
@@ -452,6 +458,80 @@ public class BookDBContext extends DBContext<Book> {
         return 0;
     }
 
+    public int countBooks(String keyword) {
+
+        String sql = """
+        SELECT COUNT(*)
+        FROM Book
+        WHERE (? IS NULL OR title LIKE ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(1, java.sql.Types.NVARCHAR);
+                ps.setNull(2, java.sql.Types.NVARCHAR);
+            } else {
+                ps.setString(1, keyword);
+                ps.setString(2, "%" + keyword + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public ArrayList<Book> pagingBooks(String keyword, int pageIndex, int pageSize) {
+
+        ArrayList<Book> list = new ArrayList<>();
+
+        String sql = """
+        SELECT *
+        FROM Book
+        WHERE (? IS NULL OR title LIKE ?)
+        ORDER BY book_id
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            int i = 1;
+
+            if (keyword == null || keyword.trim().isEmpty()) {
+                ps.setNull(i++, java.sql.Types.NVARCHAR);
+                ps.setNull(i++, java.sql.Types.NVARCHAR);
+            } else {
+                ps.setString(i++, keyword);
+                ps.setString(i++, "%" + keyword + "%");
+            }
+
+            ps.setInt(i++, (pageIndex - 1) * pageSize);
+            ps.setInt(i, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                list.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
     public ArrayList<Book> searchPaging(String keyword,
             Integer authorId,
             Integer categoryId,
@@ -492,7 +572,7 @@ public class BookDBContext extends DBContext<Book> {
         }
 
         sql += """
-        ORDER BY b.book_id DESC
+        ORDER BY b.book_id ASC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
