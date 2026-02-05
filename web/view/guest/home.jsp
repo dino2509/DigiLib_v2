@@ -232,10 +232,10 @@
                 <c:forEach items="${books}" var="b">
                     <div class="book-card">
                         <img class="card-img-top book-cover"
-                             src="${pageContext.request.contextPath}${empty book.coverUrl 
-                                    ? '/img/book/no-cover.png' 
-                                    : book.coverUrl}"
-                             alt="${book.title}">
+                             src="${pageContext.request.contextPath}/img/book/${empty b.coverUrl 
+                                    ? 'no-cover.png' 
+                                    : b.coverUrl}"
+                             alt="${b.title}">
                         <h3>${b.title}</h3>
 
                         <p>

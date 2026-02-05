@@ -356,7 +356,8 @@ public class BookDBContext extends DBContext<Book> {
             a.author_id,
             a.author_name,
             c.category_id,
-            c.category_name
+            c.category_name,
+            b.cover_url
                  
         FROM Book b
         LEFT JOIN Author a ON b.author_id = a.author_id
@@ -385,7 +386,7 @@ public class BookDBContext extends DBContext<Book> {
                 b.setPrice(rs.getBigDecimal("price"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
-
+                b.setCoverUrl(rs.getString("cover_url"));
                 Author a = new Author();
                 a.setAuthor_id(rs.getInt("author_id"));
                 a.setAuthor_name(rs.getString("author_name"));
