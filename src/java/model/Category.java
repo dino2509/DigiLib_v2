@@ -5,6 +5,9 @@ public class Category {
     private String category_name;
     private String description;
 
+    // NOTE: Không phải cột DB, chỉ dùng để hiển thị thống kê (COUNT(Book))
+    private int bookCount;
+
     public Category() {
     }
 
@@ -36,5 +39,13 @@ public class Category {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getBookCount() {
+        return bookCount;
+    }
+
+    public void setBookCount(int bookCount) {
+        this.bookCount = bookCount;
     }
 }
