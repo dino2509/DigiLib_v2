@@ -8,16 +8,22 @@ import model.Author;
 import model.Category;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
+import java.io.File;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import model.Employee;
 
 @WebServlet(name = "UpdateController", urlPatterns = {"/admin/books/edit"})
+@MultipartConfig(
+        maxFileSize = 5 * 1024 * 1024 // 5MB
+)
 public class UpdateController extends HttpServlet {
 
     private BookDBContext bookDB = new BookDBContext();
@@ -37,6 +43,24 @@ public class UpdateController extends HttpServlet {
         ArrayList<Author> authors = authorDB.list();
         ArrayList<Category> categories = categoryDB.list();
 
+        String imgDir = getServletContext().getRealPath("/img/book");
+        File folder = new File(imgDir);
+
+        ArrayList<String> images = new ArrayList<>();
+        if (folder.exists() && folder.isDirectory()) {
+            for (File f : folder.listFiles()) {
+                if (f.isFile()) {
+                    String name = f.getName().toLowerCase();
+                    if (name.endsWith(".jpg") || name.endsWith(".png")
+                            || name.endsWith(".jpeg") || name.endsWith(".webp")) {
+                        images.add(f.getName());
+                    }
+                }
+            }
+        }
+
+        request.setAttribute("images", images);
+
         request.setAttribute("book", book);
         request.setAttribute("authors", authors);
         request.setAttribute("categories", categories);
@@ -53,7 +77,7 @@ public class UpdateController extends HttpServlet {
     // HANDLE UPDATE
     // =========================
     @Override
-    
+
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -94,7 +118,6 @@ public class UpdateController extends HttpServlet {
 //        if (description == null || description.trim().isEmpty()) {
 //            errors.add("Description không được để trống");
 //        }
-
         BigDecimal price = null;
         if (priceStr != null && !priceStr.trim().isEmpty()) {
             try {
@@ -111,20 +134,7 @@ public class UpdateController extends HttpServlet {
             errors.add("Currency không hợp lệ");
         }
 
-//        if (status == null || !status.matches("Active|Inactive")) {
-//            errors.add("Status không hợp lệ");
-//        }
-
-//        if (coverUrl != null && !coverUrl.trim().isEmpty()) {
-//            if (!coverUrl.matches("^(http|https)://.*$")) {
-//                errors.add("Cover URL không hợp lệ");
-//            }
-//        }
-
-//        if (contentPath != null && contentPath.contains("..")) {
-//            errors.add("Content path không hợp lệ");
-//        }
-
+//      
         int authorId = Integer.parseInt(request.getParameter("author_id"));
         if (authorDB.get(authorId) == null) {
             errors.add("Author không tồn tại");
@@ -180,9 +190,94 @@ public class UpdateController extends HttpServlet {
 
         b.setUpdate_by(emp);
 
+        Part coverPart = request.getPart("cover_upload");
+        String selectedCover = request.getParameter("cover_select");
+
+        if (coverPart != null && coverPart.getSize() > 0) {
+            String contentType = coverPart.getContentType();
+
+            long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+            // 1️⃣ Check dung lượng
+            if (coverPart.getSize() > MAX_FILE_SIZE) {
+                request.setAttribute("error", "Ảnh không được vượt quá 2MB!");
+                loadFormAgain(request, response);
+                return;
+            }
+            if (contentType == null || !contentType.startsWith("image/")) {
+                request.setAttribute("error", "Chỉ được upload file ảnh!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            String fileName = Paths.get(coverPart.getSubmittedFileName())
+                    .getFileName()
+                    .toString()
+                    .toLowerCase();
+
+            if (!(fileName.endsWith(".jpg")
+                    || fileName.endsWith(".jpeg")
+                    || fileName.endsWith(".png")
+                    || fileName.endsWith(".gif")
+                    || fileName.endsWith(".webp"))) {
+
+                request.setAttribute("error", "Định dạng ảnh không hợp lệ!");
+
+                request.setAttribute("error", "Chỉ được upload file ảnh!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            String uploadDir
+                    = getServletContext().getRealPath("/") // build/web
+                            .replace("build\\web", "web\\img\\book");
+
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            String originalFileName = Paths.get(coverPart.getSubmittedFileName())
+                    .getFileName()
+                    .toString();
+
+            String extension = originalFileName.substring(
+                    originalFileName.lastIndexOf(".")
+            );
+
+            String fileNameNew = "book_" + System.currentTimeMillis() + extension;
+
+            coverPart.write(uploadDir + File.separator + fileNameNew);
+
+            // 👉 CHỈ LƯU TÊN FILE
+            b.setCoverUrl(fileNameNew);
+        } else if (selectedCover != null && !selectedCover.isEmpty()) {
+            b.setCoverUrl(selectedCover);
+        } else {
+            Book old = bookDB.get(bookId);
+            b.setCoverUrl(old.getCoverUrl());
+        }
+
         bookDB.update(b);
 
         response.sendRedirect(request.getContextPath() + "/admin/books");
     }
 
+    private void loadFormAgain(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        int bookId = Integer.parseInt(request.getParameter("book_id"));
+        Book book = bookDB.get(bookId);
+
+        request.setAttribute("book", book);
+        request.setAttribute("authors", authorDB.list());
+        request.setAttribute("categories", categoryDB.list());
+
+        request.setAttribute("pageTitle", "Update Book");
+        request.setAttribute("activeMenu", "book");
+        request.setAttribute("contentPage", "../../view/admin/books/edit.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+    }
 }

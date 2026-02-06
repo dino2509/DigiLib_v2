@@ -155,6 +155,12 @@
         <div class="add-title">
             ➕ Thêm sách mới
         </div>
+        <c:if test="${not empty error}">
+            <div class="alert alert-danger">
+                ${error}
+            </div>
+        </c:if>
+
 
         <!-- ❗ multipart/form-data -->
         <form action="${pageContext.request.contextPath}/admin/books/add"
@@ -210,15 +216,21 @@
 
                 <!-- ===== UPLOAD COVER IMAGE ===== -->
                 <div class="col-md-6">
+
                     <label>Ảnh bìa (Cover Image)</label>
+
                     <input type="file"
                            name="cover_url"
                            class="form-control"
-                           accept="image/*"
+                           accept=".jpg,.jpeg,.png,.gif,.webp"
                            onchange="previewCover(this)">
+
+                    <p id="error" style="color:red;"></p>
+
                     <div class="cover-preview">
-                        <img id="coverPreview">
+                        <img id="coverPreview" style="max-width:150px; display:none;">
                     </div>
+
                 </div>
 
                 <div class="col-md-12">
@@ -269,4 +281,51 @@
         };
         reader.readAsDataURL(file);
     }
+
+
+    function previewCover(input) {
+        const file = input.files[0];
+        const error = document.getElementById("error");
+        const preview = document.getElementById("coverPreview");
+
+        error.textContent = "";
+        preview.style.display = "none";
+
+        if (!file)
+            return;
+
+        // 1️⃣ Check MIME type
+        if (!file.type.startsWith("image/")) {
+            error.textContent = "❌ Chỉ được chọn file ảnh!";
+            input.value = "";
+            return;
+        }
+
+        // 2️⃣ Check đuôi file
+        const allowedExt = ["jpg", "jpeg", "png", "gif", "webp"];
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        if (!allowedExt.includes(ext)) {
+            error.textContent = "❌ Định dạng ảnh không hợp lệ!";
+            input.value = "";
+            return;
+        }
+
+        // 3️⃣ Check dung lượng (vd: max 2MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (file.size > maxSize) {
+            error.textContent = "❌ Ảnh không được vượt quá 5MB!";
+            input.value = "";
+            return;
+        }
+
+        // 4️⃣ Preview ảnh
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            preview.src = e.target.result;
+            preview.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+
 </script>

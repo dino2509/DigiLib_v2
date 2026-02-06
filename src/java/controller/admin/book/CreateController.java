@@ -71,8 +71,16 @@ public class CreateController extends HttpServlet {
         b.setContentPath(request.getParameter("content_path"));
         // ===== PRICE =====
         String price = request.getParameter("price");
-        if (price != null && !price.isEmpty()) {
-            b.setPrice(new BigDecimal(price));
+        try {
+            if (price != null && !price.isEmpty()) {
+                b.setPrice(new BigDecimal(price));
+            }
+        } catch (NumberFormatException e) {
+            request.setAttribute("error", "Giá không hợp lệ!");
+            // forward lại layout (như trên)
+
+            loadFormAgain(request, response);
+            return;
         }
 
         b.setCurrency(request.getParameter("currency"));
@@ -101,11 +109,44 @@ public class CreateController extends HttpServlet {
         // =========================
         Part coverPart = request.getPart("cover_url");
         if (coverPart != null && coverPart.getSize() > 0) {
-//
-//            String uploadDir =
-//                    request.getServletContext()
-//                    .getRealPath("/img/book");
-            String uploadDir = "D:\\FPT University Curriculum\\Spring26\\SWP391\\Git\\DigiLib_v2\\web\\img\\book";
+            String contentType = coverPart.getContentType();
+            
+            long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
+
+            // 1️⃣ Check dung lượng
+            if (coverPart.getSize() > MAX_FILE_SIZE) {
+                request.setAttribute("error", "Ảnh không được vượt quá 2MB!");
+                loadFormAgain(request, response);
+                return;
+            }
+            if (contentType == null || !contentType.startsWith("image/")) {
+                request.setAttribute("error", "Chỉ được upload file ảnh!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            String fileName = Paths.get(coverPart.getSubmittedFileName())
+                    .getFileName()
+                    .toString()
+                    .toLowerCase();
+
+            if (!(fileName.endsWith(".jpg")
+                    || fileName.endsWith(".jpeg")
+                    || fileName.endsWith(".png")
+                    || fileName.endsWith(".gif")
+                    || fileName.endsWith(".webp"))) {
+
+                request.setAttribute("error", "Định dạng ảnh không hợp lệ!");
+//                request.getRequestDispatcher("../../view/admin/books/add.jsp").forward(request, response);
+//                return;
+                request.setAttribute("error", "Chỉ được upload file ảnh!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            String uploadDir
+                    = getServletContext().getRealPath("/") // build/web
+                            .replace("build\\web", "web\\img\\book");
 
             File dir = new File(uploadDir);
             if (!dir.exists()) {
@@ -120,13 +161,12 @@ public class CreateController extends HttpServlet {
                     originalFileName.lastIndexOf(".")
             );
 
+            String fileNameNew = "book_" + System.currentTimeMillis() + extension;
 
-            String fileName = "book_" + System.currentTimeMillis() + extension;
-
-            coverPart.write(uploadDir + File.separator + fileName);
+            coverPart.write(uploadDir + File.separator + fileNameNew);
 
             // 👉 CHỈ LƯU TÊN FILE
-            b.setCoverUrl(fileName);
+            b.setCoverUrl(fileNameNew);
         }
 
         // ===== INSERT =====
@@ -134,4 +174,18 @@ public class CreateController extends HttpServlet {
 
         response.sendRedirect(request.getContextPath() + "/admin/books");
     }
+
+    private void loadFormAgain(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
+        request.setAttribute("authors", authorDB.list());
+        request.setAttribute("categories", categoryDB.list());
+        request.setAttribute("pageTitle", "Add Book");
+        request.setAttribute("activeMenu", "book");
+        request.setAttribute("contentPage", "../../view/admin/books/add.jsp");
+
+        request.getRequestDispatcher("/include/admin/layout.jsp")
+                .forward(request, response);
+    }
+
 }

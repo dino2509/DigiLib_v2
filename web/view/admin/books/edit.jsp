@@ -207,7 +207,10 @@
                 </div>
             </div>
         </c:if>
-        <form action="${pageContext.request.contextPath}/admin/books/edit" method="post">
+        <form action="${pageContext.request.contextPath}/admin/books/edit"
+              method="post"
+              enctype="multipart/form-data">
+        
             <input type="hidden" name="book_id" value="${book.bookId}">
 
             <div class="row g-4">
@@ -272,9 +275,30 @@
                 </div>
 
                 <div class="col-md-6 form-group">
-                    <label>Cover URL</label>
-                    <input name="cover_url" value="${book.coverUrl}" class="form-control">
+                    <label>Chọn ảnh có sẵn</label>
+                    <select name="cover_select" class="form-select select2">
+                        <option value="">-- Chọn ảnh trong thư mục --</option>
+                        <c:forEach items="${images}" var="img">
+                            <option value="${img}"
+                                    ${img == book.coverUrl ? 'selected' : ''}>
+                                ${img}
+                            </option>
+                        </c:forEach>
+                    </select>
                 </div>
+                <div class="cover-preview">
+                    <img id="previewImg"
+                         src="${pageContext.request.contextPath}/img/book/${book.coverUrl}">
+                </div>
+
+                <div class="col-md-6 form-group">
+                    <label>Hoặc upload ảnh mới</label>
+                    <input type="file"
+                           name="cover_upload"
+                           class="form-control"
+                           accept=".jpg,.jpeg,.png,.webp">
+                </div>
+
 
                 <div class="col-12 form-group">
                     <label>Content Path</label>
@@ -290,5 +314,24 @@
         </form>
     </div>
 </div>
+<script>$('select[name="cover_select"]').on('change', function () {
+        const img = $(this).val();
+        if (img) {
+            $('#previewImg').attr(
+                    'src',
+                    '${pageContext.request.contextPath}/img/book/' + img
+                    );
+        }
+    });
 
+    $('input[name="cover_upload"]').on('change', function (e) {
+        const file = e.target.files[0];
+        if (!file)
+            return;
+
+        const reader = new FileReader();
+        reader.onload = e => $('#previewImg').attr('src', e.target.result);
+        reader.readAsDataURL(file);
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
