@@ -1,8 +1,10 @@
 package controller.common;
 
 import dal.BookDBContext;
-import dal.FavoriteDBContext;
 import dal.BookQADBContext;
+import dal.BorrowDBContext;
+import dal.BorrowRequestDBContext;
+import dal.FavoriteDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -13,6 +15,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import model.Book;
 import model.BookQuestion;
+import model.Employee;
 import model.Reader;
 
 @WebServlet(urlPatterns = "/books/detail")
@@ -37,19 +40,40 @@ public class BookDetailController extends HttpServlet {
         }
 
         boolean isReader = false;
+        boolean isLibrarian = false;
         boolean isFavorite = false;
+        boolean hasPendingBorrow = false;
+        boolean isBorrowingThisBook = false;
 
         HttpSession session = req.getSession(false);
-        if (session != null && session.getAttribute("user") instanceof Reader) {
+        Object user = (session == null) ? null : session.getAttribute("user");
+
+        if (user instanceof Reader) {
             isReader = true;
-            Reader reader = (Reader) session.getAttribute("user");
+            Reader reader = (Reader) user;
+
             FavoriteDBContext favDAO = new FavoriteDBContext();
             isFavorite = favDAO.isFavorite(reader.getReaderId(), id);
+
+            BorrowRequestDBContext brDAO = new BorrowRequestDBContext();
+            hasPendingBorrow = brDAO.hasPendingForBook(reader.getReaderId(), id);
+
+            BorrowDBContext borrowDAO = new BorrowDBContext();
+            isBorrowingThisBook = borrowDAO.isBookCurrentlyBorrowed(reader.getReaderId(), id);
+        }
+
+        if (user instanceof Employee) {
+            Employee emp = (Employee) user;
+            // roleId==2 là Librarian theo dự án của bạn
+            isLibrarian = emp.getRoleId() == 2;
         }
 
         req.setAttribute("book", book);
         req.setAttribute("isReader", isReader);
+        req.setAttribute("isLibrarian", isLibrarian);
         req.setAttribute("isFavorite", isFavorite);
+        req.setAttribute("hasPendingBorrow", hasPendingBorrow);
+        req.setAttribute("isBorrowingThisBook", isBorrowingThisBook);
 
         // Gợi ý sách khác
         if (book.getCategory() != null) {

@@ -124,4 +124,25 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         }
         return 0;
     }
+
+    /**
+     * Kiểm tra reader hiện đang mượn (chưa trả) ít nhất 1 copy của book này hay không.
+     */
+    public boolean isBookCurrentlyBorrowed(int readerId, int bookId) {
+        String sql =
+                "SELECT TOP 1 1 "
+                + "FROM Borrow br "
+                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
+                + "INNER JOIN BookCopy bc ON bc.copy_id = bi.copy_id "
+                + "WHERE br.reader_id = ? AND bi.returned_at IS NULL AND bc.book_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ps.setInt(2, bookId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

@@ -31,7 +31,7 @@
 
     <!-- Stats -->
     <div class="row g-3 mt-1">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card stat-card shadow-sm">
                 <div class="card-body">
                     <div class="muted">Sách đang mượn</div>
@@ -40,7 +40,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card stat-card shadow-sm">
                 <div class="card-body">
                     <div class="muted">Sắp đến hạn (3 ngày)</div>
@@ -49,12 +49,22 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card stat-card shadow-sm">
                 <div class="card-body">
                     <div class="muted">Tổng sách đã đọc</div>
                     <div class="fs-3 fw-bold">${totalRead}</div>
                     <span class="small muted">theo Reading_History</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body">
+                    <div class="muted">Yêu cầu mượn (đang chờ)</div>
+                    <div class="fs-3 fw-bold">${pendingRequestedCount}</div>
+                    <div class="small muted">Tổng đã gửi: ${totalRequestedCount}</div>
                 </div>
             </div>
         </div>
@@ -66,25 +76,22 @@
 
         <c:choose>
             <c:when test="${empty continueReading}">
-                <div class="alert alert-light border">
-                    Chưa có lịch sử đọc. Hãy mở một cuốn sách để bắt đầu.
-                </div>
+                <div class="alert alert-light border">Chưa có dữ liệu đọc tiếp.</div>
             </c:when>
             <c:otherwise>
-                <div class="list-group shadow-sm">
-                    <c:forEach var="h" items="${continueReading}">
+                <div class="list-group">
+                    <c:forEach items="${continueReading}" var="h">
                         <a class="list-group-item list-group-item-action d-flex align-items-center gap-3"
                            href="${pageContext.request.contextPath}/books/detail?id=${h.book.bookId}">
                             <img class="mini-cover"
-                                 src="${empty h.book.coverUrl ? 'https://via.placeholder.com/64x84?text=No+Cover' : h.book.coverUrl}"
+                                 src="${pageContext.request.contextPath}/img/book/${empty h.book.coverUrl ? 'no-cover.png' : h.book.coverUrl}"
                                  alt="${h.book.title}">
                             <div class="flex-grow-1">
                                 <div class="fw-semibold">${h.book.title}</div>
                                 <div class="small muted">
-                                    Vị trí đọc: <c:out value="${h.lastReadPosition}"/> /
-                                    <c:out value="${h.book.totalPages}"/> trang
-                                    <c:if test="${not empty h.lastReadAt}">
-                                        • Lần cuối: <fmt:formatDate value="${h.lastReadAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                    Lần đọc gần nhất: <fmt:formatDate value="${h.lastReadAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                    <c:if test="${h.lastReadPosition != null && h.book.totalPages > 0}">
+                                        • Trang: ${h.lastReadPosition}/${h.book.totalPages}
                                     </c:if>
                                 </div>
                             </div>
@@ -96,44 +103,56 @@
         </c:choose>
     </div>
 
+    <!-- Reading History -->
+    <div class="mt-4">
+        <h4 class="mb-3">🕘 Lịch sử đọc gần đây</h4>
+        <c:choose>
+            <c:when test="${empty readingHistory}">
+                <div class="alert alert-light border">Chưa có lịch sử đọc.</div>
+            </c:when>
+            <c:otherwise>
+                <div class="list-group">
+                    <c:forEach items="${readingHistory}" var="h">
+                        <a class="list-group-item list-group-item-action d-flex align-items-center gap-3"
+                           href="${pageContext.request.contextPath}/books/detail?id=${h.book.bookId}">
+                            <img class="mini-cover"
+                                 src="${pageContext.request.contextPath}/img/book/${empty h.book.coverUrl ? 'no-cover.png' : h.book.coverUrl}"
+                                 alt="${h.book.title}">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">${h.book.title}</div>
+                                <div class="small muted">
+                                    Lần đọc gần nhất: <fmt:formatDate value="${h.lastReadAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                    <c:if test="${h.lastReadPosition != null && h.book.totalPages > 0}">
+                                        • Trang: ${h.lastReadPosition}/${h.book.totalPages}
+                                    </c:if>
+                                </div>
+                            </div>
+                        </a>
+                    </c:forEach>
+                </div>
+            </c:otherwise>
+        </c:choose>
+    </div>
+
     <!-- Recommended -->
     <div class="mt-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-3">✨ Gợi ý cho bạn</h4>
-            <a href="${pageContext.request.contextPath}/books" class="small">Xem tất cả</a>
-        </div>
+        <h4 class="mb-3">✨ Gợi ý cho bạn</h4>
 
-        <div class="row">
-            <c:forEach var="book" items="${recommended}">
-                <div class="col-md-3 mb-4">
-                    <div class="card h-100 shadow-sm">
-
+        <div class="row g-3">
+            <c:forEach items="${recommended}" var="b">
+                <div class="col-md-3">
+                    <div class="card shadow-sm h-100">
                         <img class="card-img-top book-cover"
-                             src="${empty book.coverUrl ? 'https://via.placeholder.com/300x400?text=No+Cover' : book.coverUrl}"
-                             alt="${book.title}">
-
+                             src="${pageContext.request.contextPath}/img/book/${empty b.coverUrl ? 'no-cover.png' : b.coverUrl}"
+                             alt="${b.title}">
                         <div class="card-body">
-                            <h6 class="card-title">${book.title}</h6>
-
-                            <p class="text-muted mb-0">
-                                <c:choose>
-                                    <c:when test="${book.price == null || book.price == 0}">
-                                        Miễn phí
-                                    </c:when>
-                                    <c:otherwise>
-                                        ${book.price} ${book.currency}
-                                    </c:otherwise>
-                                </c:choose>
-                            </p>
-                        </div>
-
-                        <div class="card-footer text-center bg-white">
-                            <a href="${pageContext.request.contextPath}/books/detail?id=${book.bookId}"
-                               class="btn btn-sm btn-warning">
+                            <div class="fw-semibold">${b.title}</div>
+                            <div class="small muted">${b.category != null ? b.category.category_name : ''}</div>
+                            <a class="btn btn-sm btn-warning mt-2"
+                               href="${pageContext.request.contextPath}/books/detail?id=${b.bookId}">
                                 Xem chi tiết
                             </a>
                         </div>
-
                     </div>
                 </div>
             </c:forEach>
@@ -141,8 +160,6 @@
     </div>
 
 </div>
-
-<jsp:include page="/include/reader/footer.jsp"/>
 
 </body>
 </html>

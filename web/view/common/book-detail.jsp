@@ -54,6 +54,7 @@
             font-weight: 500;
         }
         .book-card a:hover { background: var(--primary-dark); }
+        .book-cover{ width:100%; max-height:420px; object-fit:cover; border-radius:10px; }
     </style>
 </head>
 <body>
@@ -65,7 +66,7 @@
 
     <div class="row mt-3">
         <div class="col-md-4">
-            <img class="card-img-top book-cover"
+            <img class="book-cover"
                  src="${pageContext.request.contextPath}/img/book/${empty book.coverUrl ? 'no-cover.png' : book.coverUrl}"
                  alt="${book.title}">
         </div>
@@ -100,7 +101,7 @@
                 <p>${book.description}</p>
             </c:if>
 
-            <div class="mt-4 d-flex gap-2 flex-wrap">
+            <div class="mt-4 d-flex gap-2 flex-wrap align-items-center">
                 <c:if test="${isReader}">
                     <form method="post" action="${pageContext.request.contextPath}/reader/favorites">
                         <input type="hidden" name="bookId" value="${book.bookId}">
@@ -115,15 +116,36 @@
                             </c:otherwise>
                         </c:choose>
                     </form>
+
+                    <!-- Borrow request (Reader) -->
+                    <c:choose>
+                        <c:when test="${isBorrowingThisBook}">
+                            <button class="btn btn-outline-secondary" disabled>📚 Bạn đang mượn cuốn này</button>
+                        </c:when>
+                        <c:when test="${hasPendingBorrow}">
+                            <button class="btn btn-outline-secondary" disabled>📩 Đã gửi yêu cầu mượn</button>
+                        </c:when>
+                        <c:otherwise>
+                            <form method="post" action="${pageContext.request.contextPath}/reader/borrow/request" class="d-flex gap-2 flex-wrap">
+                                <input type="hidden" name="bookId" value="${book.bookId}">
+                                <input class="form-control" style="min-width: 240px" name="note" placeholder="Ghi chú (tuỳ chọn)" />
+                                <button class="btn btn-primary" type="submit">📩 Yêu cầu mượn</button>
+                            </form>
+                        </c:otherwise>
+                    </c:choose>
                 </c:if>
 
                 <a class="btn btn-warning" href="${pageContext.request.contextPath}/books">Xem thêm sách</a>
             </div>
 
-            <c:if test="${!isReader}">
-                <div class="alert alert-light border mt-3">
-                    Đăng nhập để dùng tính năng <strong>Yêu thích</strong> và <strong>Mượn sách</strong>.
-                </div>
+            <c:if test="${param.borrowRequested == '1'}">
+                <div class="alert alert-success mt-3">Đã gửi yêu cầu mượn. Vui lòng chờ Librarian duyệt.</div>
+            </c:if>
+            <c:if test="${param.borrowError == '1'}">
+                <div class="alert alert-danger mt-3">Không thể gửi yêu cầu mượn (lỗi hệ thống). Thử lại sau.</div>
+            </c:if>
+            <c:if test="${param.alreadyBorrowing == '1'}">
+                <div class="alert alert-info mt-3">Bạn đang mượn cuốn này nên không thể gửi yêu cầu mượn mới.</div>
             </c:if>
         </div>
     </div>
@@ -187,6 +209,7 @@
                                 </div>
                                 <span class="badge bg-${q.status eq 'ANSWERED' ? 'success' : 'secondary'}">${q.status}</span>
                             </div>
+
                             <div class="mt-2">${q.questionText}</div>
 
                             <c:if test="${not empty q.answers}">
@@ -199,8 +222,21 @@
                                     </c:forEach>
                                 </div>
                             </c:if>
+
                             <c:if test="${empty q.answers}">
                                 <div class="mt-2 text-muted small">Chưa có trả lời.</div>
+
+                                <!-- Librarian only: answer directly here -->
+                                <c:if test="${isLibrarian}">
+                                    <form class="mt-3" method="post" action="${pageContext.request.contextPath}/librarian/qna/answer">
+                                        <input type="hidden" name="bookId" value="${book.bookId}" />
+                                        <input type="hidden" name="questionId" value="${q.questionId}" />
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <input class="form-control" name="answer" placeholder="Librarian trả lời tại đây..." required />
+                                            <button class="btn btn-warning" type="submit">Trả lời</button>
+                                        </div>
+                                    </form>
+                                </c:if>
                             </c:if>
                         </div>
                     </c:forEach>
@@ -210,8 +246,6 @@
     </div>
 
 </div>
-
-<jsp:include page="/include/reader/footer.jsp"/>
 
 </body>
 </html>

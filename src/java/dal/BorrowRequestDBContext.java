@@ -222,4 +222,109 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
             e.printStackTrace();
         }
     }
+
+    // =========================
+    // Reader-side helpers
+    // =========================
+
+    /**
+     * Reader đã có request PENDING cho book này chưa?
+     */
+    public boolean hasPendingForBook(int readerId, int bookId) {
+        String sql = "SELECT TOP 1 r.request_id "
+                + "FROM Borrow_Request r "
+                + "INNER JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
+                + "WHERE r.reader_id = ? AND r.status = N'PENDING' AND i.book_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ps.setInt(2, bookId);
+            ResultSet rs = ps.executeQuery();
+            return rs.next();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Tạo request mượn cho 1 cuốn sách (quantity=1).
+     * @return request_id nếu thành công, null nếu lỗi.
+     */
+    public Integer createSingleBookRequest(int readerId, int bookId, String note) {
+        try {
+            connection.setAutoCommit(false);
+
+            String insHead = "INSERT INTO Borrow_Request (reader_id, status, requested_at, note) "
+                    + "OUTPUT INSERTED.request_id "
+                    + "VALUES (?, N'PENDING', SYSDATETIME(), ?)";
+
+            int requestId;
+            try (PreparedStatement ps = connection.prepareStatement(insHead)) {
+                ps.setInt(1, readerId);
+                ps.setString(2, note);
+                ResultSet rs = ps.executeQuery();
+                rs.next();
+                requestId = rs.getInt(1);
+            }
+
+            String insItem = "INSERT INTO Borrow_Request_Item (request_id, book_id, quantity) VALUES (?, ?, 1)";
+            try (PreparedStatement ps = connection.prepareStatement(insItem)) {
+                ps.setInt(1, requestId);
+                ps.setInt(2, bookId);
+                ps.executeUpdate();
+            }
+
+            connection.commit();
+            connection.setAutoCommit(true);
+            return requestId;
+
+        } catch (Exception e) {
+            try {
+                connection.rollback();
+                connection.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Đếm tổng số sách (theo request item) mà reader đã từng gửi request.
+     */
+    public int countRequestedItemsByReader(int readerId) {
+        String sql =
+                "SELECT COUNT(*) "
+                + "FROM Borrow_Request r "
+                + "INNER JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
+                + "WHERE r.reader_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Đếm số sách (theo request item) đang PENDING.
+     */
+    public int countPendingRequestedItemsByReader(int readerId) {
+        String sql =
+                "SELECT COUNT(*) "
+                + "FROM Borrow_Request r "
+                + "INNER JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
+                + "WHERE r.reader_id = ? AND r.status = N'PENDING'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }
