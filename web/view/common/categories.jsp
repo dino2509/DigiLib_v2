@@ -9,7 +9,7 @@
 </head>
 <body>
 
-<jsp:include page="/include/reader/header.jsp"/>
+<jsp:include page="/include/common/navbar.jsp"/>
 
 <div class="container mt-4">
     <h4 class="mb-3">🏷️ Thể loại</h4>
@@ -32,7 +32,7 @@
                             </div>
                             <div class="card-footer bg-white">
                                 <a class="btn btn-sm btn-warning"
-                                   href="${pageContext.request.contextPath}/reader/books?categoryId=${c.category_id}">
+                                   href="${pageContext.request.contextPath}/books?categoryId=${c.category_id}">
                                     Xem sách
                                 </a>
                             </div>

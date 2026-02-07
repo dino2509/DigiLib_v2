@@ -19,7 +19,7 @@
 
 <body>
 
-<jsp:include page="/include/reader/header.jsp"/>
+<jsp:include page="/include/common/navbar.jsp"/>
 
 <div class="container mt-4">
 
@@ -74,7 +74,7 @@
                 <div class="list-group shadow-sm">
                     <c:forEach var="h" items="${continueReading}">
                         <a class="list-group-item list-group-item-action d-flex align-items-center gap-3"
-                           href="${pageContext.request.contextPath}/reader/books/detail?id=${h.book.bookId}">
+                           href="${pageContext.request.contextPath}/books/detail?id=${h.book.bookId}">
                             <img class="mini-cover"
                                  src="${empty h.book.coverUrl ? 'https://via.placeholder.com/64x84?text=No+Cover' : h.book.coverUrl}"
                                  alt="${h.book.title}">
@@ -100,7 +100,7 @@
     <div class="mt-4">
         <div class="d-flex justify-content-between align-items-center">
             <h4 class="mb-3">✨ Gợi ý cho bạn</h4>
-            <a href="${pageContext.request.contextPath}/reader/books" class="small">Xem tất cả</a>
+            <a href="${pageContext.request.contextPath}/books" class="small">Xem tất cả</a>
         </div>
 
         <div class="row">
@@ -128,7 +128,7 @@
                         </div>
 
                         <div class="card-footer text-center bg-white">
-                            <a href="${pageContext.request.contextPath}/reader/books/detail?id=${book.bookId}"
+                            <a href="${pageContext.request.contextPath}/books/detail?id=${book.bookId}"
                                class="btn btn-sm btn-warning">
                                 Xem chi tiết
                             </a>

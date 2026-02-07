@@ -11,7 +11,7 @@
 </head>
 <body>
 
-<jsp:include page="/include/reader/header.jsp"/>
+<jsp:include page="/include/common/navbar.jsp"/>
 
 <div class="profile-wrapper">
 

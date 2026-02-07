@@ -543,21 +543,23 @@ public class BookDBContext extends DBContext<Book> {
         ArrayList<Book> books = new ArrayList<>();
 
         String sql = """
-        SELECT 
-            b.book_id,
-            b.title,
-            b.price,
-            b.status,
-            b.created_at,
-            a.author_id,
-            a.author_name,
-            c.category_id,
-            c.category_name
-        FROM Book b
-        LEFT JOIN Author a ON b.author_id = a.author_id
-        LEFT JOIN Category c ON b.category_id = c.category_id
-        WHERE 1 = 1
-    """;
+    SELECT 
+        b.book_id,
+        b.title,
+        b.price,
+        b.currency,
+        b.status,
+        b.created_at,
+        b.cover_url,
+        a.author_id,
+        a.author_name,
+        c.category_id,
+        c.category_name
+    FROM Book b
+    LEFT JOIN Author a ON b.author_id = a.author_id
+    LEFT JOIN Category c ON b.category_id = c.category_id
+    WHERE 1 = 1
+""";
 
         if (keyword != null && !keyword.isEmpty()) {
             sql += " AND b.title LIKE ? ";
@@ -573,9 +575,9 @@ public class BookDBContext extends DBContext<Book> {
         }
 
         sql += """
-        ORDER BY b.book_id ASC
-        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-    """;
+    ORDER BY b.book_id ASC
+    OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+""";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
@@ -603,8 +605,10 @@ public class BookDBContext extends DBContext<Book> {
                 b.setBookId(rs.getInt("book_id"));
                 b.setTitle(rs.getString("title"));
                 b.setPrice(rs.getBigDecimal("price"));
+                b.setCurrency(rs.getString("currency"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setCoverUrl(rs.getString("cover_url")); // ✅ FIX ẢNH
 
                 Author a = new Author();
                 a.setAuthor_id(rs.getInt("author_id"));

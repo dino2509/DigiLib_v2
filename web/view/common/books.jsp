@@ -1,13 +1,12 @@
-<%@ page contentType="text/html; charset=UTF-8" language="java" %>
-<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <!DOCTYPE html>
 <html lang="vi">
-    <head>
-        <meta charset="UTF-8">
-        <title>Digital Library - Trang chủ</title>
-
-        <style>
+<head>
+    <title>Books - DigiLib</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <style>
             :root {
                 --primary: #ff7a18;
                 --primary-dark: #e8650f;
@@ -24,37 +23,6 @@
                 font-family: "Segoe UI", Arial, sans-serif;
                 background-color: var(--bg);
                 color: var(--text);
-            }
-
-            /* ===== HEADER ===== */
-            header {
-                background: var(--primary);
-                color: white;
-                padding: 14px 40px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            }
-
-            header h2 {
-                margin: 0;
-                font-size: 22px;
-            }
-
-            nav {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
-
-            nav a {
-                color: white;
-                text-decoration: none;
-                font-weight: 500;
-            }
-
-            nav a:hover {
-                text-decoration: underline;
             }
 
             /* ===== SEARCH ===== */
@@ -102,19 +70,6 @@
                 opacity: 0.95;
             }
 
-            /* ===== CONTAINER ===== */
-            .container {
-                padding: 50px 60px;
-            }
-
-            .container h2 {
-                color: var(--primary-dark);
-                margin-bottom: 30px;
-                text-align: center;
-                font-size: 28px;
-            }
-
-            /* ===== BOOK LIST ===== */
             .book-list {
                 display: grid;
                 grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -196,40 +151,46 @@
                 }
             }
         </style>
-    </head>
+</head>
+<body>
 
-    <body>
+<jsp:include page="/include/common/navbar.jsp"/>
 
-        <header>
-            <h2>📚 Digital Library</h2>
+<div class="container mt-4">
 
-            <nav>
-                <a href="${pageContext.request.contextPath}/home">Trang chủ</a>
-                <a href="${pageContext.request.contextPath}/books">Sách</a>
-                <a href="${pageContext.request.contextPath}/login">Đăng nhập</a>
-                <a href="${pageContext.request.contextPath}/register">Đăng ký</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">📚 Danh sách sách</h4>
+        <div class="text-muted small">Tổng: ${total}</div>
+    </div>
 
-                <form class="search-box"
-                      action="${pageContext.request.contextPath}/home/search"
-                      method="get">
-                    <input type="text" name="keyword"
-                           placeholder="Tìm sách..."
-                           value="${param.keyword}">
-                    <button type="submit">🔍</button>
-                </form>
-            </nav>
-        </header>
+    <form class="row g-2 mb-3" action="${pageContext.request.contextPath}/books" method="get">
+        <div class="col-md-5">
+            <input class="form-control" name="q" value="${q}" placeholder="Tìm theo tên sách...">
+        </div>
 
-        <section class="banner">
-            <h1>Thư viện số dành cho mọi người</h1>
-            <p>Khám phá • Đọc online • Mượn sách dễ dàng</p>
-        </section>
+        <div class="col-md-4">
+            <select class="form-select" name="categoryId">
+                <option value="">-- Thể loại --</option>
+                <c:forEach var="c" items="${categories}">
+                    <option value="${c.category_id}" ${c.category_id == categoryId ? 'selected' : ''}>
+                        ${c.category_name}
+                    </option>
+                </c:forEach>
+            </select>
+        </div>
 
-        <div class="container">
-            <h2>Sách nổi bật</h2>
+        <div class="col-md-3 d-grid">
+            <button class="btn btn-warning">Lọc / Tìm</button>
+        </div>
+    </form>
 
+    <c:choose>
+        <c:when test="${empty books}">
+            <div class="alert alert-light border">Không có sách phù hợp.</div>
+        </c:when>
+        <c:otherwise>
             <div class="book-list">
-                <c:forEach items="${books}" var="b">
+                <c:forEach var="b" items="${books}">
                     <div class="book-card">
                         <img class="card-img-top book-cover"
                              src="${pageContext.request.contextPath}/img/book/${empty b.coverUrl 
@@ -251,13 +212,28 @@
 
                         <a href="books/detail?id=${b.bookId}">Xem chi tiết</a>
                     </div>
+                
                 </c:forEach>
             </div>
-        </div>
 
-        <footer>
-            <p>© 2026 Digital Library | JSP & Servlet</p>
-        </footer>
+            <c:if test="${totalPages > 1}">
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        <c:forEach begin="1" end="${totalPages}" var="p">
+                            <li class="page-item ${p == page ? 'active' : ''}">
+                                <a class="page-link"
+                                   href="${pageContext.request.contextPath}/books?q=${q}&categoryId=${categoryId}&page=${p}">
+                                    ${p}
+                                </a>
+                            </li>
+                        </c:forEach>
+                    </ul>
+                </nav>
+            </c:if>
+        </c:otherwise>
+    </c:choose>
 
-    </body>
+</div>
+
+</body>
 </html>

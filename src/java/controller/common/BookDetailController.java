@@ -1,4 +1,4 @@
-package controller.reader;
+package controller.common;
 
 import dal.BookDBContext;
 import dal.FavoriteDBContext;
@@ -12,43 +12,43 @@ import java.io.IOException;
 import model.Book;
 import model.Reader;
 
-@WebServlet(urlPatterns = "/reader/books/detail")
+@WebServlet(urlPatterns = "/books/detail")
 public class BookDetailController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("user") == null
-                || !(session.getAttribute("user") instanceof Reader)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-
-        Reader reader = (Reader) session.getAttribute("user");
-
         int id;
         try {
             id = Integer.parseInt(req.getParameter("id"));
         } catch (Exception e) {
-            resp.sendRedirect(req.getContextPath() + "/reader/books");
+            resp.sendRedirect(req.getContextPath() + "/books");
             return;
         }
 
         BookDBContext bookDAO = new BookDBContext();
-        FavoriteDBContext favDAO = new FavoriteDBContext();
-
         Book book = bookDAO.get(id);
         if (book == null) {
-            resp.sendRedirect(req.getContextPath() + "/reader/books");
+            resp.sendRedirect(req.getContextPath() + "/books");
             return;
         }
 
-        boolean isFavorite = favDAO.isFavorite(reader.getReaderId(), id);
+        // Nếu là Reader => check favorite, còn Guest => không cần
+        boolean isReader = false;
+        boolean isFavorite = false;
+
+        HttpSession session = req.getSession(false);
+        if (session != null && session.getAttribute("user") instanceof Reader) {
+            isReader = true;
+            Reader reader = (Reader) session.getAttribute("user");
+            FavoriteDBContext favDAO = new FavoriteDBContext();
+            isFavorite = favDAO.isFavorite(reader.getReaderId(), id);
+        }
 
         req.setAttribute("book", book);
+        req.setAttribute("isReader", isReader);
         req.setAttribute("isFavorite", isFavorite);
 
-        req.getRequestDispatcher("/view/reader/book-detail.jsp").forward(req, resp);
+        req.getRequestDispatcher("/view/common/book-detail.jsp").forward(req, resp);
     }
 }

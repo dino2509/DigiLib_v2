@@ -13,6 +13,7 @@ import model.FavoriteItem;
 import model.Reader;
 
 @WebServlet(urlPatterns = "/reader/favorites")
+
 public class FavoritesController extends HttpServlet {
 
     @Override

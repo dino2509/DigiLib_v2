@@ -1,4 +1,4 @@
-package controller.reader;
+package controller.common;
 
 import dal.BookDBContext;
 import dal.CategoryDBContext;
@@ -7,27 +7,18 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import model.Book;
 import model.Category;
-import model.Reader;
 
-@WebServlet(urlPatterns = "/reader/books")
+@WebServlet(urlPatterns = "/books")
 public class BooksController extends HttpServlet {
 
     private static final int PAGE_SIZE = 12;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-        HttpSession session = req.getSession(false);
-        if (session == null || session.getAttribute("user") == null
-                || !(session.getAttribute("user") instanceof Reader)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
 
         String q = req.getParameter("q");
         Integer categoryId = parseIntOrNull(req.getParameter("categoryId"));
@@ -59,7 +50,7 @@ public class BooksController extends HttpServlet {
         req.setAttribute("total", total);
         req.setAttribute("totalPages", totalPages);
 
-        req.getRequestDispatcher("/view/reader/books.jsp").forward(req, resp);
+        req.getRequestDispatcher("/view/common/books.jsp").forward(req, resp);
     }
 
     private Integer parseIntOrNull(String s) {

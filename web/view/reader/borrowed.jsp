@@ -13,7 +13,7 @@
 </head>
 <body>
 
-<jsp:include page="/include/reader/header.jsp"/>
+<jsp:include page="/include/common/navbar.jsp"/>
 
 <div class="container mt-4">
     <h4 class="mb-3">📌 Sách đang mượn</h4>
@@ -42,7 +42,7 @@
                         </div>
 
                         <a class="btn btn-sm btn-warning"
-                           href="${pageContext.request.contextPath}/reader/books/detail?id=${it.book.bookId}">
+                           href="${pageContext.request.contextPath}/books/detail?id=${it.book.bookId}">
                             Chi tiết
                         </a>
                     </div>
