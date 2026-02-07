@@ -235,5 +235,7 @@
 
 </div>
 
+<jsp:include page="/include/reader/footer.jsp"/>
+
 </body>
 </html>

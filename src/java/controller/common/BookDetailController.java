@@ -2,6 +2,7 @@ package controller.common;
 
 import dal.BookDBContext;
 import dal.FavoriteDBContext;
+import dal.BookQADBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -9,7 +10,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.ArrayList;
 import model.Book;
+import model.BookQuestion;
 import model.Reader;
 
 @WebServlet(urlPatterns = "/books/detail")
@@ -33,7 +36,6 @@ public class BookDetailController extends HttpServlet {
             return;
         }
 
-        // Nếu là Reader => check favorite, còn Guest => không cần
         boolean isReader = false;
         boolean isFavorite = false;
 
@@ -48,6 +50,16 @@ public class BookDetailController extends HttpServlet {
         req.setAttribute("book", book);
         req.setAttribute("isReader", isReader);
         req.setAttribute("isFavorite", isFavorite);
+
+        // Gợi ý sách khác
+        if (book.getCategory() != null) {
+            req.setAttribute("recommendedBooks", bookDAO.listRecommended(id, book.getCategory().getCategory_id(), 8));
+        }
+
+        // Q&A theo sách
+        BookQADBContext qaDAO = new BookQADBContext();
+        ArrayList<BookQuestion> qas = qaDAO.listByBook(id);
+        req.setAttribute("qas", qas);
 
         req.getRequestDispatcher("/view/common/book-detail.jsp").forward(req, resp);
     }

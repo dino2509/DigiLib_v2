@@ -7,6 +7,11 @@
     .navbar-orange { background-color: #ff7a18; }
     .navbar-orange .nav-link, .navbar-orange .navbar-brand { color: #fff !important; font-weight: 500; }
     .navbar-orange .nav-link:hover { color: #ffe3cc !important; }
+
+    /* Fix: tránh chữ ở menu bị xuống dòng ("Thể loại", "Đang mượn"...) */
+    .navbar-orange .nav-link { white-space: nowrap; }
+    .navbar-orange .navbar-nav { flex-wrap: nowrap; }
+
     .dropdown-menu a:hover { background-color: #fff0e5; }
     .search-input { width: 320px; }
     @media (max-width: 992px) { .search-input { width: 100%; } }

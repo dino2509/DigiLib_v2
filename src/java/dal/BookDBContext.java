@@ -641,4 +641,36 @@ public class BookDBContext extends DBContext<Book> {
             e.printStackTrace();
         }
     }
+
+    /**
+     * Gợi ý sách khác (ưu tiên cùng thể loại), loại trừ chính nó.
+     */
+    public ArrayList<Book> listRecommended(int bookId, int categoryId, int limit) {
+        ArrayList<Book> list = new ArrayList<>();
+        String sql = "SELECT TOP (?) b.book_id, b.title, b.cover_url, b.currency, b.price "
+                + "FROM Book b "
+                + "WHERE b.book_id <> ? "
+                + "AND b.category_id = ? "
+                + "ORDER BY NEWID()";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, Math.max(1, limit));
+            ps.setInt(2, bookId);
+            ps.setInt(3, categoryId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                b.setCurrency(rs.getString("currency"));
+                b.setPrice(rs.getBigDecimal("price"));
+                list.add(b);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
 }

@@ -30,6 +30,13 @@
 
         <!-- INFO -->
         <div class="profile-body">
+            <c:if test="${param.updated eq '1'}">
+                <div class="alert alert-success">Cập nhật thông tin thành công.</div>
+            </c:if>
+            <c:if test="${not empty error}">
+                <div class="alert alert-danger">${error}</div>
+            </c:if>
+
             <div class="info-row">
                 <span class="label">📧 Email</span>
                 <span class="value">${reader.email}</span>
@@ -61,6 +68,31 @@
                     </c:choose>
                 </span>
             </div>
+
+            <hr/>
+
+            <h5 class="mb-3">Sửa thông tin</h5>
+            <form method="post" action="${pageContext.request.contextPath}/reader/profile" class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Họ và tên</label>
+                    <input class="form-control" name="fullName" value="${reader.fullName}" required />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Số điện thoại</label>
+                    <input class="form-control" name="phone" value="${reader.phone}" placeholder="VD: 0987..." />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Avatar URL</label>
+                    <input class="form-control" name="avatar" value="${reader.avatar}" placeholder="https://..." />
+                </div>
+
+                <div class="col-12 d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+                    <a class="btn btn-outline-secondary" href="${pageContext.request.contextPath}/reader/profile">Huỷ</a>
+                </div>
+            </form>
         </div>
 
     </div>

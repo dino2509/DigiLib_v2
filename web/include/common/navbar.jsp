@@ -2,12 +2,16 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
     .navbar-orange { background-color: #ff7a18; }
     .navbar-orange .nav-link, .navbar-orange .navbar-brand { color: #fff !important; font-weight: 500; }
     .navbar-orange .nav-link:hover { color: #ffe3cc !important; }
+
+    /* Fix: tránh chữ ở menu bị xuống dòng ("Thể loại", "Đang mượn"...) */
+    .navbar-orange .nav-link { white-space: nowrap; }
+    .navbar-orange .navbar-nav { flex-wrap: nowrap; }
+
     .search-input { width: 340px; }
     @media (max-width: 992px) { .search-input { width: 100%; } }
 </style>
@@ -33,7 +37,7 @@
             </form>
 
             <!-- Menu -->
-            <ul class="navbar-nav me-auto order-lg-2 order-1">
+            <ul class="navbar-nav me-auto order-lg-2 order-1 flex-nowrap">
                 <!-- /books -->
                 <li class="nav-item">
                     <a class="nav-link" href="${pageContext.request.contextPath}/books">Sách</a>
@@ -56,7 +60,7 @@
             </ul>
 
             <!-- Right side: Guest Login/Register OR Reader Profile dropdown -->
-            <div class="d-flex align-items-center gap-2 order-lg-3 order-3">
+            <div class="d-flex align-items-center gap-2 order-lg-3 order-3 flex-nowrap">
                 <c:choose>
                     <c:when test="${sessionScope.user == null}">
                         <!-- Guest: /login, /register -->
