@@ -90,6 +90,77 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         return items;
     }
 
+    /**
+     * Lịch sử mượn sách theo filter:
+     * - all: tất cả
+     * - returned: đã trả
+     * - borrowing: đang mượn (chưa trả và chưa quá hạn)
+     * - overdue: quá hạn (chưa trả và due_date < GETDATE())
+     */
+    public ArrayList<BorrowedBookItem> listHistoryByReader(int readerId, String filter) {
+        ArrayList<BorrowedBookItem> items = new ArrayList<>();
+
+        if (filter == null) {
+            filter = "all";
+        }
+
+        String where = "";
+        switch (filter) {
+            case "returned" -> where = " AND bi.returned_at IS NOT NULL ";
+            case "borrowing" -> where = " AND bi.returned_at IS NULL AND bi.due_date >= GETDATE() ";
+            case "overdue" -> where = " AND bi.returned_at IS NULL AND bi.due_date < GETDATE() ";
+            case "all" -> where = "";
+            default -> where = "";
+        }
+
+        String sql =
+                "SELECT "
+                + " br.borrow_id, br.status AS borrow_status, br.borrow_date, "
+                + " bi.borrow_item_id, bi.due_date, bi.returned_at, bi.status AS borrow_item_status, "
+                + " bc.copy_id, bc.copy_code, "
+                + " b.book_id, b.title, b.cover_url, b.currency, b.price "
+                + "FROM Borrow br "
+                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
+                + "INNER JOIN BookCopy bc ON bc.copy_id = bi.copy_id "
+                + "INNER JOIN Book b ON b.book_id = bc.book_id "
+                + "WHERE br.reader_id = ? "
+                + where
+                + "ORDER BY br.borrow_date DESC, bi.borrow_item_id DESC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                BorrowedBookItem it = new BorrowedBookItem();
+                it.setBorrowId(rs.getInt("borrow_id"));
+                it.setBorrowStatus(rs.getString("borrow_status"));
+                it.setBorrowDate(rs.getTimestamp("borrow_date"));
+
+                it.setBorrowItemId(rs.getInt("borrow_item_id"));
+                it.setDueDate(rs.getTimestamp("due_date"));
+                it.setReturnedAt(rs.getTimestamp("returned_at"));
+                it.setBorrowItemStatus(rs.getString("borrow_item_status"));
+
+                it.setCopyId(rs.getInt("copy_id"));
+                it.setCopyCode(rs.getString("copy_code"));
+
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                b.setCurrency(rs.getString("currency"));
+                b.setPrice(rs.getBigDecimal("price"));
+                it.setBook(b);
+
+                items.add(it);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return items;
+    }
+
     public int countActiveBorrowedItems(int readerId) {
         String sql =
                 "SELECT COUNT(*) "
@@ -119,6 +190,72 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
             ps.setInt(2, days);
             ResultSet rs = ps.executeQuery();
             if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Đếm số sách quá hạn (chưa trả và due_date < GETDATE()).
+     */
+    public int countOverdueBorrowedItems(int readerId) {
+        String sql =
+                "SELECT COUNT(*) "
+                + "FROM Borrow br "
+                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
+                + "WHERE br.reader_id = ? "
+                + "AND bi.returned_at IS NULL "
+                + "AND bi.due_date < GETDATE()";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Đếm tổng số Borrow_Item của reader (bao gồm đã trả/đang mượn).
+     */
+    public int countAllBorrowedItems(int readerId) {
+        String sql =
+                "SELECT COUNT(*) "
+                + "FROM Borrow br "
+                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
+                + "WHERE br.reader_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Đếm số Borrow_Item đã trả.
+     */
+    public int countReturnedBorrowedItems(int readerId) {
+        String sql =
+                "SELECT COUNT(*) "
+                + "FROM Borrow br "
+                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
+                + "WHERE br.reader_id = ? AND bi.returned_at IS NOT NULL";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

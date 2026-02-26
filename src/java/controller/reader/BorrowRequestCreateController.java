@@ -37,6 +37,13 @@ public class BorrowRequestCreateController extends HttpServlet {
 
         // Nếu đang mượn rồi -> không tạo request
         BorrowDBContext borrowDAO = new BorrowDBContext();
+
+        // Nếu đang có sách quá hạn -> không cho tạo request mới
+        if (borrowDAO.countOverdueBorrowedItems(reader.getReaderId()) > 0) {
+            resp.sendRedirect(req.getContextPath() + "/books/detail?id=" + bookId + "&hasOverdue=1");
+            return;
+        }
+
         if (borrowDAO.isBookCurrentlyBorrowed(reader.getReaderId(), bookId)) {
             resp.sendRedirect(req.getContextPath() + "/books/detail?id=" + bookId + "&alreadyBorrowing=1");
             return;

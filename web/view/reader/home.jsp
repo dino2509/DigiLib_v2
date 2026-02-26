@@ -14,6 +14,7 @@
         .mini-cover { width: 64px; height: 84px; object-fit: cover; border-radius: 6px; }
         .stat-card { border-left: 6px solid #ff7a18; }
         .muted { color: #6c757d; }
+        .nowrap { white-space: nowrap; }
     </style>
 </head>
 
@@ -31,43 +32,117 @@
 
     <!-- Stats -->
     <div class="row g-3 mt-1">
+
         <div class="col-md-3">
-            <div class="card stat-card shadow-sm">
+            <div class="card stat-card shadow-sm h-100">
                 <div class="card-body">
                     <div class="muted">Sách đang mượn</div>
                     <div class="fs-3 fw-bold">${borrowedCount}</div>
-                    <a class="small" href="${pageContext.request.contextPath}/reader/borrowed">Xem danh sách</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card shadow-sm">
-                <div class="card-body">
-                    <div class="muted">Sắp đến hạn (3 ngày)</div>
-                    <div class="fs-3 fw-bold">${dueSoonCount}</div>
-                    <a class="small" href="${pageContext.request.contextPath}/reader/borrowed">Kiểm tra hạn trả</a>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card stat-card shadow-sm">
-                <div class="card-body">
-                    <div class="muted">Tổng sách đã đọc</div>
-                    <div class="fs-3 fw-bold">${totalRead}</div>
-                    <span class="small muted">theo Reading_History</span>
+                    <a class="small" href="${pageContext.request.contextPath}/reader/borrowed?filter=borrowing">Xem danh sách</a>
                 </div>
             </div>
         </div>
 
         <div class="col-md-3">
-            <div class="card stat-card shadow-sm">
+            <div class="card stat-card shadow-sm h-100">
                 <div class="card-body">
-                    <div class="muted">Yêu cầu mượn (đang chờ)</div>
-                    <div class="fs-3 fw-bold">${pendingRequestedCount}</div>
-                    <div class="small muted">Tổng đã gửi: ${totalRequestedCount}</div>
+                    <div class="muted">Sách quá hạn</div>
+                    <div class="fs-3 fw-bold ${overdueCount > 0 ? 'text-danger' : ''}">${overdueCount}</div>
+                    <a class="small" href="${pageContext.request.contextPath}/reader/borrowed?filter=overdue">Xem sách quá hạn</a>
                 </div>
             </div>
         </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="muted">Sắp đến hạn (3 ngày)</div>
+                    <div class="fs-3 fw-bold">${dueSoonCount}</div>
+                    <a class="small" href="${pageContext.request.contextPath}/reader/borrowed?filter=borrowing">Kiểm tra hạn trả</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card stat-card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="muted">Tổng số sách đã đọc</div>
+                    <div class="fs-3 fw-bold">${totalRead}</div>
+                    <a class="small" href="${pageContext.request.contextPath}/reader/borrowed?filter=all">Xem lịch sử mượn</a>
+                    <div class="small muted mt-1">Tổng lượt mượn: ${totalBorrowedItems}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card stat-card shadow-sm">
+                <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="muted">Yêu cầu mượn (đang chờ)</div>
+                        <div class="fs-4 fw-bold mb-0">${pendingRequestedCount}</div>
+                        <div class="small muted">Tổng đã gửi (theo items): ${totalRequestedCount}</div>
+                    </div>
+                    <a class="btn btn-sm btn-outline-secondary" href="#borrow-requests">Xem lịch sử yêu cầu</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Borrow request history -->
+    <div class="mt-4" id="borrow-requests">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <h4 class="mb-0">📩 Lịch sử yêu cầu mượn đã gửi</h4>
+            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/reader/borrowed?filter=all">Mở lịch sử mượn</a>
+        </div>
+
+        <c:choose>
+            <c:when test="${empty recentRequests}">
+                <div class="alert alert-light border mt-3">Bạn chưa gửi yêu cầu mượn nào.</div>
+            </c:when>
+            <c:otherwise>
+                <div class="accordion mt-3" id="accRequests">
+                    <c:forEach items="${recentRequests}" var="r" varStatus="st">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="h${st.index}">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#c${st.index}">
+                                    <span class="me-2 nowrap">#${r.requestId}</span>
+                                    <span class="me-2">•</span>
+                                    <span class="me-2 nowrap"><fmt:formatDate value="${r.requestedAt}" pattern="dd/MM/yyyy HH:mm"/></span>
+                                    <span class="me-2">•</span>
+                                    <c:choose>
+                                        <c:when test="${r.status eq 'PENDING'}"><span class="badge bg-warning text-dark">PENDING</span></c:when>
+                                        <c:when test="${r.status eq 'APPROVED'}"><span class="badge bg-success">APPROVED</span></c:when>
+                                        <c:when test="${r.status eq 'REJECTED'}"><span class="badge bg-danger">REJECTED</span></c:when>
+                                        <c:otherwise><span class="badge bg-secondary">${r.status}</span></c:otherwise>
+                                    </c:choose>
+                                </button>
+                            </h2>
+                            <div id="c${st.index}" class="accordion-collapse collapse" data-bs-parent="#accRequests">
+                                <div class="accordion-body">
+                                    <c:if test="${not empty r.note}">
+                                        <div class="mb-2"><span class="fw-semibold">Ghi chú:</span> ${r.note}</div>
+                                    </c:if>
+                                    <c:if test="${not empty r.decisionNote}">
+                                        <div class="mb-2"><span class="fw-semibold">Phản hồi:</span> ${r.decisionNote}</div>
+                                    </c:if>
+
+                                    <div class="fw-semibold mb-2">Danh sách sách:</div>
+                                    <ul class="mb-0">
+                                        <c:forEach items="${r.items}" var="it">
+                                            <li>
+                                                <a href="${pageContext.request.contextPath}/books/detail?id=${it.bookId}">${it.bookTitle}</a>
+                                                <span class="muted">(x${it.quantity})</span>
+                                            </li>
+                                        </c:forEach>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </c:forEach>
+                </div>
+            </c:otherwise>
+        </c:choose>
     </div>
 
     <!-- Continue Reading -->

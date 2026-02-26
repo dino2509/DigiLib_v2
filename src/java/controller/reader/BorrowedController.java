@@ -28,10 +28,24 @@ public class BorrowedController extends HttpServlet {
 
         Reader reader = (Reader) session.getAttribute("user");
 
+        String filter = req.getParameter("filter");
+        if (filter == null || filter.trim().isEmpty()) {
+            filter = "all";
+        }
+
+        // normalize
+        filter = filter.trim().toLowerCase();
+        switch (filter) {
+            case "all", "returned", "borrowing", "overdue" -> {
+            }
+            default -> filter = "all";
+        }
+
         BorrowDBContext borrowDAO = new BorrowDBContext();
-        ArrayList<BorrowedBookItem> items = borrowDAO.listActiveByReader(reader.getReaderId());
+        ArrayList<BorrowedBookItem> items = borrowDAO.listHistoryByReader(reader.getReaderId(), filter);
 
         req.setAttribute("borrowedItems", items);
+        req.setAttribute("filter", filter);
         req.getRequestDispatcher("/view/reader/borrowed.jsp").forward(req, resp);
     }
 }

@@ -327,4 +327,32 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
         }
         return 0;
     }
+
+    /**
+     * Lấy danh sách request gần đây của reader (kèm items) để hiển thị lịch sử ở /reader/home.
+     */
+    public ArrayList<BorrowRequest> listRecentWithItemsByReader(int readerId, int limit) {
+        ArrayList<BorrowRequest> list = new ArrayList<>();
+        if (limit <= 0) {
+            limit = 10;
+        }
+
+        String sql = "SELECT TOP (?) request_id FROM Borrow_Request WHERE reader_id = ? ORDER BY requested_at DESC";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ps.setInt(2, readerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int requestId = rs.getInt("request_id");
+                BorrowRequest br = getWithItems(requestId);
+                if (br != null) {
+                    list.add(br);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 }

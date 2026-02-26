@@ -50,9 +50,16 @@ public class HomeController extends HttpServlet {
         int dueSoonCount = borrowDAO.countDueSoon(reader.getReaderId(), 3);
         int totalRead = historyDAO.countDistinctBooksRead(reader.getReaderId());
 
+        // Borrow history stats
+        int overdueCount = borrowDAO.countOverdueBorrowedItems(reader.getReaderId());
+        int totalBorrowedItems = borrowDAO.countAllBorrowedItems(reader.getReaderId());
+
         // Borrow request stats
         int pendingRequestedCount = requestDAO.countPendingRequestedItemsByReader(reader.getReaderId());
         int totalRequestedCount = requestDAO.countRequestedItemsByReader(reader.getReaderId());
+
+        // Recent borrow requests (history)
+        List<model.BorrowRequest> recentRequests = requestDAO.listRecentWithItemsByReader(reader.getReaderId(), 10);
 
         // Recommended (tạm)
         List<Book> recommended = bookDAO.listAll();
@@ -66,8 +73,11 @@ public class HomeController extends HttpServlet {
         req.setAttribute("borrowedCount", borrowedCount);
         req.setAttribute("dueSoonCount", dueSoonCount);
         req.setAttribute("totalRead", totalRead);
+        req.setAttribute("overdueCount", overdueCount);
+        req.setAttribute("totalBorrowedItems", totalBorrowedItems);
         req.setAttribute("pendingRequestedCount", pendingRequestedCount);
         req.setAttribute("totalRequestedCount", totalRequestedCount);
+        req.setAttribute("recentRequests", recentRequests);
         req.setAttribute("recommended", recommended);
 
         // ===== 4. FORWARD JSP =====

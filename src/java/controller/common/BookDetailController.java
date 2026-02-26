@@ -44,6 +44,7 @@ public class BookDetailController extends HttpServlet {
         boolean isFavorite = false;
         boolean hasPendingBorrow = false;
         boolean isBorrowingThisBook = false;
+        boolean hasOverdue = false;
 
         HttpSession session = req.getSession(false);
         Object user = (session == null) ? null : session.getAttribute("user");
@@ -60,6 +61,7 @@ public class BookDetailController extends HttpServlet {
 
             BorrowDBContext borrowDAO = new BorrowDBContext();
             isBorrowingThisBook = borrowDAO.isBookCurrentlyBorrowed(reader.getReaderId(), id);
+            hasOverdue = borrowDAO.countOverdueBorrowedItems(reader.getReaderId()) > 0;
         }
 
         if (user instanceof Employee) {
@@ -74,6 +76,7 @@ public class BookDetailController extends HttpServlet {
         req.setAttribute("isFavorite", isFavorite);
         req.setAttribute("hasPendingBorrow", hasPendingBorrow);
         req.setAttribute("isBorrowingThisBook", isBorrowingThisBook);
+        req.setAttribute("hasOverdue", hasOverdue);
 
         // Gợi ý sách khác
         if (book.getCategory() != null) {

@@ -119,6 +119,9 @@
 
                     <!-- Borrow request (Reader) -->
                     <c:choose>
+                        <c:when test="${hasOverdue}">
+                            <button class="btn btn-outline-danger" disabled>⛔ Bạn có sách quá hạn</button>
+                        </c:when>
                         <c:when test="${isBorrowingThisBook}">
                             <button class="btn btn-outline-secondary" disabled>📚 Bạn đang mượn cuốn này</button>
                         </c:when>
@@ -146,6 +149,9 @@
             </c:if>
             <c:if test="${param.alreadyBorrowing == '1'}">
                 <div class="alert alert-info mt-3">Bạn đang mượn cuốn này nên không thể gửi yêu cầu mượn mới.</div>
+            </c:if>
+            <c:if test="${param.hasOverdue == '1' || hasOverdue}">
+                <div class="alert alert-danger mt-3">Bạn đang có sách quá hạn. Vui lòng trả sách trước khi mượn thêm.</div>
             </c:if>
         </div>
     </div>
