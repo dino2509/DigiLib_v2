@@ -25,6 +25,16 @@
                 <div class="col-md-6">
                     <div class="card">
                         <div class="card-body">
+                            <h5 class="card-title">Quản lý sách đang cho mượn / trả sách</h5>
+                            <p class="card-text text-muted">Danh sách các sách đang mượn/quá hạn/đã trả. Có thể xác nhận trả sách trực tiếp tại đây.</p>
+                            <a class="btn btn-outline-danger" href="${pageContext.request.contextPath}/librarian/borrowed-books">Mở</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
                             <h5 class="card-title">Trả lời hỏi đáp</h5>
                             <p class="card-text text-muted">Trả lời câu hỏi Reader gửi từ /books/detail?id=...</p>
                             <a class="btn btn-outline-danger" href="${pageContext.request.contextPath}/librarian/qna">Mở</a>

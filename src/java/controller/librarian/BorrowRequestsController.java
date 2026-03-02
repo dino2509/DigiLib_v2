@@ -17,12 +17,25 @@ public class BorrowRequestsController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Employee emp = requireLibrarian(req, resp);
-        if (emp == null) return;
+        HttpSession session = req.getSession(false);
+        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return;
+        }
+        Employee emp = (Employee) session.getAttribute("user");
+        if (emp.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
+            return;
+        }
+
+        String filter = req.getParameter("filter");
+        if (filter == null || filter.trim().isEmpty()) filter = "pending";
+        filter = normalizeFilter(filter);
 
         BorrowRequestDBContext dao = new BorrowRequestDBContext();
-        ArrayList<BorrowRequest> list = dao.listPending();
+        ArrayList<BorrowRequest> list = dao.listByStatus(filter, 200);
         req.setAttribute("requests", list);
+        req.setAttribute("filter", filter);
 
         int requestId = parseInt(req.getParameter("requestId"), -1);
         if (requestId > 0) {
@@ -35,46 +48,66 @@ public class BorrowRequestsController extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Employee emp = requireLibrarian(req, resp);
-        if (emp == null) return;
+        HttpSession session = req.getSession(false);
+        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return;
+        }
+        Employee emp = (Employee) session.getAttribute("user");
+        if (emp.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
+            return;
+        }
+
+        String filter = req.getParameter("filter");
+        if (filter == null || filter.trim().isEmpty()) filter = "pending";
+        filter = normalizeFilter(filter);
 
         int requestId = parseInt(req.getParameter("requestId"), -1);
         String action = req.getParameter("action");
         String note = trimToNull(req.getParameter("decisionNote"));
 
+        int dueDays = parseInt(req.getParameter("dueDays"), 14);
+        if (dueDays < 7) dueDays = 7;
+        if (dueDays > 14) dueDays = 14;
+
         BorrowRequestDBContext dao = new BorrowRequestDBContext();
 
         if (requestId > 0 && "approve".equalsIgnoreCase(action)) {
-            boolean ok = dao.approve(requestId, emp.getEmployeeId(), note, 14);
+            boolean ok = dao.approve(requestId, emp.getEmployeeId(), note, dueDays);
             if (!ok) {
-                resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?requestId=" + requestId + "&error=not_enough_copies");
+                resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=" + filter + "&requestId=" + requestId + "&error=not_enough_copies");
                 return;
             }
+            // duyệt xong -> tự chuyển tab approved
+            resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=approved");
+            return;
         } else if (requestId > 0 && "reject".equalsIgnoreCase(action)) {
             dao.reject(requestId, emp.getEmployeeId(), note);
+            // từ chối xong -> tự chuyển tab rejected
+            resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=rejected");
+            return;
         }
 
-        resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests");
+        resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=" + filter);
     }
 
-    private Employee requireLibrarian(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        HttpSession session = req.getSession(false);
-        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return null;
+    private String normalizeFilter(String filter) {
+        filter = filter.trim().toLowerCase();
+        switch (filter) {
+            case "pending", "approved", "rejected", "all" -> {
+                return filter;
+            }
+            default -> {
+                return "pending";
+            }
         }
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return null;
-        }
-        return emp;
     }
 
     private int parseInt(String s, int def) {
         try {
             if (s == null || s.trim().isEmpty()) return def;
-            return Integer.parseInt(s);
+            return Integer.parseInt(s.trim());
         } catch (Exception e) {
             return def;
         }

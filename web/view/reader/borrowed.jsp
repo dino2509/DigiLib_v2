@@ -24,6 +24,13 @@
         <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/reader/home">← Về trang Reader</a>
     </div>
 
+    <c:if test="${param.returnRequested eq '1'}">
+        <div class="alert alert-success mt-3">Đã tạo yêu cầu trả sách. Vui lòng mang sách đến thư viện để Librarian xác nhận.</div>
+    </c:if>
+    <c:if test="${param.returnError eq '1'}">
+        <div class="alert alert-danger mt-3">Không thể tạo yêu cầu trả sách (có thể bạn đã gửi yêu cầu trước đó hoặc sách đã được trả).</div>
+    </c:if>
+
     <!-- Filters -->
     <ul class="nav nav-pills mt-3">
         <li class="nav-item">
@@ -48,6 +55,7 @@
             <div class="list-group shadow-sm mt-3">
                 <c:forEach var="it" items="${borrowedItems}">
                     <c:set var="isOverdue" value="${it.returnedAt == null and it.dueDate != null and it.dueDate.time < now.time}" />
+                    <c:set var="isPendingReturn" value="${pendingReturnBorrowItemIds != null and pendingReturnBorrowItemIds.contains(it.borrowItemId)}" />
 
                     <div class="list-group-item d-flex align-items-center gap-3">
                         <img class="mini-cover"
@@ -70,11 +78,15 @@
                                             <span class="badge bg-warning text-dark">Đang mượn</span>
                                         </c:otherwise>
                                     </c:choose>
+
+                                    <c:if test="${it.returnedAt == null and isPendingReturn}">
+                                        <span class="badge bg-info text-dark">Đã gửi yêu cầu trả</span>
+                                    </c:if>
                                 </div>
                             </div>
 
                             <div class="small muted">
-                                Copy: ${it.copyCode} • Borrow ID: ${it.borrowId}
+                                Copy: ${it.copyCode} • Borrow ID: ${it.borrowId} • BorrowItem ID: ${it.borrowItemId}
                             </div>
 
                             <div class="small">
@@ -89,10 +101,27 @@
                             </div>
                         </div>
 
-                        <a class="btn btn-sm btn-warning"
-                           href="${pageContext.request.contextPath}/books/detail?id=${it.book.bookId}">
-                            Chi tiết
-                        </a>
+                        <div class="d-flex flex-column gap-2">
+                            <a class="btn btn-sm btn-warning"
+                               href="${pageContext.request.contextPath}/books/detail?id=${it.book.bookId}">
+                                Chi tiết
+                            </a>
+
+                            <c:if test="${it.returnedAt == null}">
+                                <c:choose>
+                                    <c:when test="${isPendingReturn}">
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Đã gửi yêu cầu</button>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <form method="post" action="${pageContext.request.contextPath}/reader/return/request" class="m-0">
+                                            <input type="hidden" name="borrowItemId" value="${it.borrowItemId}"/>
+                                            <input type="hidden" name="filter" value="${filter}"/>
+                                            <button class="btn btn-sm btn-outline-danger" type="submit">Trả sách</button>
+                                        </form>
+                                    </c:otherwise>
+                                </c:choose>
+                            </c:if>
+                        </div>
                     </div>
                 </c:forEach>
             </div>

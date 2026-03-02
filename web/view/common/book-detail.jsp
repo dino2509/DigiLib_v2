@@ -89,6 +89,7 @@
                     </c:otherwise>
                 </c:choose>
                 <span class="badge bg-secondary">${book.status}</span>
+                <span class="badge bg-info text-dark">Trong kho: ${availableCopies} copy</span>
             </div>
 
             <c:if test="${not empty book.summary}">
@@ -119,8 +120,14 @@
 
                     <!-- Borrow request (Reader) -->
                     <c:choose>
+                        <c:when test="${availableCopies == 0}">
+                            <button class="btn btn-outline-secondary" disabled>📦 Hết bản sao trong kho</button>
+                        </c:when>
                         <c:when test="${hasOverdue}">
                             <button class="btn btn-outline-danger" disabled>⛔ Bạn có sách quá hạn</button>
+                        </c:when>
+                        <c:when test="${reachBorrowLimit}">
+                            <button class="btn btn-outline-danger" disabled>⛔ Bạn đang mượn ${activeBorrowCount}/3 cuốn</button>
                         </c:when>
                         <c:when test="${isBorrowingThisBook}">
                             <button class="btn btn-outline-secondary" disabled>📚 Bạn đang mượn cuốn này</button>
@@ -129,11 +136,7 @@
                             <button class="btn btn-outline-secondary" disabled>📩 Đã gửi yêu cầu mượn</button>
                         </c:when>
                         <c:otherwise>
-                            <form method="post" action="${pageContext.request.contextPath}/reader/borrow/request" class="d-flex gap-2 flex-wrap">
-                                <input type="hidden" name="bookId" value="${book.bookId}">
-                                <input class="form-control" style="min-width: 240px" name="note" placeholder="Ghi chú (tuỳ chọn)" />
-                                <button class="btn btn-primary" type="submit">📩 Yêu cầu mượn</button>
-                            </form>
+                            <a class="btn btn-primary" href="${pageContext.request.contextPath}/reader/borrow/request?bookId=${book.bookId}">📩 Yêu cầu mượn</a>
                         </c:otherwise>
                     </c:choose>
                 </c:if>
@@ -152,6 +155,12 @@
             </c:if>
             <c:if test="${param.hasOverdue == '1' || hasOverdue}">
                 <div class="alert alert-danger mt-3">Bạn đang có sách quá hạn. Vui lòng trả sách trước khi mượn thêm.</div>
+            </c:if>
+            <c:if test="${param.outOfStock == '1'}">
+                <div class="alert alert-warning mt-3">Cuốn sách này hiện không còn bản sao AVAILABLE trong kho.</div>
+            </c:if>
+            <c:if test="${param.reachBorrowLimit == '1'}">
+                <div class="alert alert-danger mt-3">Bạn đang mượn tối đa 3 cuốn cùng lúc. Vui lòng trả bớt sách để mượn thêm.</div>
             </c:if>
         </div>
     </div>

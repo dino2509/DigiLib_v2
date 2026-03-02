@@ -2,6 +2,7 @@ package controller.common;
 
 import dal.BookDBContext;
 import dal.BookQADBContext;
+import dal.BookCopyDBContext;
 import dal.BorrowDBContext;
 import dal.BorrowRequestDBContext;
 import dal.FavoriteDBContext;
@@ -45,6 +46,9 @@ public class BookDetailController extends HttpServlet {
         boolean hasPendingBorrow = false;
         boolean isBorrowingThisBook = false;
         boolean hasOverdue = false;
+        int availableCopies = 0;
+        int activeBorrowCount = 0;
+        boolean reachBorrowLimit = false;
 
         HttpSession session = req.getSession(false);
         Object user = (session == null) ? null : session.getAttribute("user");
@@ -62,13 +66,17 @@ public class BookDetailController extends HttpServlet {
             BorrowDBContext borrowDAO = new BorrowDBContext();
             isBorrowingThisBook = borrowDAO.isBookCurrentlyBorrowed(reader.getReaderId(), id);
             hasOverdue = borrowDAO.countOverdueBorrowedItems(reader.getReaderId()) > 0;
+            activeBorrowCount = borrowDAO.countActiveBorrowedItems(reader.getReaderId());
+            reachBorrowLimit = activeBorrowCount >= 3;
         }
 
         if (user instanceof Employee) {
             Employee emp = (Employee) user;
-            // roleId==2 là Librarian theo dự án của bạn
             isLibrarian = emp.getRoleId() == 2;
         }
+
+        BookCopyDBContext copyDAO = new BookCopyDBContext();
+        availableCopies = copyDAO.countAvailableByBookId(id);
 
         req.setAttribute("book", book);
         req.setAttribute("isReader", isReader);
@@ -77,13 +85,14 @@ public class BookDetailController extends HttpServlet {
         req.setAttribute("hasPendingBorrow", hasPendingBorrow);
         req.setAttribute("isBorrowingThisBook", isBorrowingThisBook);
         req.setAttribute("hasOverdue", hasOverdue);
+        req.setAttribute("availableCopies", availableCopies);
+        req.setAttribute("activeBorrowCount", activeBorrowCount);
+        req.setAttribute("reachBorrowLimit", reachBorrowLimit);
 
-        // Gợi ý sách khác
         if (book.getCategory() != null) {
             req.setAttribute("recommendedBooks", bookDAO.listRecommended(id, book.getCategory().getCategory_id(), 8));
         }
 
-        // Q&A theo sách
         BookQADBContext qaDAO = new BookQADBContext();
         ArrayList<BookQuestion> qas = qaDAO.listByBook(id);
         req.setAttribute("qas", qas);
