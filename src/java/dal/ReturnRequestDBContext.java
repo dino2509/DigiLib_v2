@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.Set;
 import model.ReturnRequest;
+import dal.ReservationDBContext;
 
 /**
  * Return Request DAO
@@ -41,11 +42,15 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
     }
     // =====================================================
 
+    // =====================================================
+    // Reader-side
+    // =====================================================
+
     public boolean hasPendingForBorrowItem(int borrowItemId) {
         String sql = "SELECT TOP 1 r.return_request_id "
                 + "FROM Return_Request r "
                 + "INNER JOIN Return_Request_Item i ON i.return_request_id = r.return_request_id "
-                + "WHERE i.borrow_item_id = ? AND r.status = N'PENDING'";
+                + "WHERE r.status = N'PENDING' AND i.borrow_item_id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, borrowItemId);
             ResultSet rs = ps.executeQuery();
@@ -60,7 +65,8 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
         String sql = "SELECT TOP 1 r.return_request_id "
                 + "FROM Return_Request r "
                 + "INNER JOIN Return_Request_Item i ON i.return_request_id = r.return_request_id "
-                + "WHERE i.borrow_item_id = ? AND r.status = N'PENDING'";
+                + "WHERE r.status = N'PENDING' AND i.borrow_item_id = ? "
+                + "ORDER BY r.created_at ASC, r.return_request_id ASC";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, borrowItemId);
             ResultSet rs = ps.executeQuery();
@@ -72,25 +78,29 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
     }
 
     /**
-     * Reader bấm "Trả sách" -> tạo Return_Request PENDING.
+     * Reader tạo Return_Request (PENDING) cho 1 Borrow_Item đang mượn.
+     * @return return_request_id hoặc null nếu lỗi/đã có pending/đã trả
      */
     public Integer createByReader(int readerId, int borrowItemId) {
         try {
             connection.setAutoCommit(false);
 
+            // borrow_item phải thuộc reader + chưa returned
             String chk = "SELECT TOP 1 bi.borrow_item_id "
                     + "FROM Borrow_Item bi "
-                    + "INNER JOIN Borrow br ON br.borrow_id = bi.borrow_id "
-                    + "WHERE bi.borrow_item_id = ? AND br.reader_id = ? AND bi.returned_at IS NULL";
+                    + "INNER JOIN Borrow b ON b.borrow_id = bi.borrow_id "
+                    + "WHERE bi.borrow_item_id = ? AND b.reader_id = ? AND bi.returned_at IS NULL";
+            boolean ok = false;
             try (PreparedStatement ps = connection.prepareStatement(chk)) {
                 ps.setInt(1, borrowItemId);
                 ps.setInt(2, readerId);
                 ResultSet rs = ps.executeQuery();
-                if (!rs.next()) {
-                    connection.rollback();
-                    connection.setAutoCommit(true);
-                    return null;
-                }
+                ok = rs.next();
+            }
+            if (!ok) {
+                connection.rollback();
+                connection.setAutoCommit(true);
+                return null;
             }
 
             if (hasPendingForBorrowItem(borrowItemId)) {
@@ -100,9 +110,10 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
             }
 
             int requestId;
-            String insHead = "INSERT INTO Return_Request (reader_id, created_by_type, status, created_at, note) "
+            String insHead = "INSERT INTO Return_Request (reader_id, created_by_employee_id, created_by_type, status, created_at, "
+                    + "confirmed_by_employee_id, confirmed_at, note) "
                     + "OUTPUT INSERTED.return_request_id "
-                    + "VALUES (?, N'READER', N'PENDING', SYSDATETIME(), NULL)";
+                    + "VALUES (?, NULL, N'READER', N'PENDING', SYSDATETIME(), NULL, NULL, NULL)";
             try (PreparedStatement ps = connection.prepareStatement(insHead)) {
                 ps.setInt(1, readerId);
                 ResultSet rs = ps.executeQuery();
@@ -132,6 +143,10 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
             return null;
         }
     }
+
+    // =====================================================
+    // Librarian-side
+    // =====================================================
 
     /**
      * Librarian bấm "Trả sách" trên /librarian/borrowed-books:
@@ -209,6 +224,14 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
             try (PreparedStatement ps = connection.prepareStatement(updCopy)) {
                 ps.setInt(1, copyId);
                 ps.executeUpdate();
+            }
+
+            // ✅ Auto process reservation queue when a copy becomes AVAILABLE
+            Integer bookId = getBookIdByCopyId(copyId);
+            if (bookId != null) {
+                ReservationDBContext resDao = new ReservationDBContext();
+                resDao.connection = this.connection; // share transaction
+                resDao.processQueueForBook(bookId);
             }
 
             updateBorrowCompletedIfNeeded(borrowId);
@@ -293,6 +316,14 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
                 ps.executeUpdate();
             }
 
+            // ✅ Auto process reservation queue when a copy becomes AVAILABLE
+            Integer bookId = getBookIdByCopyId(copyId);
+            if (bookId != null) {
+                ReservationDBContext resDao = new ReservationDBContext();
+                resDao.connection = this.connection; // share transaction
+                resDao.processQueueForBook(bookId);
+            }
+
             updateBorrowCompletedIfNeeded(borrowId);
 
             connection.commit();
@@ -342,5 +373,17 @@ public class ReturnRequestDBContext extends DBContext<ReturnRequest> {
                 ps.executeUpdate();
             }
         }
+    }
+
+    private Integer getBookIdByCopyId(int copyId) {
+        String sql = "SELECT book_id FROM BookCopy WHERE copy_id = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, copyId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

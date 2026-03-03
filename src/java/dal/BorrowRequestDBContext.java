@@ -62,6 +62,10 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
         }
     }
 
+    /**
+     * Tạo 1 borrow request cho 1 cuốn sách (quantity = 1)
+     * @return request_id hoặc null nếu lỗi / đã có pending cho book này
+     */
     public Integer createSingleBookRequest(int readerId, int bookId) {
         try {
             connection.setAutoCommit(false);
@@ -106,38 +110,8 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
         }
     }
 
-    public int countPendingRequestedItemsByReader(int readerId) {
-        String sql = "SELECT COALESCE(SUM(i.quantity), 0) "
-                + "FROM Borrow_Request r "
-                + "INNER JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
-                + "WHERE r.reader_id = ? AND r.status = N'PENDING'";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public int countRequestedItemsByReader(int readerId) {
-        String sql = "SELECT COALESCE(SUM(i.quantity), 0) "
-                + "FROM Borrow_Request r "
-                + "INNER JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
-                + "WHERE r.reader_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
     /**
-     * ✅ Method chuẩn: chữ thường (HomeController dùng)
+     * Recent list (để Reader/Home dùng)
      */
     public List<BorrowRequest> listRecentWithItemsByReader(int readerId, int limit) {
         if (limit <= 0) limit = 5;
@@ -197,14 +171,87 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
     }
 
     /**
-     * ✅ Alias để khỏi lỗi case-sensitive nếu code cũ gọi L hoa
+     * Alias cho code cũ (nếu có chỗ gọi L hoa)
      */
     public List<BorrowRequest> ListRecentWithItemsByReader(int readerId, int limit) {
         return listRecentWithItemsByReader(readerId, limit);
     }
 
+    /**
+     * ✅ NEW: Reader history list with items theo filter:
+     * - all / pending / approved / rejected
+     */
+    public List<BorrowRequest> listWithItemsByReaderAndStatus(int readerId, String filter, int limit) {
+        if (limit <= 0) limit = 200;
+        if (filter == null || filter.trim().isEmpty()) filter = "all";
+        filter = filter.trim().toLowerCase();
+
+        String where = " WHERE r.reader_id = ? ";
+        switch (filter) {
+            case "pending" -> where += " AND r.status = N'PENDING' ";
+            case "approved" -> where += " AND r.status = N'APPROVED' ";
+            case "rejected" -> where += " AND r.status = N'REJECTED' ";
+            case "all" -> { /* no-op */ }
+            default -> { /* no-op */ }
+        }
+
+        Map<Integer, BorrowRequest> map = new LinkedHashMap<>();
+
+        String sql = "SELECT TOP (?) "
+                + "r.request_id, r.reader_id, rd.full_name AS reader_name, r.status, r.requested_at, r.note, "
+                + "r.processed_by_employee_id, r.processed_at, r.decision_note, "
+                + "i.request_item_id, i.book_id, i.quantity, b.title AS book_title "
+                + "FROM Borrow_Request r "
+                + "INNER JOIN Reader rd ON rd.reader_id = r.reader_id "
+                + "LEFT JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
+                + "LEFT JOIN Book b ON b.book_id = i.book_id "
+                + where
+                + "ORDER BY r.requested_at DESC, r.request_id DESC, i.request_item_id ASC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            ps.setInt(2, readerId);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                int rid = rs.getInt("request_id");
+                BorrowRequest br = map.get(rid);
+                if (br == null) {
+                    br = new BorrowRequest();
+                    br.setRequestId(rid);
+                    br.setReaderId(rs.getInt("reader_id"));
+                    br.setReaderName(rs.getString("reader_name"));
+                    br.setStatus(rs.getString("status"));
+                    br.setRequestedAt(rs.getTimestamp("requested_at"));
+                    br.setNote(rs.getString("note"));
+
+                    int p = rs.getInt("processed_by_employee_id");
+                    br.setProcessedByEmployeeId(rs.wasNull() ? null : p);
+                    br.setProcessedAt(rs.getTimestamp("processed_at"));
+                    br.setDecisionNote(rs.getString("decision_note"));
+
+                    map.put(rid, br);
+                }
+
+                int itemId = rs.getInt("request_item_id");
+                if (!rs.wasNull()) {
+                    BorrowRequestItem it = new BorrowRequestItem();
+                    it.setRequestItemId(itemId);
+                    it.setRequestId(rid);
+                    it.setBookId(rs.getInt("book_id"));
+                    it.setBookTitle(rs.getString("book_title"));
+                    it.setQuantity(rs.getInt("quantity"));
+                    br.getItems().add(it);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>(map.values());
+    }
+
     // =====================================================
-    // Librarian-side functions (history filters + approve/reject)
+    // Librarian-side list/get
     // =====================================================
 
     public ArrayList<BorrowRequest> listByStatus(String filter, int limit) {
@@ -250,61 +297,66 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
     }
 
     public BorrowRequest getWithItems(int requestId) {
-        BorrowRequest br = null;
+        Map<Integer, BorrowRequest> map = new LinkedHashMap<>();
 
-        String headSql = "SELECT r.request_id, r.reader_id, rd.full_name AS reader_name, r.status, r.requested_at, r.note, "
-                + "r.processed_by_employee_id, r.processed_at, r.decision_note "
+        String sql = "SELECT r.request_id, r.reader_id, rd.full_name AS reader_name, "
+                + "r.status, r.requested_at, r.note, r.processed_by_employee_id, r.processed_at, r.decision_note, "
+                + "i.request_item_id, i.book_id, i.quantity, b.title AS book_title "
                 + "FROM Borrow_Request r "
                 + "INNER JOIN Reader rd ON rd.reader_id = r.reader_id "
+                + "LEFT JOIN Borrow_Request_Item i ON i.request_id = r.request_id "
+                + "LEFT JOIN Book b ON b.book_id = i.book_id "
                 + "WHERE r.request_id = ?";
 
-        String itemsSql = "SELECT i.request_item_id, i.request_id, i.book_id, b.title AS book_title, i.quantity "
-                + "FROM Borrow_Request_Item i "
-                + "INNER JOIN Book b ON b.book_id = i.book_id "
-                + "WHERE i.request_id = ?";
-
-        try (PreparedStatement ps = connection.prepareStatement(headSql)) {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, requestId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                br = new BorrowRequest();
-                br.setRequestId(rs.getInt("request_id"));
-                br.setReaderId(rs.getInt("reader_id"));
-                br.setReaderName(rs.getString("reader_name"));
-                br.setStatus(rs.getString("status"));
-                br.setRequestedAt(rs.getTimestamp("requested_at"));
-                br.setNote(rs.getString("note"));
 
-                int p = rs.getInt("processed_by_employee_id");
-                br.setProcessedByEmployeeId(rs.wasNull() ? null : p);
-                br.setProcessedAt(rs.getTimestamp("processed_at"));
-                br.setDecisionNote(rs.getString("decision_note"));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        if (br == null) return null;
-
-        try (PreparedStatement ps = connection.prepareStatement(itemsSql)) {
-            ps.setInt(1, requestId);
-            ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                BorrowRequestItem it = new BorrowRequestItem();
-                it.setRequestItemId(rs.getInt("request_item_id"));
-                it.setRequestId(rs.getInt("request_id"));
-                it.setBookId(rs.getInt("book_id"));
-                it.setBookTitle(rs.getString("book_title"));
-                it.setQuantity(rs.getInt("quantity"));
-                br.getItems().add(it);
+                int rid = rs.getInt("request_id");
+                BorrowRequest br = map.get(rid);
+                if (br == null) {
+                    br = new BorrowRequest();
+                    br.setRequestId(rid);
+                    br.setReaderId(rs.getInt("reader_id"));
+                    br.setReaderName(rs.getString("reader_name"));
+                    br.setStatus(rs.getString("status"));
+                    br.setRequestedAt(rs.getTimestamp("requested_at"));
+                    br.setNote(rs.getString("note"));
+
+                    int p = rs.getInt("processed_by_employee_id");
+                    br.setProcessedByEmployeeId(rs.wasNull() ? null : p);
+                    br.setProcessedAt(rs.getTimestamp("processed_at"));
+                    br.setDecisionNote(rs.getString("decision_note"));
+
+                    map.put(rid, br);
+                }
+
+                int itemId = rs.getInt("request_item_id");
+                if (!rs.wasNull()) {
+                    BorrowRequestItem it = new BorrowRequestItem();
+                    it.setRequestItemId(itemId);
+                    it.setRequestId(rid);
+                    it.setBookId(rs.getInt("book_id"));
+                    it.setBookTitle(rs.getString("book_title"));
+                    it.setQuantity(rs.getInt("quantity"));
+                    br.getItems().add(it);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return br;
+        return map.values().stream().findFirst().orElse(null);
     }
 
+    /**
+     * ✅ APPROVE chuẩn (KHÔNG gọi BorrowDBContext.createBorrowFromRequest)
+     * - Chọn đủ BookCopy AVAILABLE
+     * - Update Borrow_Request -> APPROVED
+     * - Insert Borrow + Borrow_Item
+     * - Update BookCopy -> BORROWED
+     */
     public boolean approve(int requestId, int employeeId, String decisionNote, int borrowDays) {
         try {
             connection.setAutoCommit(false);

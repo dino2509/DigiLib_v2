@@ -41,6 +41,16 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Quản lý đặt trước (Reservation Queue)</h5>
+                            <p class="card-text text-muted">Xem hàng đợi đặt trước theo từng cuốn sách. Khi có copy AVAILABLE, hệ thống sẽ tự động chuyển người đầu hàng đợi thành Borrow_Request (PENDING).</p>
+                            <a class="btn btn-outline-danger" href="${pageContext.request.contextPath}/librarian/reservations">Mở</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </body>

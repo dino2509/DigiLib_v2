@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import model.BookCopy;
+import dal.ReservationDBContext;
 
 public class BookCopyDBContext extends DBContext<BookCopy> {
 
@@ -55,6 +56,12 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
             ps.setString(2, model.getCopyCode());
             ps.setString(3, model.getStatus());
             ps.executeUpdate();
+
+            // ✅ Nếu thêm copy AVAILABLE -> auto convert hàng đợi đặt trước
+            if (model.getStatus() != null && model.getStatus().equalsIgnoreCase("AVAILABLE")) {
+                ReservationDBContext resDao = new ReservationDBContext();
+                resDao.processQueueForBook(model.getBookId());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -62,6 +69,16 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
 
     @Override
     public void update(BookCopy model) {
+        // Lấy status cũ để biết có chuyển sang AVAILABLE hay không
+        String oldStatus = null;
+        try (PreparedStatement ps0 = connection.prepareStatement("SELECT status FROM BookCopy WHERE copy_id = ?")) {
+            ps0.setInt(1, model.getCopyId());
+            ResultSet rs0 = ps0.executeQuery();
+            if (rs0.next()) oldStatus = rs0.getString(1);
+        } catch (Exception e) {
+            // ignore -> vẫn update như bình thường
+        }
+
         String sql = "UPDATE BookCopy SET book_id = ?, copy_code = ?, status = ? WHERE copy_id = ?";
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, model.getBookId());
@@ -69,6 +86,14 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
             ps.setString(3, model.getStatus());
             ps.setInt(4, model.getCopyId());
             ps.executeUpdate();
+
+            // ✅ Nếu status vừa chuyển sang AVAILABLE -> auto convert hàng đợi đặt trước
+            boolean nowAvailable = model.getStatus() != null && model.getStatus().equalsIgnoreCase("AVAILABLE");
+            boolean wasAvailable = oldStatus != null && oldStatus.equalsIgnoreCase("AVAILABLE");
+            if (nowAvailable && !wasAvailable) {
+                ReservationDBContext resDao = new ReservationDBContext();
+                resDao.processQueueForBook(model.getBookId());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -13,6 +13,8 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.List;
 import model.Book;
+import model.BorrowRequest;
+import model.BorrowRequestItem;
 import model.Reader;
 
 @WebServlet(urlPatterns = "/reader/home")
@@ -44,12 +46,17 @@ public class HomeController extends HttpServlet {
         int overdueCount = borrowDAO.countOverdueBorrowedItems(reader.getReaderId());
         int totalBorrowedItems = borrowDAO.countAllBorrowedItems(reader.getReaderId());
 
-        int pendingRequestedCount = requestDAO.countPendingRequestedItemsByReader(reader.getReaderId());
-        int totalRequestedCount = requestDAO.countRequestedItemsByReader(reader.getReaderId());
+        // ✅ FIX: thay vì gọi countPendingRequestedItemsByReader / countRequestedItemsByReader (không tồn tại),
+        // ta tính dựa trên listWithItemsByReaderAndStatus(...) đã có trong BorrowRequestDBContext
+        List<BorrowRequest> pendingRequests = requestDAO.listWithItemsByReaderAndStatus(reader.getReaderId(), "pending", 200);
+        List<BorrowRequest> allRequests = requestDAO.listWithItemsByReaderAndStatus(reader.getReaderId(), "all", 200);
+
+        int pendingRequestedCount = sumRequestedItems(pendingRequests);
+        int totalRequestedCount = sumRequestedItems(allRequests);
 
         // ===== Recent borrow requests (history) =====
         // FIX: dùng method chữ thường (đúng theo convention và dễ đồng bộ)
-        List<model.BorrowRequest> recentRequests = requestDAO.listRecentWithItemsByReader(reader.getReaderId(), 5);
+        List<BorrowRequest> recentRequests = requestDAO.listRecentWithItemsByReader(reader.getReaderId(), 5);
 
         // ===== Recommended =====
         List<Book> recommended = bookDAO.listAll();
@@ -72,5 +79,18 @@ public class HomeController extends HttpServlet {
         req.setAttribute("recommended", recommended);
 
         req.getRequestDispatcher("/view/reader/home.jsp").forward(req, resp);
+    }
+
+    private int sumRequestedItems(List<BorrowRequest> requests) {
+        int sum = 0;
+        if (requests == null) return 0;
+        for (BorrowRequest r : requests) {
+            if (r == null || r.getItems() == null) continue;
+            for (BorrowRequestItem it : r.getItems()) {
+                if (it == null) continue;
+                sum += Math.max(0, it.getQuantity());
+            }
+        }
+        return sum;
     }
 }

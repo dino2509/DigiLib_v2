@@ -75,8 +75,13 @@
             <h2 class="mb-1">${book.title}</h2>
 
             <div class="muted mb-3">
-                <c:if test="${book.author != null}">Tác giả: <strong>${book.author.author_name}</strong> • </c:if>
-                <c:if test="${book.category != null}">Thể loại: <strong>${book.category.category_name}</strong></c:if>
+                <c:if test="${book.author != null}">
+                    Tác giả: <strong>${book.author.author_name}</strong> &bull;
+                </c:if>
+
+                <c:if test="${book.category != null}">
+                    Thể loại: <strong>${book.category.category_name}</strong>
+                </c:if>
             </div>
 
             <div class="mb-2">
@@ -104,6 +109,7 @@
 
             <div class="mt-4 d-flex gap-2 flex-wrap align-items-center">
                 <c:if test="${isReader}">
+                    <!-- Favorite -->
                     <form method="post" action="${pageContext.request.contextPath}/reader/favorites">
                         <input type="hidden" name="bookId" value="${book.bookId}">
                         <c:choose>
@@ -118,7 +124,41 @@
                         </c:choose>
                     </form>
 
-                    <!-- Borrow request (Reader) -->
+                    <!-- ✅ NEW: Reserve / Auto-borrow button (confirm modal) -->
+                    <c:choose>
+                        <c:when test="${hasWaitingReservation}">
+                            <button class="btn btn-outline-secondary" disabled>
+                                ⏳ Bạn đang ở hàng đợi #${reservationPosition}
+                            </button>
+                        </c:when>
+
+                        <c:when test="${hasOverdue}">
+                            <button class="btn btn-outline-danger" disabled>⛔ Bạn có sách quá hạn</button>
+                        </c:when>
+
+                        <c:when test="${reachBorrowLimit}">
+                            <button class="btn btn-outline-danger" disabled>⛔ Bạn đang mượn ${activeBorrowCount}/3 cuốn</button>
+                        </c:when>
+
+                        <c:when test="${isBorrowingThisBook}">
+                            <button class="btn btn-outline-secondary" disabled>📚 Bạn đang mượn cuốn này</button>
+                        </c:when>
+
+                        <c:when test="${hasPendingBorrow}">
+                            <button class="btn btn-outline-secondary" disabled>📩 Đã gửi yêu cầu mượn</button>
+                        </c:when>
+
+                        <c:otherwise>
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reserveConfirmModal">
+                                ⏳ Đặt trước
+                            </button>
+                        </c:otherwise>
+                    </c:choose>
+
+                    <!-- Borrow request (giữ lại nút cũ nếu bạn muốn) -->
                     <c:choose>
                         <c:when test="${availableCopies == 0}">
                             <button class="btn btn-outline-secondary" disabled>📦 Hết bản sao trong kho</button>
@@ -144,17 +184,18 @@
                 <a class="btn btn-warning" href="${pageContext.request.contextPath}/books">Xem thêm sách</a>
             </div>
 
+            <!-- Alerts -->
             <c:if test="${param.borrowRequested == '1'}">
-                <div class="alert alert-success mt-3">Đã gửi yêu cầu mượn. Vui lòng chờ Librarian duyệt.</div>
+                <div class="alert alert-success mt-3">Đã tạo yêu cầu mượn. Vui lòng chờ Librarian duyệt.</div>
             </c:if>
             <c:if test="${param.borrowError == '1'}">
-                <div class="alert alert-danger mt-3">Không thể gửi yêu cầu mượn (lỗi hệ thống). Thử lại sau.</div>
+                <div class="alert alert-danger mt-3">Không thể tạo yêu cầu mượn (lỗi hệ thống). Thử lại sau.</div>
             </c:if>
             <c:if test="${param.alreadyBorrowing == '1'}">
-                <div class="alert alert-info mt-3">Bạn đang mượn cuốn này nên không thể gửi yêu cầu mượn mới.</div>
+                <div class="alert alert-info mt-3">Bạn đang mượn cuốn này nên không thể tạo yêu cầu mượn mới.</div>
             </c:if>
             <c:if test="${param.hasOverdue == '1' || hasOverdue}">
-                <div class="alert alert-danger mt-3">Bạn đang có sách quá hạn. Vui lòng trả sách trước khi mượn thêm.</div>
+                <div class="alert alert-danger mt-3">Bạn đang có sách quá hạn. Vui lòng trả sách trước khi mượn/đặt trước.</div>
             </c:if>
             <c:if test="${param.outOfStock == '1'}">
                 <div class="alert alert-warning mt-3">Cuốn sách này hiện không còn bản sao AVAILABLE trong kho.</div>
@@ -162,6 +203,60 @@
             <c:if test="${param.reachBorrowLimit == '1'}">
                 <div class="alert alert-danger mt-3">Bạn đang mượn tối đa 3 cuốn cùng lúc. Vui lòng trả bớt sách để mượn thêm.</div>
             </c:if>
+
+            <!-- ✅ NEW reservation alerts -->
+            <c:if test="${param.reserved == '1'}">
+                <div class="alert alert-success mt-3">
+                    Đã đặt trước thành công. Bạn đã được đưa vào hàng đợi.
+                    Khi thư viện có bản sao AVAILABLE, hệ thống sẽ tự động chuyển đơn của bạn thành yêu cầu mượn.
+                </div>
+            </c:if>
+            <c:if test="${param.reserveExists == '1'}">
+                <div class="alert alert-info mt-3">
+                    Bạn đã có 1 đơn đặt trước (WAITING) cho cuốn này rồi.
+                    <c:if test="${reservationPosition != null}">
+                        Vị trí hiện tại: <strong>#${reservationPosition}</strong>.
+                    </c:if>
+                </div>
+            </c:if>
+        </div>
+    </div>
+
+    <!-- ✅ NEW: Confirm modal -->
+    <div class="modal fade" id="reserveConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <c:choose>
+                        <c:when test="${availableCopies > 0}">
+                            <div class="alert alert-success mb-0">
+                                Trong kho hiện có <strong>${availableCopies}</strong> bản sao AVAILABLE.<br/>
+                                Khi bạn xác nhận, hệ thống sẽ <strong>tạo yêu cầu mượn (Borrow Request)</strong> cho cuốn sách này.
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <div class="alert alert-warning mb-0">
+                                Hiện tại sách đang <strong>hết bản sao</strong> trong kho.<br/>
+                                Khi bạn xác nhận, hệ thống sẽ <strong>tạo đơn đặt trước</strong> và đưa bạn vào hàng đợi.
+                            </div>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Huỷ</button>
+
+                    <form method="post" action="${pageContext.request.contextPath}/reader/reserve-or-borrow" class="m-0">
+                        <input type="hidden" name="bookId" value="${book.bookId}" />
+                        <button type="submit" class="btn btn-primary">Xác nhận</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -241,7 +336,6 @@
                             <c:if test="${empty q.answers}">
                                 <div class="mt-2 text-muted small">Chưa có trả lời.</div>
 
-                                <!-- Librarian only: answer directly here -->
                                 <c:if test="${isLibrarian}">
                                     <form class="mt-3" method="post" action="${pageContext.request.contextPath}/librarian/qna/answer">
                                         <input type="hidden" name="bookId" value="${book.bookId}" />

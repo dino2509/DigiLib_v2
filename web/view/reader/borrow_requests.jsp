@@ -5,7 +5,7 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Librarian - Borrow Requests</title>
+    <title>Reader - Borrow Requests</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
 </head>
 <body>
@@ -15,36 +15,32 @@
 <div class="container mt-4">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
         <div>
-            <h3 class="mb-0">📥 Quản lý yêu cầu mượn &amp; đặt trước</h3>
-            <div class="text-muted">Gộp Borrow_Request và Reservation_Request theo bộ lọc.</div>
+            <h3 class="mb-0">📩 Lịch sử yêu cầu mượn &amp; đặt trước</h3>
+            <div class="text-muted">Gộp Borrow_Request và Reservation_Request.</div>
         </div>
         <div class="d-flex gap-2">
-            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/borrowed-books">Borrowed books</a>
-            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/qna">Q&amp;A</a>
-            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/dashboard">Dashboard</a>
+            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/reader/home">Reader Home</a>
+            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/reader/borrowed">Đang mượn</a>
         </div>
     </div>
 
     <hr/>
 
-    <c:if test="${param.error eq 'not_enough_copies'}">
-        <div class="alert alert-danger">Không đủ bản sao (BookCopy) AVAILABLE để duyệt đơn này.</div>
-    </c:if>
     <c:if test="${param.msg eq 'cancelled'}">
         <div class="alert alert-success">Đã huỷ đặt trước.</div>
     </c:if>
 
     <div class="d-flex gap-2 flex-wrap mb-3">
         <a class="btn btn-sm ${filter eq 'all' ? 'btn-danger' : 'btn-outline-danger'}"
-           href="${pageContext.request.contextPath}/librarian/borrow-requests?filter=all">Tất cả</a>
+           href="${pageContext.request.contextPath}/reader/borrow-requests?filter=all">Tất cả</a>
         <a class="btn btn-sm ${filter eq 'reserved' ? 'btn-danger' : 'btn-outline-danger'}"
-           href="${pageContext.request.contextPath}/librarian/borrow-requests?filter=reserved">Đặt trước</a>
+           href="${pageContext.request.contextPath}/reader/borrow-requests?filter=reserved">Đặt trước</a>
         <a class="btn btn-sm ${filter eq 'pending' ? 'btn-danger' : 'btn-outline-danger'}"
-           href="${pageContext.request.contextPath}/librarian/borrow-requests?filter=pending">Đang chờ</a>
+           href="${pageContext.request.contextPath}/reader/borrow-requests?filter=pending">Đang chờ</a>
         <a class="btn btn-sm ${filter eq 'approved' ? 'btn-danger' : 'btn-outline-danger'}"
-           href="${pageContext.request.contextPath}/librarian/borrow-requests?filter=approved">Đã duyệt</a>
+           href="${pageContext.request.contextPath}/reader/borrow-requests?filter=approved">Đã duyệt</a>
         <a class="btn btn-sm ${filter eq 'rejected' ? 'btn-danger' : 'btn-outline-danger'}"
-           href="${pageContext.request.contextPath}/librarian/borrow-requests?filter=rejected">Từ chối</a>
+           href="${pageContext.request.contextPath}/reader/borrow-requests?filter=rejected">Từ chối</a>
     </div>
 
     <div class="row g-3">
@@ -59,34 +55,33 @@
                         <c:otherwise>
                             <c:forEach items="${rows}" var="r">
                                 <a class="list-group-item list-group-item-action"
-                                   href="${pageContext.request.contextPath}/librarian/borrow-requests?filter=${filter}&type=${r.type eq 'BORROW' ? 'borrow' : 'reservation'}&id=${r.id}">
+                                   href="${pageContext.request.contextPath}/reader/borrow-requests?filter=${filter}&type=${r.type eq 'BORROW' ? 'borrow' : 'reservation'}&id=${r.id}">
                                     <div class="d-flex justify-content-between gap-2">
                                         <div>
                                             <div class="fw-semibold">
                                                 <c:choose>
-                                                    <c:when test="${r.type eq 'BORROW'}">
-                                                        BR#${r.id} • ${r.readerName}
-                                                    </c:when>
-                                                    <c:otherwise>
-                                                        RES#${r.id} • ${r.readerName}
-                                                    </c:otherwise>
+                                                    <c:when test="${r.type eq 'BORROW'}">BR#${r.id}</c:when>
+                                                    <c:otherwise>RES#${r.id}</c:otherwise>
                                                 </c:choose>
                                             </div>
                                             <div class="small text-muted">${r.createdAt}</div>
-                                            <c:if test="${r.type eq 'RESERVATION'}">
-                                                <div class="small mt-1">
-                                                    📚 ${r.titleSummary}
-                                                    <c:if test="${r.status eq 'WAITING' && r.position != null}">
-                                                        • Hàng đợi #${r.position}
-                                                    </c:if>
-                                                </div>
-                                            </c:if>
+
+                                            <c:choose>
+                                                <c:when test="${r.type eq 'BORROW'}">
+                                                    <div class="small mt-1">📚 ${r.titleSummary}</div>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="small mt-1">📚 ${r.titleSummary}
+                                                        <c:if test="${r.status eq 'WAITING' && r.position != null}">
+                                                            • Hàng đợi #${r.position}
+                                                        </c:if>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                         <div class="text-end">
                                             <span class="badge ${r.type eq 'RESERVATION' ? 'bg-primary' : 'bg-secondary'}">${r.type}</span>
-                                            <div class="mt-1">
-                                                <span class="badge bg-dark">${r.status}</span>
-                                            </div>
+                                            <div class="mt-1"><span class="badge bg-dark">${r.status}</span></div>
                                         </div>
                                     </div>
                                 </a>
@@ -106,13 +101,14 @@
                 <c:when test="${not empty borrowDetail}">
                     <div class="card">
                         <div class="card-header fw-semibold d-flex justify-content-between flex-wrap gap-2">
-                            <div>Chi tiết Borrow Request #${borrowDetail.requestId}</div>
+                            <div>Borrow Request #${borrowDetail.requestId}</div>
                             <span class="badge bg-secondary">${borrowDetail.status}</span>
                         </div>
                         <div class="card-body">
-                            <div class="mb-2"><strong>Reader:</strong> ${borrowDetail.readerName}</div>
                             <div class="mb-2"><strong>Requested:</strong> ${borrowDetail.requestedAt}</div>
-                            <div class="mb-3"><strong>Ghi chú:</strong> <c:out value="${borrowDetail.note}"/></div>
+                            <c:if test="${not empty borrowDetail.note}">
+                                <div class="mb-2"><strong>Ghi chú:</strong> <c:out value="${borrowDetail.note}"/></div>
+                            </c:if>
 
                             <div class="table-responsive">
                                 <table class="table table-sm align-middle">
@@ -120,6 +116,7 @@
                                     <tr>
                                         <th>Sách</th>
                                         <th style="width:120px">Số lượng</th>
+                                        <th style="width:120px"></th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -127,39 +124,21 @@
                                         <tr>
                                             <td>${it.bookTitle}</td>
                                             <td>${it.quantity}</td>
+                                            <td>
+                                                <a class="btn btn-sm btn-outline-secondary"
+                                                   href="${pageContext.request.contextPath}/books/detail?id=${it.bookId}">Xem</a>
+                                            </td>
                                         </tr>
                                     </c:forEach>
                                     </tbody>
                                 </table>
                             </div>
 
-                            <c:choose>
-                                <c:when test="${borrowDetail.status ne 'PENDING'}">
-                                    <div class="alert alert-light border mb-0">Đơn đã được xử lý, không thể duyệt/từ chối nữa.</div>
-                                </c:when>
-                                <c:otherwise>
-                                    <form method="post" action="${pageContext.request.contextPath}/librarian/borrow-requests" class="mt-3">
-                                        <input type="hidden" name="requestId" value="${borrowDetail.requestId}"/>
-                                        <input type="hidden" name="filter" value="${filter}"/>
-
-                                        <div class="row g-2">
-                                            <div class="col-md-4">
-                                                <label class="form-label fw-semibold">Hạn trả (ngày)</label>
-                                                <input class="form-control" type="number" name="dueDays" min="7" max="14" value="14"/>
-                                            </div>
-                                            <div class="col-md-8">
-                                                <label class="form-label fw-semibold">Decision note (tuỳ chọn)</label>
-                                                <textarea class="form-control" name="decisionNote" rows="2"></textarea>
-                                            </div>
-                                        </div>
-
-                                        <div class="d-flex gap-2 mt-3">
-                                            <button class="btn btn-danger" name="action" value="approve" type="submit">Duyệt</button>
-                                            <button class="btn btn-outline-danger" name="action" value="reject" type="submit">Từ chối</button>
-                                        </div>
-                                    </form>
-                                </c:otherwise>
-                            </c:choose>
+                            <c:if test="${borrowDetail.status ne 'PENDING' && not empty borrowDetail.decisionNote}">
+                                <div class="alert alert-light border mb-0">
+                                    <strong>Decision note:</strong> <c:out value="${borrowDetail.decisionNote}"/>
+                                </div>
+                            </c:if>
                         </div>
                     </div>
                 </c:when>
@@ -167,11 +146,10 @@
                 <c:otherwise>
                     <div class="card">
                         <div class="card-header fw-semibold d-flex justify-content-between flex-wrap gap-2">
-                            <div>Chi tiết Reservation #${reservationDetail.reservationId}</div>
+                            <div>Reservation #${reservationDetail.reservationId}</div>
                             <span class="badge bg-primary">${reservationDetail.status}</span>
                         </div>
                         <div class="card-body">
-                            <div class="mb-2"><strong>Reader:</strong> ${reservationDetail.readerName}</div>
                             <div class="mb-2"><strong>Book:</strong> ${reservationDetail.bookTitle}</div>
                             <div class="mb-2"><strong>Created:</strong> ${reservationDetail.createdAt}</div>
 
@@ -181,17 +159,17 @@
 
                             <c:if test="${reservationDetail.status eq 'CONVERTED' && reservationDetail.convertedRequestId != null}">
                                 <div class="alert alert-success">
-                                    Đã chuyển thành Borrow Request #${reservationDetail.convertedRequestId}
-                                    (PENDING) để Librarian duyệt.
+                                    Đơn đặt trước đã được chuyển thành Borrow Request #${reservationDetail.convertedRequestId}.
+                                    Bạn có thể theo dõi ở tab "Đang chờ".
                                 </div>
                             </c:if>
 
-                            <c:choose>
-                                <c:when test="${reservationDetail.status ne 'WAITING'}">
-                                    <div class="alert alert-light border mb-0">Reservation không còn ở trạng thái WAITING nên không thể huỷ.</div>
-                                </c:when>
-                                <c:otherwise>
-                                    <form method="post" action="${pageContext.request.contextPath}/librarian/borrow-requests" class="mt-2">
+                            <div class="d-flex gap-2 flex-wrap">
+                                <a class="btn btn-outline-secondary"
+                                   href="${pageContext.request.contextPath}/books/detail?id=${reservationDetail.bookId}">Xem sách</a>
+
+                                <c:if test="${reservationDetail.status eq 'WAITING'}">
+                                    <form method="post" action="${pageContext.request.contextPath}/reader/borrow-requests" class="m-0">
                                         <input type="hidden" name="filter" value="${filter}"/>
                                         <input type="hidden" name="reservationId" value="${reservationDetail.reservationId}"/>
                                         <button class="btn btn-outline-danger" name="action" value="cancel_reservation" type="submit"
@@ -199,8 +177,8 @@
                                             Huỷ đặt trước
                                         </button>
                                     </form>
-                                </c:otherwise>
-                            </c:choose>
+                                </c:if>
+                            </div>
                         </div>
                     </div>
                 </c:otherwise>

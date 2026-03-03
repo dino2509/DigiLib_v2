@@ -1,4 +1,4 @@
-package controller.librarian;
+package controller.reader;
 
 import dal.BorrowRequestDBContext;
 import dal.ReservationDBContext;
@@ -13,25 +13,25 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import model.BorrowRequest;
-import model.Employee;
 import model.RequestHistoryRow;
 import model.ReservationRequest;
+import model.Reader;
 
-@WebServlet(urlPatterns = "/librarian/borrow-requests")
+/**
+ * Reader merged page:
+ *  - /reader/borrow-requests
+ * Filters: all / reserved / pending / approved / rejected
+ *
+ * - reserved = Reservation_Request (WAITING)
+ * - pending/approved/rejected = Borrow_Request
+ */
+@WebServlet(urlPatterns = "/reader/borrow-requests")
 public class BorrowRequestsController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession(false);
-        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return;
-        }
+        Reader reader = requireReader(req, resp);
+        if (reader == null) return;
 
         String filter = normalizeFilter(req.getParameter("filter"));
 
@@ -42,7 +42,7 @@ public class BorrowRequestsController extends HttpServlet {
 
         // Borrow requests
         if (!"reserved".equals(filter)) {
-            ArrayList<BorrowRequest> brs = brDAO.listByStatus(filter, 200);
+            List<BorrowRequest> brs = brDAO.listWithItemsByReaderAndStatus(reader.getReaderId(), filter, 200);
             for (BorrowRequest br : brs) {
                 RequestHistoryRow row = new RequestHistoryRow();
                 row.setType("BORROW");
@@ -51,14 +51,16 @@ public class BorrowRequestsController extends HttpServlet {
                 row.setReaderName(br.getReaderName());
                 row.setStatus(br.getStatus());
                 row.setCreatedAt(br.getRequestedAt());
-                row.setTitleSummary("Borrow request");
+                row.setTitleSummary(buildBorrowTitleSummary(br));
                 rows.add(row);
             }
         }
 
-        // Reservations (reserved tab OR all/approved/rejected tab)
+        // Reservations
         if ("reserved".equals(filter) || "all".equals(filter) || "approved".equals(filter) || "rejected".equals(filter)) {
-            ArrayList<ReservationRequest> rrs = rrDAO.listForLibrarian(filter, 200);
+            // mapping inside DAO:
+            // reserved -> WAITING, approved -> CONVERTED, rejected -> CANCELLED, all -> all
+            ArrayList<ReservationRequest> rrs = rrDAO.listByReader(reader.getReaderId(), filter, 200);
             for (ReservationRequest rr : rrs) {
                 RequestHistoryRow row = new RequestHistoryRow();
                 row.setType("RESERVATION");
@@ -74,6 +76,7 @@ public class BorrowRequestsController extends HttpServlet {
             }
         }
 
+        // sort newest first
         rows.sort(Comparator.comparing(RequestHistoryRow::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())).reversed()
                 .thenComparing(RequestHistoryRow::getType)
                 .thenComparing(RequestHistoryRow::getId, Comparator.reverseOrder()));
@@ -81,83 +84,75 @@ public class BorrowRequestsController extends HttpServlet {
         req.setAttribute("rows", rows);
         req.setAttribute("filter", filter);
 
+        // Detail
         String type = req.getParameter("type");
         int id = parseInt(req.getParameter("id"), -1);
         if (id > 0 && type != null) {
             if ("borrow".equalsIgnoreCase(type)) {
                 BorrowRequest detail = brDAO.getWithItems(id);
-                req.setAttribute("borrowDetail", detail);
+                // safety: only allow own request
+                if (detail != null && detail.getReaderId() == reader.getReaderId()) {
+                    req.setAttribute("borrowDetail", detail);
+                }
             } else if ("reservation".equalsIgnoreCase(type)) {
                 ReservationRequest detail = rrDAO.get(id);
-                req.setAttribute("reservationDetail", detail);
+                if (detail != null && detail.getReaderId() == reader.getReaderId()) {
+                    req.setAttribute("reservationDetail", detail);
+                }
             }
         }
 
-        req.getRequestDispatcher("/view/librarian/borrow_requests.jsp").forward(req, resp);
+        req.getRequestDispatcher("/view/reader/borrow_requests.jsp").forward(req, resp);
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        HttpSession session = req.getSession(false);
-        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return;
-        }
+        Reader reader = requireReader(req, resp);
+        if (reader == null) return;
 
         String filter = normalizeFilter(req.getParameter("filter"));
 
         String action = req.getParameter("action");
-
-        // Borrow approve/reject
-        int requestId = parseInt(req.getParameter("requestId"), -1);
-        String note = trimToNull(req.getParameter("decisionNote"));
-        int dueDays = parseInt(req.getParameter("dueDays"), 14);
-        if (dueDays < 7) dueDays = 7;
-        if (dueDays > 14) dueDays = 14;
-
-        BorrowRequestDBContext brDAO = new BorrowRequestDBContext();
-
-        if (requestId > 0 && "approve".equalsIgnoreCase(action)) {
-            boolean ok = brDAO.approve(requestId, emp.getEmployeeId(), note, dueDays);
-            if (!ok) {
-                resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=" + filter + "&type=borrow&id=" + requestId + "&error=not_enough_copies");
-                return;
-            }
-            resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=approved");
-            return;
-        }
-
-        if (requestId > 0 && "reject".equalsIgnoreCase(action)) {
-            brDAO.reject(requestId, emp.getEmployeeId(), note);
-            resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=rejected");
-            return;
-        }
-
-        // Reservation cancel
         if ("cancel_reservation".equalsIgnoreCase(action)) {
             int reservationId = parseInt(req.getParameter("reservationId"), -1);
             if (reservationId > 0) {
                 ReservationDBContext rrDAO = new ReservationDBContext();
-                rrDAO.cancelByLibrarian(reservationId);
+                rrDAO.cancel(reservationId, reader.getReaderId());
             }
-            resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=" + filter + "&msg=cancelled");
+            resp.sendRedirect(req.getContextPath() + "/reader/borrow-requests?filter=" + filter + "&msg=cancelled");
             return;
         }
 
-        resp.sendRedirect(req.getContextPath() + "/librarian/borrow-requests?filter=" + filter);
+        resp.sendRedirect(req.getContextPath() + "/reader/borrow-requests?filter=" + filter);
+    }
+
+    private String buildBorrowTitleSummary(BorrowRequest br) {
+        if (br == null || br.getItems() == null || br.getItems().isEmpty()) return "(Không có sách)";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < br.getItems().size(); i++) {
+            String t = br.getItems().get(i).getBookTitle();
+            if (t == null) t = "(Unknown)";
+            if (i > 0) sb.append(", ");
+            sb.append(t);
+        }
+        return sb.toString();
+    }
+
+    private Reader requireReader(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession(false);
+        if (session == null || !(session.getAttribute("user") instanceof Reader)) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return null;
+        }
+        return (Reader) session.getAttribute("user");
     }
 
     private String normalizeFilter(String filter) {
-        if (filter == null || filter.trim().isEmpty()) return "pending";
+        if (filter == null || filter.trim().isEmpty()) return "all";
         filter = filter.trim().toLowerCase();
         return switch (filter) {
-            case "pending", "approved", "rejected", "all", "reserved" -> filter;
-            default -> "pending";
+            case "all", "reserved", "pending", "approved", "rejected" -> filter;
+            default -> "all";
         };
     }
 
@@ -168,11 +163,5 @@ public class BorrowRequestsController extends HttpServlet {
         } catch (Exception e) {
             return def;
         }
-    }
-
-    private String trimToNull(String s) {
-        if (s == null) return null;
-        s = s.trim();
-        return s.isEmpty() ? null : s;
     }
 }
