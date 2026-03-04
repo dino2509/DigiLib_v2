@@ -7,7 +7,6 @@
         margin: 0 auto;
     }
 
-    /* ===== PAGE TITLE ===== */
     .dashboard-title {
         font-size: 26px;
         font-weight: 800;
@@ -18,7 +17,6 @@
         gap: 10px;
     }
 
-    /* ===== STAT GRID ===== */
     .stat-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -68,7 +66,6 @@
         color: #111827;
     }
 
-    /* ===== SECTION CARD ===== */
     .dashboard-card {
         background: #ffffff;
         border: 1px solid #fed7aa;
@@ -83,7 +80,6 @@
         margin-bottom: 16px;
     }
 
-    /* ===== BUTTON ===== */
     .btn-orange {
         background: linear-gradient(135deg, #fb923c, #ea580c);
         color: #fff;
@@ -99,7 +95,6 @@
         color: #fff;
     }
 
-    /* ===== ACTIVITY LIST ===== */
     .activity-list li {
         padding: 10px 0;
         border-bottom: 1px dashed #fed7aa;
@@ -110,7 +105,6 @@
         border-bottom: none;
     }
 
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 992px) {
         .stat-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -140,7 +134,7 @@
             </div>
             <div class="stat-info">
                 <small>Total Books</small>
-                <h4>1,250</h4>
+                <h4>${totalBooks}</h4>
             </div>
         </div>
 
@@ -150,7 +144,7 @@
             </div>
             <div class="stat-info">
                 <small>Users</small>
-                <h4>540</h4>
+                <h4>${totalReaders}</h4>
             </div>
         </div>
 
@@ -160,7 +154,7 @@
             </div>
             <div class="stat-info">
                 <small>Borrowed</small>
-                <h4>87</h4>
+                <h4>${totalBorrowed}</h4>
             </div>
         </div>
 
@@ -170,7 +164,7 @@
             </div>
             <div class="stat-info">
                 <small>Orders</small>
-                <h4>23</h4>
+                <h4>${totalOrders}</h4>
             </div>
         </div>
 
@@ -203,7 +197,7 @@
         </div>
     </div>
 
-    <!-- RECENT ACTIVITIES -->
+    <!-- RECENT ACTIVITIES (Có thể nâng cấp sau để lấy DB thật) -->
     <div class="dashboard-card">
         <h5>🕒 Recent Activities</h5>
 

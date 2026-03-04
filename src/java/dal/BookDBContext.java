@@ -637,4 +637,293 @@ public class BookDBContext extends DBContext<Book> {
             e.printStackTrace();
         }
     }
+
+    public ArrayList<Book> getFeaturedBooks() {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        String sql = """
+        SELECT TOP 8
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            b.cover_url,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE b.status = 'ACTIVE'
+        ORDER BY b.created_at DESC
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setCoverUrl(rs.getString("cover_url"));
+
+                // ===== AUTHOR =====
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                // ===== CATEGORY =====
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    public ArrayList<Book> searchAdvanced(String keyword, String type) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            b.cover_url,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1 = 1
+    """;
+
+        // ===== FILTER =====
+        if (keyword != null && !keyword.trim().isEmpty()) {
+
+            switch (type) {
+
+                case "title":
+                    sql += " AND b.title LIKE ? ";
+                    break;
+
+                case "author":
+                    sql += " AND a.author_name LIKE ? ";
+                    break;
+
+                case "category":
+                    sql += " AND c.category_name LIKE ? ";
+                    break;
+
+                default: // ALL
+                    sql += """
+                       AND (
+                           b.title LIKE ?
+                           OR a.author_name LIKE ?
+                           OR c.category_name LIKE ?
+                       )
+                       """;
+                    break;
+            }
+        }
+
+        sql += " ORDER BY b.created_at DESC ";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            int index = 1;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+
+                if ("all".equals(type)) {
+
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+
+                } else {
+
+                    ps.setString(index++, "%" + keyword + "%");
+
+                }
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setCoverUrl(rs.getString("cover_url"));
+
+                // AUTHOR
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                // CATEGORY
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    public ArrayList<Book> advancedSearch(
+            String field1, String keyword1,
+            String logic1,
+            String field2, String keyword2,
+            String logic2,
+            String field3, String keyword3,
+            String logic3,
+            String field4, String keyword4) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT 
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            b.cover_url,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1=1
+    """);
+
+        ArrayList<String> params = new ArrayList<>();
+
+        // ===== BUILD CONDITION =====
+        buildCondition(sql, params, field1, keyword1, null);
+        buildCondition(sql, params, field2, keyword2, logic1);
+        buildCondition(sql, params, field3, keyword3, logic2);
+        buildCondition(sql, params, field4, keyword4, logic3);
+
+        sql.append(" ORDER BY b.created_at DESC");
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                ps.setString(i + 1, "%" + params.get(i) + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setCoverUrl(rs.getString("cover_url"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    private void buildCondition(StringBuilder sql,
+            ArrayList<String> params,
+            String field,
+            String keyword,
+            String logic) {
+
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return;
+        }
+
+        if (logic != null) {
+            sql.append(" ").append(logic).append(" ");
+        } else {
+            sql.append(" AND ");
+        }
+
+        switch (field) {
+
+            case "title":
+                sql.append(" b.title LIKE ? ");
+                break;
+
+            case "author":
+                sql.append(" a.author_name LIKE ? ");
+                break;
+
+            case "category":
+                sql.append(" c.category_name LIKE ? ");
+                break;
+
+            default:
+                sql.append("""
+                (
+                    b.title LIKE ?
+                    OR a.author_name LIKE ?
+                    OR c.category_name LIKE ?
+                )
+            """);
+                params.add(keyword);
+                params.add(keyword);
+                params.add(keyword);
+                return;
+        }
+
+        params.add(keyword);
+    }
 }

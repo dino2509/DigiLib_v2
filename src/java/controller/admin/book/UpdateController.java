@@ -22,7 +22,8 @@ import model.Employee;
 
 @WebServlet(name = "UpdateController", urlPatterns = {"/admin/books/edit"})
 @MultipartConfig(
-        maxFileSize = 5 * 1024 * 1024 // 5MB
+        maxFileSize = 20 * 1024 * 1024,
+        maxRequestSize = 25 * 1024 * 1024
 )
 public class UpdateController extends HttpServlet {
 
@@ -99,7 +100,7 @@ public class UpdateController extends HttpServlet {
         String summary = request.getParameter("summary");
         String description = request.getParameter("description");
         String coverUrl = request.getParameter("cover_url");
-        String contentPath = request.getParameter("content_path");
+//        String contentPath = request.getParameter("content_path");
         String priceStr = request.getParameter("price");
         String currency = request.getParameter("currency");
         String status = request.getParameter("status");
@@ -174,7 +175,7 @@ public class UpdateController extends HttpServlet {
         b.setSummary(summary);
         b.setDescription(description);
         b.setCoverUrl(coverUrl);
-        b.setContentPath(contentPath);
+//        b.setContentPath(contentPath);
         b.setPrice(price);
         b.setCurrency(currency);
         b.setStatus(status);
@@ -189,6 +190,62 @@ public class UpdateController extends HttpServlet {
         b.setCategory(c);
 
         b.setUpdate_by(emp);
+
+        // =========================
+// UPLOAD PDF FILE
+// =========================
+        Part pdfPart = request.getPart("content_upload");
+
+        if (pdfPart != null && pdfPart.getSize() > 0) {
+
+            String contentType = pdfPart.getContentType();
+            long MAX_PDF_SIZE = 20 * 1024 * 1024;
+
+            // 1️⃣ Check dung lượng
+            if (pdfPart.getSize() > MAX_PDF_SIZE) {
+                errors.add("PDF không được vượt quá 20MB");
+            }
+
+            // 2️⃣ Check MIME
+            if (contentType == null || !contentType.equals("application/pdf")) {
+                errors.add("Chỉ được upload file PDF");
+            }
+
+            String originalFileName = Paths.get(pdfPart.getSubmittedFileName())
+                    .getFileName()
+                    .toString();
+
+            if (!originalFileName.toLowerCase().endsWith(".pdf")) {
+                errors.add("File phải có định dạng .pdf");
+            }
+
+            if (!errors.isEmpty()) {
+                request.setAttribute("errors", errors);
+                loadFormAgain(request, response);
+                return;
+            }
+
+            // 📂 Thư mục lưu PDF
+            String uploadDir = getServletContext().getRealPath("/")
+                    .replace("build\\web", "web\\pdf");
+
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // Rename tránh trùng
+            String fileNameNew = "book_" + System.currentTimeMillis() + ".pdf";
+
+            pdfPart.write(uploadDir + File.separator + fileNameNew);
+
+            b.setContentPath(fileNameNew);
+
+        } else {
+            // Không upload mới → giữ file cũ
+            Book old = bookDB.get(bookId);
+            b.setContentPath(old.getContentPath());
+        }
 
         Part coverPart = request.getPart("cover_upload");
         String selectedCover = request.getParameter("cover_select");

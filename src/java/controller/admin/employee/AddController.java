@@ -17,11 +17,11 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import model.Role;
+import org.mindrot.jbcrypt.BCrypt;
 
 @WebServlet(name = "EmployeeAddController", urlPatterns = {"/admin/employees/add"})
 public class AddController extends HttpServlet {
 
-    ReaderDBContext readerDB = new ReaderDBContext();
     EmployeeDBContext employeeDB = new EmployeeDBContext();
     RoleDBContext roleDB = new RoleDBContext();
 
@@ -29,51 +29,57 @@ public class AddController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Load danh sách reader
-        ArrayList<Reader> readers = readerDB.list();
-        
-        request.setAttribute("readers", readers);
-        ArrayList<Role> roles = roleDB.list();
-        request.setAttribute("roles", roles);
+        request.setAttribute("roles", roleDB.list());
+
         request.setAttribute("pageTitle", "Add Employee");
         request.setAttribute("activeMenu", "employee");
         request.setAttribute("contentPage", "../../view/admin/employees/add.jsp");
+
         request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
-//        request.getRequestDispatcher("../../view/admin/employees/add.jsp")
-//                .forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int readerId = Integer.parseInt(request.getParameter("reader_id"));
+        String fullName = request.getParameter("full_name");
+        String email = request.getParameter("email");
+        String password = request.getParameter("password");
+        String status = request.getParameter("status");
         int roleId = Integer.parseInt(request.getParameter("role_id"));
 
-        // 1️⃣ Lấy reader
-        Reader r = readerDB.get(readerId);
-        if (r == null) {
-            response.sendRedirect("add?error=reader_not_found");
+        // validate
+        if (fullName == null || fullName.trim().length() < 3) {
+            request.setAttribute("error", "Full name must be at least 3 characters");
+            doGet(request, response);
             return;
         }
 
-        // 2️⃣ Check đã là employee chưa
-        if (employeeDB.existsByEmail(r.getEmail())) {
-            response.sendRedirect("add?error=already_employee");
+        if (password.length() < 6) {
+            request.setAttribute("error", "Password must be at least 6 characters");
+            doGet(request, response);
             return;
         }
 
-        // 3️⃣ Copy Reader → Employee
+        // check email duplicate
+        if (employeeDB.existsByEmail(email)) {
+            request.setAttribute("error", "Email already exists");
+            doGet(request, response);
+            return;
+        }
+
+        // hash password
+        String passwordHash = BCrypt.hashpw(password, BCrypt.gensalt());
+
         Employee e = new Employee();
-        e.setFullName(r.getFullName());
-        e.setEmail(r.getEmail());
-        e.setPasswordHash(r.getPasswordHash()); // dùng lại
-        e.setStatus("active");
+        e.setFullName(fullName);
+        e.setEmail(email);
+        e.setPasswordHash(passwordHash);
+        e.setStatus(status);
         e.setRoleId(roleId);
         e.setCreatedAt(LocalDateTime.now());
 
-        // 4️⃣ Insert
         employeeDB.insert(e);
 
         response.sendRedirect(request.getContextPath() + "/admin/employees");

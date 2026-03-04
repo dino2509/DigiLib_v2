@@ -1,20 +1,11 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 package controller.guest;
 
 import dal.BookDBContext;
-import dal.AuthorDBContext;
-import dal.CategoryDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import model.Book;
-import model.Author;
-import model.Category;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,36 +14,44 @@ import java.util.ArrayList;
 public class SearchController extends HttpServlet {
 
     private BookDBContext bookDB = new BookDBContext();
-   
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ===== LẤY THAM SỐ SEARCH =====
-        String keyword = request.getParameter("keyword");             
-        String keyResult = keyword.trim().replaceAll("\\s+", " ").toLowerCase();
-  
-        // ===== SEARCH BOOK =====
-        ArrayList<Book> books = bookDB.searchByKeyword(
-                keyResult
-                );
+        // ===== LẤY KEYWORD =====
+        String keyword = request.getParameter("keyword");
+        String type = request.getParameter("type");
+        // Tránh null
+        if (keyword == null) {
+            keyword = "";
+        }
 
-        // ===== LOAD DATA CHO FILTER =====
-        
+        keyword = keyword.trim().replaceAll("\\s+", " ");
+        String keyResult = keyword.toLowerCase();
+
+        // ===== SEARCH =====
+        ArrayList<Book> books;
+
+        if (!keyword.isEmpty()) {
+
+            books = bookDB.searchAdvanced(keyword, type);
+
+        } else {
+
+            books = bookDB.getFeaturedBooks();
+
+        }
+
         // ===== SET ATTRIBUTE =====
         request.setAttribute("books", books);
-    
-
         request.setAttribute("keyword", keyword);
-     
+        request.setAttribute("type", type);
+        request.setAttribute("pageTitle", "Search Result");
+        request.setAttribute("contentPage", "/view/guest/search.jsp");
 
-        // ===== FORWARD =====
-        
-
-        request.getRequestDispatcher("../view/guest/home.jsp")
+        // ===== FORWARD VỀ LAYOUT =====
+        request.getRequestDispatcher("/include/guest/layout.jsp")
                 .forward(request, response);
-
     }
 }
-

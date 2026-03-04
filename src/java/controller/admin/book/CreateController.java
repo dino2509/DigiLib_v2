@@ -22,7 +22,8 @@ import java.util.ArrayList;
 
 @WebServlet(name = "CreateController", urlPatterns = {"/admin/books/add"})
 @MultipartConfig(
-        maxFileSize = 5 * 1024 * 1024 // 5MB
+        maxFileSize = 20 * 1024 * 1024,
+        maxRequestSize = 25 * 1024 * 1024
 )
 public class CreateController extends HttpServlet {
 
@@ -68,7 +69,7 @@ public class CreateController extends HttpServlet {
         b.setTitle(request.getParameter("title"));
         b.setSummary(request.getParameter("summary"));
         b.setDescription(request.getParameter("description"));
-        b.setContentPath(request.getParameter("content_path"));
+//        b.setContentPath(request.getParameter("content_path"));
         // ===== PRICE =====
         String price = request.getParameter("price");
         try {
@@ -110,7 +111,7 @@ public class CreateController extends HttpServlet {
         Part coverPart = request.getPart("cover_url");
         if (coverPart != null && coverPart.getSize() > 0) {
             String contentType = coverPart.getContentType();
-            
+
             long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
 
             // 1️⃣ Check dung lượng
@@ -167,6 +168,58 @@ public class CreateController extends HttpServlet {
 
             // 👉 CHỈ LƯU TÊN FILE
             b.setCoverUrl(fileNameNew);
+        }
+
+        // =========================
+// UPLOAD PDF FILE
+// =========================
+        Part pdfPart = request.getPart("content_path");
+
+        if (pdfPart != null && pdfPart.getSize() > 0) {
+
+            String contentType = pdfPart.getContentType();
+            long MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
+
+            // 1️⃣ Check dung lượng
+            if (pdfPart.getSize() > MAX_PDF_SIZE) {
+                request.setAttribute("error", "File PDF không được vượt quá 20MB!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            // 2️⃣ Check MIME type
+            if (contentType == null || !contentType.equals("application/pdf")) {
+                request.setAttribute("error", "Chỉ được upload file PDF!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            String originalFileName = Paths.get(pdfPart.getSubmittedFileName())
+                    .getFileName()
+                    .toString();
+
+            if (!originalFileName.toLowerCase().endsWith(".pdf")) {
+                request.setAttribute("error", "File phải có định dạng .pdf!");
+                loadFormAgain(request, response);
+                return;
+            }
+
+            // 📂 Thư mục lưu PDF
+            String uploadDir = getServletContext().getRealPath("/")
+                    .replace("build\\web", "web\\pdf");
+
+            File dir = new File(uploadDir);
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+
+            // 👉 Rename tránh trùng file
+            String fileNameNew = "book_" + System.currentTimeMillis() + ".pdf";
+
+            pdfPart.write(uploadDir + File.separator + fileNameNew);
+
+            // 👉 Lưu tên file vào DB
+            b.setContentPath(fileNameNew);
         }
 
         // ===== INSERT =====

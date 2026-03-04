@@ -170,6 +170,18 @@
         font-size: 16px;
     }
 
+    .field-error {
+        margin-top: 6px;
+        font-size: 13px;
+        color: #dc2626;
+        font-weight: 600;
+    }
+
+    .input-error {
+        border-color: #dc2626 !important;
+        box-shadow: 0 0 0 2px rgba(220,38,38,.15);
+    }
+
 </style>
 
 
@@ -182,7 +194,7 @@
         width: '100%'
     });
 </script>
-
+<script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
 <!-- ================= CONTENT ================= -->
 <div class="main">
     <div class="edit-card">
@@ -210,7 +222,7 @@
         <form action="${pageContext.request.contextPath}/admin/books/edit"
               method="post"
               enctype="multipart/form-data">
-        
+
             <input type="hidden" name="book_id" value="${book.bookId}">
 
             <div class="row g-4">
@@ -230,14 +242,20 @@
                     <input name="currency" value="${book.currency}" class="form-control">
                 </div>
 
-                <div class="col-12 form-group">
+                <div class="form-group">
                     <label>Tóm tắt</label>
-                    <textarea name="summary" rows="3" class="form-control">${book.summary}</textarea>
+                    <textarea id="summaryEditor"
+                              name="summary"
+                              rows="3"
+                              class="form-control">${book.summary}</textarea>
                 </div>
 
-                <div class="col-12 form-group">
+                <div class="form-group">
                     <label>Mô tả</label>
-                    <textarea name="description" rows="4" class="form-control">${book.description}</textarea>
+                    <textarea id="descriptionEditor"
+                              name="description"
+                              rows="4"
+                              class="form-control">${book.description}</textarea>
                 </div>
 
 
@@ -274,35 +292,58 @@
                     </select>
                 </div>
 
+                <!--                <div class="col-md-6 form-group">
+                                    <label>Chọn ảnh có sẵn</label>
+                                    <select name="cover_select" class="form-select select2">
+                                        <option value="">-- Chọn ảnh trong thư mục --</option>
+                <c:forEach items="${images}" var="img">
+                    <option value="${img}"
+                    ${img == book.coverUrl ? 'selected' : ''}>
+                    ${img}
+                </option>
+                </c:forEach>
+            </select>
+        </div>-->
+
+
                 <div class="col-md-6 form-group">
-                    <label>Chọn ảnh có sẵn</label>
-                    <select name="cover_select" class="form-select select2">
-                        <option value="">-- Chọn ảnh trong thư mục --</option>
-                        <c:forEach items="${images}" var="img">
-                            <option value="${img}"
-                                    ${img == book.coverUrl ? 'selected' : ''}>
-                                ${img}
-                            </option>
-                        </c:forEach>
-                    </select>
+                    <label>Upload ảnh mới</label>
+                    <input type="file"
+                           id="coverUpload"
+                           name="cover_upload"
+                           class="form-control"
+                           accept=".jpg,.jpeg,.png,.webp">
+                    <div id="coverError" class="field-error"></div>
                 </div>
                 <div class="cover-preview">
                     <img id="previewImg"
                          src="${pageContext.request.contextPath}/img/book/${book.coverUrl}">
                 </div>
 
-                <div class="col-md-6 form-group">
-                    <label>Hoặc upload ảnh mới</label>
-                    <input type="file"
-                           name="cover_upload"
-                           class="form-control"
-                           accept=".jpg,.jpeg,.png,.webp">
-                </div>
-
-
+                <!--                <div class="col-12 form-group">
+                                    <label>Content Path</label>
+                                    <input name="content_path" value="${book.contentPath}" class="form-control">
+                                </div>-->
                 <div class="col-12 form-group">
-                    <label>Content Path</label>
-                    <input name="content_path" value="${book.contentPath}" class="form-control">
+                    <label>Upload PDF mới</label>
+
+                    <input type="file"
+                           id="pdfUpload"
+                           name="content_upload"
+                           class="form-control"
+                           accept=".pdf,application/pdf">
+
+                    <div id="pdfError" class="field-error"></div>
+
+                    <c:if test="${not empty book.contentPath}">
+                        <div style="margin-top:8px; font-size:13px;">
+                            📄 File hiện tại:
+                            <a href="${pageContext.request.contextPath}/pdf/${book.contentPath}"
+                               target="_blank">
+                                ${book.contentPath}
+                            </a>
+                        </div>
+                    </c:if>
                 </div>
 
             </div>
@@ -314,24 +355,138 @@
         </form>
     </div>
 </div>
-<script>$('select[name="cover_select"]').on('change', function () {
-        const img = $(this).val();
-        if (img) {
-            $('#previewImg').attr(
-                    'src',
-                    '${pageContext.request.contextPath}/img/book/' + img
-                    );
-        }
-    });
+<script>
+    $(document).ready(function () {
 
-    $('input[name="cover_upload"]').on('change', function (e) {
-        const file = e.target.files[0];
-        if (!file)
-            return;
+        let coverValid = true;
+        let pdfValid = true;
 
-        const reader = new FileReader();
-        reader.onload = e => $('#previewImg').attr('src', e.target.result);
-        reader.readAsDataURL(file);
+        // ===== PREVIEW ẢNH (giữ nguyên chức năng cũ) =====
+        $('#coverUpload').on('change', function (e) {
+
+            coverValid = true;
+
+            const file = e.target.files[0];
+            const errorBox = $('#coverError');
+
+            errorBox.text('');
+            $(this).removeClass('input-error');
+
+            if (!file)
+                return;
+
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+            const maxSize = 2 * 1024 * 1024; // 2MB
+
+            // Check MIME
+            if (!allowedTypes.includes(file.type)) {
+                errorBox.text('❌ Chỉ cho phép JPG, PNG, WEBP');
+                $(this).addClass('input-error');
+                coverValid = false;
+                this.value = '';
+                return;
+            }
+
+            // Check size
+            if (file.size > maxSize) {
+                errorBox.text('❌ Ảnh không được vượt quá 2MB');
+                $(this).addClass('input-error');
+                coverValid = false;
+                this.value = '';
+                return;
+            }
+
+            // Preview
+            const reader = new FileReader();
+            reader.onload = e => $('#previewImg').attr('src', e.target.result);
+            reader.readAsDataURL(file);
+        });
+
+        // ===== VALIDATE PDF =====
+        $('#pdfUpload').on('change', function (e) {
+
+            pdfValid = true;
+
+            const file = e.target.files[0];
+            const errorBox = $('#pdfError');
+
+            errorBox.text('');
+            $(this).removeClass('input-error');
+
+            if (!file)
+                return;
+
+            const maxSize = 20 * 1024 * 1024; // 20MB
+
+            if (file.type !== 'application/pdf') {
+                errorBox.text('❌ Chỉ được upload file PDF');
+                $(this).addClass('input-error');
+                pdfValid = false;
+                this.value = '';
+                return;
+            }
+
+            if (file.size > maxSize) {
+                errorBox.text('❌ PDF không được vượt quá 20MB');
+                $(this).addClass('input-error');
+                pdfValid = false;
+                this.value = '';
+                return;
+            }
+
+            // Check magic number
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const arr = new Uint8Array(e.target.result).subarray(0, 4);
+                const header = String.fromCharCode(...arr);
+                if (header !== "%PDF") {
+                    errorBox.text('❌ File không phải PDF hợp lệ');
+                    $('#pdfUpload').addClass('input-error');
+                    pdfValid = false;
+                    $('#pdfUpload').val('');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // ===== CHẶN SUBMIT NẾU LỖI =====
+        $('form').on('submit', function (e) {
+            if (!coverValid || !pdfValid) {
+                e.preventDefault();
+                alert("Vui lòng sửa lỗi trước khi cập nhật.");
+            }
+        });
+
     });
+</script>
+<script>
+    // CKEditor Summary
+    ClassicEditor
+            .create(document.querySelector('#summaryEditor'), {
+                toolbar: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', '|',
+                    'link', 'bulletedList', 'numberedList', '|',
+                    'undo', 'redo'
+                ]
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+    // CKEditor Description
+    ClassicEditor
+            .create(document.querySelector('#descriptionEditor'), {
+                toolbar: [
+                    'heading', '|',
+                    'bold', 'italic', 'underline', '|',
+                    'link', 'bulletedList', 'numberedList', '|',
+                    'blockQuote', 'insertTable', '|',
+                    'undo', 'redo'
+                ]
+            })
+            .catch(error => {
+                console.error(error);
+            });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

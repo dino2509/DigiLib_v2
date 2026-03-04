@@ -2,189 +2,141 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <style>
-    .add-wrapper {
-        max-width: 900px;
-        margin: 0 auto;
+    .add-wrapper{
+        max-width:900px;
+        margin:0 auto;
     }
 
-    .add-card {
-        background: #ffffff;
-        padding: 34px 38px;
-        border-radius: 18px;
-        border: 1px solid #fed7aa;
-        box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+    .add-card{
+        background:#fff;
+        padding:34px 38px;
+        border-radius:18px;
+        border:1px solid #fed7aa;
+        box-shadow:0 18px 40px rgba(0,0,0,0.08);
     }
 
-    .add-title {
-        text-align: center;
-        font-size: 24px;
-        font-weight: 700;
-        color: #c2410c;
-        margin-bottom: 28px;
+    .add-title{
+        text-align:center;
+        font-size:24px;
+        font-weight:700;
+        color:#c2410c;
+        margin-bottom:28px;
     }
 
-    label {
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 6px;
-        font-size: 14px;
-        display: block;
+    label{
+        font-weight:600;
+        color:#374151;
+        margin-bottom:6px;
+        font-size:14px;
+        display:block;
     }
 
     .form-control,
-    .form-select {
-        width: 100%;
-        border-radius: 10px;
-        font-size: 14px;
-        padding: 10px 12px;
-        margin-bottom: 16px;
-        border: 1px solid #e5e7eb;
+    .form-select{
+        width:100%;
+        border-radius:10px;
+        font-size:14px;
+        padding:10px 12px;
+        margin-bottom:16px;
+        border:1px solid #e5e7eb;
     }
 
-    .form-control[readonly] {
-        background: #f3f4f6;
-        color: #6b7280;
+    .error{
+        color:#dc2626;
+        font-size:13px;
+        margin-top:-12px;
+        margin-bottom:10px;
     }
 
-    .divider {
-        margin: 20px 0;
-        border-top: 1px dashed #fed7aa;
+    .form-actions{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-top:24px;
+        padding-top:18px;
+        border-top:1px dashed #fed7aa;
     }
 
-    .form-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 24px;
-        padding-top: 18px;
-        border-top: 1px dashed #fed7aa;
+    .btn-save{
+        background:linear-gradient(135deg,#fb923c,#ea580c);
+        color:#fff;
+        padding:10px 30px;
+        border-radius:999px;
+        font-weight:600;
+        border:none;
     }
 
-    .btn-save {
-        background: linear-gradient(135deg, #fb923c, #ea580c);
-        color: #fff;
-        padding: 10px 30px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-save:hover {
-        box-shadow: 0 6px 18px rgba(234,88,12,0.45);
-    }
-
-    .btn-back {
-        color: #ea580c;
-        font-weight: 600;
-        text-decoration: none;
-        font-size: 14px;
-    }
-
-    .btn-back:hover {
-        text-decoration: underline;
-    }
-
-    .hint {
-        font-size: 13px;
-        color: #6b7280;
-        margin-top: -10px;
-        margin-bottom: 12px;
-        font-style: italic;
+    .btn-back{
+        color:#ea580c;
+        font-weight:600;
+        text-decoration:none;
     }
 </style>
 
+
 <div class="add-wrapper">
+
     <div class="add-card">
 
         <div class="add-title">
-            🚀 Promote Reader to Employee
+            ➕ Add Employee
         </div>
 
+        <c:if test="${not empty error}">
+            <div class="error">${error}</div>
+        </c:if>
+
         <form action="${pageContext.request.contextPath}/admin/employees/add"
-              method="post">
+              method="post"
+              onsubmit="return validateForm()">
 
-            <!-- SELECT READER -->
-            <label>Reader</label>
-            <select id="readerSelect"
-                    name="reader_id"
-                    class="form-select"
-                    required
-                    onchange="fillReaderInfo()">
-                <option value="">-- Select Reader --</option>
-
-                <c:forEach items="${readers}" var="r">
-                    <c:if test="${r.roleId == 3}">
-                        <option value="${r.readerId}"
-                                data-name="${r.fullName}"
-                                data-email="${r.email}"
-                                data-phone="${r.phone}"
-                                data-status="${r.status}">
-                            ${r.fullName} - ${r.email}
-                        </option>
-                    </c:if>
-                </c:forEach>
-
-            </select>
-            <div class="hint">Chọn reader để tự động điền thông tin</div>
-
-            <div class="divider"></div>
-
-            <!-- FULL NAME -->
             <label>Full Name</label>
             <input type="text"
-                   id="fullName"
                    name="full_name"
+                   id="fullName"
                    class="form-control"
                    required>
 
-            <!-- EMAIL -->
             <label>Email</label>
-            <input type="text"
+            <input type="email"
+                   name="email"
                    id="email"
                    class="form-control"
-                   readonly>
+                   required>
 
-            <!-- PHONE -->
-            <label>Phone</label>
-            <input type="text"
-                   id="phone"
+            <label>Password</label>
+            <input type="password"
+                   name="password"
+                   id="password"
                    class="form-control"
-                   readonly>
+                   required>
 
-            <!-- STATUS -->
             <label>Status</label>
-            <input type="text"
-                   id="status"
-                   class="form-control"
-                   readonly>
+            <select name="status" class="form-select">
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
 
-            <!-- ROLE -->
             <label>Role</label>
-            <select name="role_id"
-                    class="form-select"
-                    required>
-
+            <select name="role_id" class="form-select" required>
                 <c:forEach items="${roles}" var="r">
-                    <c:if test="${r.roleId ne 3}">
-                        <option value="${r.roleId}">
-                            ${r.roleName}
-                        </option>
-                    </c:if>
+                    <option value="${r.roleId}">
+                        ${r.roleName}
+                    </option>
                 </c:forEach>
             </select>
 
-            <!-- ACTIONS -->
             <div class="form-actions">
+
                 <button type="submit" class="btn-save">
-                    🚀 Promote
+                    💾 Save
                 </button>
 
                 <a href="${pageContext.request.contextPath}/admin/employees"
                    class="btn-back">
                     ⬅ Cancel
                 </a>
+
             </div>
 
         </form>
@@ -193,16 +145,32 @@
 </div>
 
 <script>
-    function fillReaderInfo() {
-        const select = document.getElementById("readerSelect");
-        const opt = select.options[select.selectedIndex];
 
-        if (!opt.value)
-            return;
+    function validateForm() {
 
-        document.getElementById("fullName").value = opt.dataset.name;
-        document.getElementById("email").value = opt.dataset.email;
-        document.getElementById("phone").value = opt.dataset.phone;
-        document.getElementById("status").value = opt.dataset.status;
+        let name = document.getElementById("fullName").value.trim();
+        let email = document.getElementById("email").value.trim();
+        let password = document.getElementById("password").value;
+
+        if (name.length < 3) {
+            alert("Full name must be at least 3 characters");
+            return false;
+        }
+
+        let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(email)) {
+            alert("Invalid email format");
+            return false;
+        }
+
+        if (password.length < 6) {
+            alert("Password must be at least 6 characters");
+            return false;
+        }
+
+        return true;
+
     }
+
 </script>

@@ -1,263 +1,405 @@
 <%@ page contentType="text/html; charset=UTF-8" language="java" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
-<!DOCTYPE html>
-<html lang="vi">
-    <head>
-        <meta charset="UTF-8">
-        <title>Digital Library - Trang chủ</title>
+<style>
 
-        <style>
-            :root {
-                --primary: #ff7a18;
-                --primary-dark: #e8650f;
-                --bg: #fdf2e9;
-                --text: #333;
-            }
+    :root{
+        --primary:#f97316;
+        --primary-soft:#fff7ed;
+        --border:#e5e7eb;
+        --text:#374151;
+    }
 
-            * {
-                box-sizing: border-box;
-            }
+    /* ===== BANNER ===== */
 
-            body {
-                margin: 0;
-                font-family: "Segoe UI", Arial, sans-serif;
-                background-color: var(--bg);
-                color: var(--text);
-            }
+    .banner{
+        background:linear-gradient(135deg,#f97316,#fb923c);
+        color:white;
+        text-align:center;
+        padding:70px 20px;
+        border-radius:14px;
+        margin-bottom:35px;
+    }
 
-            /* ===== HEADER ===== */
-            header {
-                background: var(--primary);
-                color: white;
-                padding: 14px 40px;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            }
+    .banner h1{
+        font-size:36px;
+        margin-bottom:10px;
+    }
 
-            header h2 {
-                margin: 0;
-                font-size: 22px;
-            }
+    .banner p{
+        font-size:18px;
+    }
 
-            nav {
-                display: flex;
-                align-items: center;
-                gap: 20px;
-            }
+    /* ===== SEARCH ===== */
 
-            nav a {
-                color: white;
-                text-decoration: none;
-                font-weight: 500;
-            }
+    .home-search{
+        display:flex;
+        justify-content:center;
+        margin:35px 0;
+    }
 
-            nav a:hover {
-                text-decoration: underline;
-            }
+    .home-search form{
+        display:flex;
+        width:500px;
+        border:1px solid var(--border);
+        border-radius:8px;
+        overflow:hidden;
+    }
 
-            /* ===== SEARCH ===== */
-            .search-box {
-                display: flex;
-                gap: 6px;
-            }
+    .home-search input{
+        flex:1;
+        padding:12px;
+        border:none;
+        outline:none;
+    }
 
-            .search-box input {
-                padding: 6px 10px;
-                border-radius: 6px;
-                border: none;
-                outline: none;
-            }
+    .home-search button{
+        padding:0 20px;
+        border:none;
+        background:var(--primary);
+        color:white;
+        cursor:pointer;
+    }
 
-            .search-box button {
-                background: white;
-                color: var(--primary);
-                border: none;
-                padding: 6px 12px;
-                border-radius: 6px;
-                font-weight: 600;
-                cursor: pointer;
-            }
+    /* ===== SECTION ===== */
 
-            .search-box button:hover {
-                background: #ffe4d1;
-            }
+    .section-title{
+        margin:40px 0 20px;
+        font-size:24px;
+        font-weight:600;
+    }
 
-            /* ===== BANNER ===== */
-            .banner {
-                background: linear-gradient(to right, var(--primary), #ff9f43);
-                color: white;
-                padding: 80px 20px;
-                text-align: center;
-            }
+    /* ===== BOOK LIST ===== */
 
-            .banner h1 {
-                font-size: 36px;
-                margin-bottom: 10px;
-            }
+    .book-list{
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+        gap:22px;
+    }
 
-            .banner p {
-                font-size: 18px;
-                opacity: 0.95;
-            }
+    /* ===== BOOK CARD ===== */
 
-            /* ===== CONTAINER ===== */
-            .container {
-                padding: 50px 60px;
-            }
+    .book-card{
+        border:1px solid var(--border);
+        border-radius:10px;
+        padding:14px;
+        background:white;
+        transition:0.2s;
+        text-align:center;
+    }
 
-            .container h2 {
-                color: var(--primary-dark);
-                margin-bottom: 30px;
-                text-align: center;
-                font-size: 28px;
-            }
+    .book-card:hover{
+        transform:translateY(-5px);
+        box-shadow:0 8px 20px rgba(0,0,0,0.1);
+    }
 
-            /* ===== BOOK LIST ===== */
-            .book-list {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-                gap: 30px;
-            }
+    .book-cover{
+        width:100%;
+        height:220px;
+        object-fit:cover;
+        border-radius:6px;
+        margin-bottom:10px;
+    }
 
-            .book-card {
-                background: white;
-                border-radius: 12px;
-                padding: 16px;
-                box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-                display: flex;
-                flex-direction: column;
-                text-align: center;
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
+    .book-card h3{
+        font-size:16px;
+        height:40px;
+        overflow:hidden;
+    }
 
-            .book-card:hover {
-                transform: translateY(-6px);
-                box-shadow: 0 12px 25px rgba(0,0,0,0.12);
-            }
+    .book-card p{
+        color:#ef4444;
+        margin:8px 0;
+    }
 
-            .book-card img {
-                width: 130px;
-                height: 180px;
-                object-fit: cover;
-                margin: 0 auto 12px;
-                border-radius: 6px;
-            }
+    .btn-detail{
+        display:inline-block;
+        padding:7px 12px;
+        background:var(--primary);
+        color:white;
+        text-decoration:none;
+        border-radius:6px;
+        font-size:14px;
+    }
 
-            .book-card h3 {
-                font-size: 16px;
-                min-height: 44px;
-                margin: 8px 0;
-            }
+    /* ===== STATS ===== */
 
-            .book-card p {
-                font-weight: 600;
-                margin: 6px 0 14px;
-                color: #555;
-            }
+    .stats{
+        margin-top:60px;
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:20px;
+        text-align:center;
+    }
 
-            .book-card a {
-                margin-top: auto;
-                background: var(--primary);
-                color: white;
-                padding: 9px 14px;
-                border-radius: 8px;
-                text-decoration: none;
-                font-weight: 500;
-            }
+    .stat-card{
+        background:var(--primary-soft);
+        padding:25px;
+        border-radius:10px;
+    }
 
-            .book-card a:hover {
-                background: var(--primary-dark);
-            }
+    .stat-card h2{
+        color:var(--primary);
+    }
 
-            /* ===== FOOTER ===== */
-            footer {
-                background: var(--primary);
-                color: white;
-                text-align: center;
-                padding: 16px;
-                margin-top: 60px;
-            }
+    /* ===== CTA ===== */
 
-            /* ===== RESPONSIVE ===== */
-            @media (max-width: 768px) {
-                header {
-                    flex-direction: column;
-                    gap: 10px;
-                }
+    .cta{
+        margin-top:60px;
+        padding:40px;
+        background:#f9fafb;
+        text-align:center;
+        border-radius:12px;
+    }
 
-                .container {
-                    padding: 30px 20px;
-                }
+    .cta a{
+        margin-top:15px;
+        display:inline-block;
+        padding:10px 20px;
+        background:var(--primary);
+        color:white;
+        text-decoration:none;
+        border-radius:8px;
+    }
+    .home-search{
+        display:flex;
+        justify-content:center;
+        margin:40px 0;
+    }
 
-                .banner h1 {
-                    font-size: 28px;
-                }
-            }
-        </style>
-    </head>
+    .home-search form{
+        display:flex;
+        width:700px;
+        border-radius:6px;
+        overflow:hidden;
+        box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    }
 
-    <body>
+    .home-search select{
+        width:150px;
+        padding:12px;
+        border:none;
+        background:#eee;
+    }
 
-        <header>
-            <h2>📚 Digital Library</h2>
+    .home-search input{
+        flex:1;
+        padding:12px;
+        border:none;
+        outline:none;
+    }
 
-            <nav>
-                <a href="${pageContext.request.contextPath}/home">Trang chủ</a>
-                <a href="${pageContext.request.contextPath}/books">Sách</a>
-                <a href="${pageContext.request.contextPath}/login">Đăng nhập</a>
-                <a href="${pageContext.request.contextPath}/register">Đăng ký</a>
+    .home-search button{
+        width:120px;
+        border:none;
+        background:#f97316;
+        color:white;
+        font-weight:bold;
+        cursor:pointer;
+    }
+    .book-list{
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+        gap:25px;
+    }
 
-                <form class="search-box"
-                      action="${pageContext.request.contextPath}/home/search"
-                      method="get">
-                    <input type="text" name="keyword"
-                           placeholder="Tìm sách..."
-                           value="${param.keyword}">
-                    <button type="submit">🔍</button>
-                </form>
-            </nav>
-        </header>
+    .book-card{
+        background:white;
+        border-radius:10px;
+        padding:15px;
+        border:1px solid #e5e7eb;
+        transition:0.2s;
+    }
 
-        <section class="banner">
-            <h1>Thư viện số dành cho mọi người</h1>
-            <p>Khám phá • Đọc online • Mượn sách dễ dàng</p>
-        </section>
+    .book-card:hover{
+        transform:translateY(-5px);
+        box-shadow:0 10px 20px rgba(0,0,0,0.1);
+    }
 
-        <div class="container">
-            <h2>Sách nổi bật</h2>
+    .book-cover{
+        width:100%;
+        height:240px;
+        object-fit:cover;
+        border-radius:6px;
+        margin-bottom:10px;
+    }
 
-            <div class="book-list">
-                <c:forEach items="${books}" var="b">
-                    <div class="book-card">
-                        <img class="card-img-top book-cover"
-                             src="${pageContext.request.contextPath}/img/book/${empty b.coverUrl 
-                                    ? 'no-cover.png' 
-                                    : b.coverUrl}"
-                             alt="${b.title}">
-                        <h3>${b.title}</h3>
+    .book-title{
+        font-size:16px;
+        font-weight:600;
+        margin-bottom:10px;
+        height:40px;
+        overflow:hidden;
+    }
 
-                        <p>
-                            <c:choose>
-                                <c:when test="${b.price == null || b.price == 0}">
-                                    Miễn phí
-                                </c:when>
-                                <c:otherwise>
-                                    ${b.price} VND
-                                </c:otherwise>
-                            </c:choose>
-                        </p>
+    .book-meta{
+        font-size:13px;
+        color:#555;
+        line-height:1.5;
+        margin-bottom:10px;
+    }
 
-                        <a href="book-detail?id=${b.bookId}">Xem chi tiết</a>
-                    </div>
-                </c:forEach>
+    .book-price{
+        margin-bottom:10px;
+        font-weight:600;
+    }
+
+    .free{
+        color:#16a34a;
+    }
+
+    .price{
+        color:#ef4444;
+    }
+
+    .btn-detail{
+        display:block;
+        text-align:center;
+        padding:8px;
+        background:#f97316;
+        color:white;
+        border-radius:6px;
+        text-decoration:none;
+        font-size:14px;
+    }
+
+</style>
+
+<!-- ===== BANNER ===== -->
+
+<section class="banner">
+    <h1>📚 Thư viện số</h1>
+    <p>Khám phá hàng nghìn tài liệu học tập miễn phí</p>
+</section>
+
+<!-- ===== SEARCH ===== -->
+
+<div class="home-search">
+
+    <form action="${pageContext.request.contextPath}/home/search" method="get">
+
+        <select name="type">
+
+            <option value="all"
+                    ${param.type == 'all' || param.type == null ? 'selected' : ''}>
+                All
+            </option>
+
+            <option value="title"
+                    ${param.type == 'title' ? 'selected' : ''}>
+                Title
+            </option>
+
+            <option value="author"
+                    ${param.type == 'author' ? 'selected' : ''}>
+                Author
+            </option>
+
+            <option value="category"
+                    ${param.type == 'category' ? 'selected' : ''}>
+                Category
+            </option>
+
+        </select>
+
+        <input type="text"
+               name="keyword"
+               placeholder="Everything"
+               value="${param.keyword}">
+
+        <button type="submit">Search</button>
+
+    </form>
+
+</div>
+
+<!-- ===== BOOKS ===== -->
+
+<h2 class="section-title">🔥 Sách nổi bật</h2>
+
+<div class="book-list">
+
+    <c:forEach items="${books}" var="b">
+
+        <div class="book-card">
+
+            <img class="book-cover"
+                 src="${pageContext.request.contextPath}/img/book/${empty b.coverUrl 
+                        ? 'no-cover.png' 
+                        : b.coverUrl}"
+                 alt="${b.title}">
+
+            <h3 class="book-title">${b.title}</h3>
+
+            <div class="book-meta">
+
+                <p>
+                    <strong>Author:</strong>
+                    <c:out value="${b.author.author_name}" default="Unknown"/>
+                </p>
+
+                <p>
+                    <strong>Category:</strong>
+                    <c:out value="${b.category.category_name}" default="Other"/>
+                </p>
+
+                
+
             </div>
+
+            <div class="book-price">
+
+                <c:choose>
+                    <c:when test="${b.price == null || b.price == 0}">
+                        <span class="free">Miễn phí</span>
+                    </c:when>
+
+                    <c:otherwise>
+                        <span class="price">${b.price} ${b.currency}</span>
+                    </c:otherwise>
+                </c:choose>
+
+            </div>
+
+            <a href="${pageContext.request.contextPath}/book-detail?id=${b.bookId}"
+               class="btn-detail">
+                Xem chi tiết
+            </a>
+
         </div>
 
-        <footer>
-            <p>© 2026 Digital Library | JSP & Servlet</p>
-        </footer>
+    </c:forEach>
 
-    </body>
-</html>
+</div>
+
+<!-- ===== STATS ===== -->
+
+<div class="stats">
+
+    <div class="stat-card">
+        <h2>10.000+</h2>
+        <p>Tài liệu</p>
+    </div>
+
+    <div class="stat-card">
+        <h2>5.000+</h2>
+        <p>Người dùng</p>
+    </div>
+
+    <div class="stat-card">
+        <h2>50.000+</h2>
+        <p>Lượt đọc</p>
+    </div>
+
+</div>
+
+<!-- ===== CTA ===== -->
+
+<div class="cta">
+    <h2>Đăng ký để đọc sách miễn phí</h2>
+    <p>Tham gia cộng đồng đọc sách của chúng tôi</p>
+
+    <a href="${pageContext.request.contextPath}/register">
+        Đăng ký ngay
+    </a>
+</div>
