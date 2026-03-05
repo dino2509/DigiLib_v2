@@ -533,6 +533,176 @@ public class BookDBContext extends DBContext<Book> {
         return list;
     }
 
+    public ArrayList<Book> getBooksPaging(int pageIndex, int pageSize) {
+
+        ArrayList<Book> list = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            b.book_id,
+            b.title,
+            b.cover_url,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        ORDER BY b.book_id
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, (pageIndex - 1) * pageSize);
+            ps.setInt(2, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                // ===== AUTHOR =====
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                // ===== CATEGORY =====
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                list.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int countBooks() {
+
+        String sql = "SELECT COUNT(*) FROM Book";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public ArrayList<Book> searchByKeywordPaging(String keyword, int pageIndex, int pageSize) {
+
+        ArrayList<Book> list = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            b.book_id,
+            b.title,
+            b.cover_url,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE b.title LIKE ?
+        ORDER BY b.book_id
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword + "%");
+            ps.setInt(2, (pageIndex - 1) * pageSize);
+            ps.setInt(3, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                // ===== AUTHOR =====
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                // ===== CATEGORY =====
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                list.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int countSearchBooks(String keyword) {
+
+        String sql = """
+        SELECT COUNT(*)
+        FROM Book
+        WHERE title LIKE ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword + "%");
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     public ArrayList<Book> searchPaging(String keyword,
             Integer authorId,
             Integer categoryId,
@@ -926,4 +1096,186 @@ public class BookDBContext extends DBContext<Book> {
 
         params.add(keyword);
     }
+    
+    
+    public ArrayList<Book> searchAdvancedPaging(String keyword, String type, int pageIndex, int pageSize) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT 
+            b.book_id,
+            b.title,
+            b.cover_url,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1=1
+    """);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+
+            switch (type) {
+
+                case "title":
+                    sql.append(" AND b.title LIKE ? ");
+                    break;
+
+                case "author":
+                    sql.append(" AND a.author_name LIKE ? ");
+                    break;
+
+                case "category":
+                    sql.append(" AND c.category_name LIKE ? ");
+                    break;
+
+                default:
+                    sql.append("""
+                    AND (
+                        b.title LIKE ?
+                        OR a.author_name LIKE ?
+                        OR c.category_name LIKE ?
+                    )
+                """);
+                    break;
+            }
+        }
+
+        sql.append("""
+        ORDER BY b.created_at DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int index = 1;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+
+                if ("all".equals(type)) {
+
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+
+                } else {
+
+                    ps.setString(index++, "%" + keyword + "%");
+
+                }
+            }
+
+            ps.setInt(index++, (pageIndex - 1) * pageSize);
+            ps.setInt(index, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    public int countSearchAdvanced(String keyword, String type) {
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(*)
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1=1
+    """);
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+
+            switch (type) {
+
+                case "title":
+                    sql.append(" AND b.title LIKE ? ");
+                    break;
+
+                case "author":
+                    sql.append(" AND a.author_name LIKE ? ");
+                    break;
+
+                case "category":
+                    sql.append(" AND c.category_name LIKE ? ");
+                    break;
+
+                default:
+                    sql.append("""
+                    AND (
+                        b.title LIKE ?
+                        OR a.author_name LIKE ?
+                        OR c.category_name LIKE ?
+                    )
+                """);
+                    break;
+            }
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int index = 1;
+
+            if (keyword != null && !keyword.trim().isEmpty()) {
+
+                if ("all".equals(type)) {
+
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+
+                } else {
+
+                    ps.setString(index++, "%" + keyword + "%");
+
+                }
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+    
 }

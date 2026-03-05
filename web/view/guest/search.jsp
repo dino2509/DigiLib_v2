@@ -120,6 +120,36 @@
         color:#777;
     }
 
+    .pagination{
+        margin-top:40px;
+        display:flex;
+        justify-content:center;
+        gap:10px;
+    }
+
+    .pagination a{
+        padding:8px 14px;
+        border:1px solid #ddd;
+        text-decoration:none;
+        color:#333;
+        border-radius:6px;
+    }
+
+    .pagination a:hover{
+        background:#f97316;
+        color:white;
+    }
+
+    .active-page{
+        background:#f97316;
+        color:white !important;
+        border:none;
+    }
+    .pagination a.active{
+        background:#f97316;
+        color:white;
+        border-color:none;
+    }
 </style>
 
 
@@ -239,5 +269,27 @@
         </div>
 
     </c:forEach>
+
+</div>
+<div class="pagination">
+
+    <c:if test="${currentPage > 1}">
+        <a href="${pageContext.request.contextPath}/home/search?page=${currentPage-1}&keyword=${keyword}&type=${type}">
+            Previous
+        </a>
+    </c:if>
+
+    <c:forEach begin="1" end="${totalPages}" var="i">
+        <a class="${i==currentPage?'active':''}"
+           href="${pageContext.request.contextPath}/home/search?page=${i}&keyword=${keyword}&type=${type}">
+            ${i}
+        </a>
+    </c:forEach>
+
+    <c:if test="${currentPage < totalPages}">
+        <a href="${pageContext.request.contextPath}/home/search?page=${currentPage+1}&keyword=${keyword}&type=${type}">
+            Next
+        </a>
+    </c:if>
 
 </div>

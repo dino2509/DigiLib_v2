@@ -11,13 +11,42 @@ public class CategoryDBContext extends DBContext<Category> {
     // =========================
     // LIST ALL CATEGORIES
     // =========================
+    public ArrayList<Category> listAll() {
+
+        ArrayList<Category> list = new ArrayList<>();
+
+        String sql = "SELECT * FROM Category ORDER BY category_name";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Category c = new Category();
+
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                c.setDescription(rs.getString("description"));
+
+                list.add(c);
+
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
     @Override
     public ArrayList<Category> list() {
         ArrayList<Category> categories = new ArrayList<>();
         String sql = "SELECT category_id, category_name, description FROM Category";
 
-        try (PreparedStatement stm = connection.prepareStatement(sql);
-             ResultSet rs = stm.executeQuery()) {
+        try (PreparedStatement stm = connection.prepareStatement(sql); ResultSet rs = stm.executeQuery()) {
 
             while (rs.next()) {
                 Category c = new Category();
