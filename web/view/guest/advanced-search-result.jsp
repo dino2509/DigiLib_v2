@@ -219,33 +219,33 @@
             </div>
 
 
-            <div class="keyword-row">
-
-                <select name="field4">
-                    <option value="">---Tất cả---</option>
-                    <option value="title" ${param.field4=='title'?'selected':''}>Title</option>
-                    <option value="author" ${param.field4=='author'?'selected':''}>Author</option>
-                    <option value="category" ${param.field4=='category'?'selected':''}>Category</option>
-                </select>
-
-                <input type="text" name="keyword4" value="${param.keyword4}" placeholder="Từ khóa tìm kiếm">
-
-                <select name="logic4">
-                    <option value="AND" ${param.logic4=='AND'?'selected':''}>Và</option>
-                    <option value="OR" ${param.logic4=='OR'?'selected':''}>Hoặc</option>
-                </select>
-
-            </div>
+            <!--            <div class="keyword-row">
+            
+                            <select name="field4">
+                                <option value="">---Tất cả---</option>
+                                <option value="title" ${param.field4=='title'?'selected':''}>Title</option>
+                                <option value="author" ${param.field4=='author'?'selected':''}>Author</option>
+                                <option value="category" ${param.field4=='category'?'selected':''}>Category</option>
+                            </select>
+            
+                            <input type="text" name="keyword4" value="${param.keyword4}" placeholder="Từ khóa tìm kiếm">
+            
+                            <select name="logic4">
+                                <option value="AND" ${param.logic4=='AND'?'selected':''}>Và</option>
+                                <option value="OR" ${param.logic4=='OR'?'selected':''}>Hoặc</option>
+                            </select>
+            
+                        </div>-->
 
             <div class="search-btns">
 
-                <button class="btn-search" type="submit">
+                <button class="btn-reset" type="submit">
                     Tìm kiếm
                 </button>
 
-                <button class="btn-reset" type="reset">
-                    Tìm lại
-                </button>
+                <!--                <button class="btn-reset" type="reset">
+                                    Tìm lại
+                                </button>-->
 
             </div>
 
@@ -279,12 +279,12 @@
 
                     <p>
                         <strong>Author:</strong>
-                    <c:out value="${b.author.author_name}" default="Unknown"/>
+                        <c:out value="${b.author.author_name}" default="Unknown"/>
                     </p>
 
                     <p>
                         <strong>Category:</strong>
-                    <c:out value="${b.category.category_name}" default="Other"/>
+                        <c:out value="${b.category.category_name}" default="Other"/>
                     </p>
 
                 </div>

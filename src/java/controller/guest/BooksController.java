@@ -10,8 +10,8 @@ import model.Book;
 import java.io.IOException;
 import java.util.ArrayList;
 
-@WebServlet("/home/search")
-public class SearchController extends HttpServlet {
+@WebServlet("/books")
+public class BooksController extends HttpServlet {
 
     private BookDBContext bookDB = new BookDBContext();
 
@@ -20,22 +20,15 @@ public class SearchController extends HttpServlet {
             throws ServletException, IOException {
 
         String keyword = request.getParameter("keyword");
-        String type = request.getParameter("type");
-
-        if (keyword == null) {
-            keyword = "";
-        }
-        if (type == null) {
-            type = "all";
-        }
-
-        keyword = keyword.trim();
 
         int page = 1;
         int pageSize = 8;
 
         try {
-            page = Integer.parseInt(request.getParameter("page"));
+            String pageParam = request.getParameter("page");
+            if (pageParam != null) {
+                page = Integer.parseInt(pageParam);
+            }
         } catch (Exception e) {
             page = 1;
         }
@@ -43,27 +36,27 @@ public class SearchController extends HttpServlet {
         ArrayList<Book> books;
         int totalBooks;
 
-        if (!keyword.isEmpty()) {
+        if (keyword != null && !keyword.trim().isEmpty()) {
 
-            books = bookDB.searchAdvancedPaging(keyword, type, page, pageSize);
-            totalBooks = bookDB.countSearchAdvanced(keyword, type);
+            books = bookDB.searchByKeywordPaging(keyword, page, pageSize);
+            totalBooks = bookDB.countSearchBooks(keyword);
 
         } else {
 
             books = bookDB.getBooksPaging(page, pageSize);
             totalBooks = bookDB.countBooks();
+
         }
 
         int totalPages = (int) Math.ceil((double) totalBooks / pageSize);
 
         request.setAttribute("books", books);
-        request.setAttribute("keyword", keyword);
-        request.setAttribute("type", type);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
+        request.setAttribute("keyword", keyword);
 
-        request.setAttribute("pageTitle", "Search Result");
-        request.setAttribute("contentPage", "/view/guest/search.jsp");
+        request.setAttribute("pageTitle", "Books");
+        request.setAttribute("contentPage", "/view/guest/books.jsp");
 
         request.getRequestDispatcher("/include/guest/layout.jsp")
                 .forward(request, response);
