@@ -117,7 +117,11 @@
                     <c:out value="${c.description}" default="Không có mô tả"/>
                 </div>
 
-                <a href="${pageContext.request.contextPath}/books?categoryId=${c.category_id}"
+<!--                <a href="${pageContext.request.contextPath}/books?categoryId=${c.category_id}"
+                   class="btn-view">
+                    Xem sách
+                </a>-->
+                    <a href="${pageContext.request.contextPath}/home/search?type=category&keyword=${c.category_name}"
                    class="btn-view">
                     Xem sách
                 </a>

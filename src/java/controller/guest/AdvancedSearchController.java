@@ -15,6 +15,22 @@ public class AdvancedSearchController extends HttpServlet {
 
     private BookDBContext bookDB = new BookDBContext();
 
+    // ===== NORMALIZE KEYWORD =====
+    private String normalizeKeyword(String keyword) {
+
+        if (keyword == null) {
+            return null;
+        }
+
+        keyword = keyword.trim().replaceAll("\\s+", " ");
+
+        if (keyword.isEmpty()) {
+            return null;
+        }
+
+        return keyword;
+    }
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -25,10 +41,10 @@ public class AdvancedSearchController extends HttpServlet {
         String field3 = request.getParameter("field3");
         String field4 = request.getParameter("field4");
 
-        String keyword1 = request.getParameter("keyword1");
-        String keyword2 = request.getParameter("keyword2");
-        String keyword3 = request.getParameter("keyword3");
-        String keyword4 = request.getParameter("keyword4");
+        String keyword1 = normalizeKeyword(request.getParameter("keyword1"));
+        String keyword2 = normalizeKeyword(request.getParameter("keyword2"));
+        String keyword3 = normalizeKeyword(request.getParameter("keyword3"));
+        String keyword4 = normalizeKeyword(request.getParameter("keyword4"));
 
         String logic1 = request.getParameter("logic1");
         String logic2 = request.getParameter("logic2");
@@ -44,7 +60,7 @@ public class AdvancedSearchController extends HttpServlet {
             page = 1;
         }
 
-        // ===== SEARCH WITH PAGING =====
+        // ===== SEARCH =====
         ArrayList<Book> books = bookDB.advancedSearchPaging(
                 field1, keyword1,
                 logic1,
@@ -74,7 +90,7 @@ public class AdvancedSearchController extends HttpServlet {
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
-        // giữ lại param cho form
+        // ===== GIỮ LẠI FORM DATA =====
         request.setAttribute("field1", field1);
         request.setAttribute("field2", field2);
         request.setAttribute("field3", field3);
@@ -89,6 +105,7 @@ public class AdvancedSearchController extends HttpServlet {
         request.setAttribute("logic2", logic2);
         request.setAttribute("logic3", logic3);
 
+        // ===== VIEW =====
         request.setAttribute("pageTitle", "Advanced Search Result");
         request.setAttribute("contentPage", "/view/guest/advanced-search-result.jsp");
 

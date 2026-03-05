@@ -242,10 +242,10 @@
 
                 <input type="text" name="keyword3" value="${param.keyword3}" placeholder="Từ khóa tìm kiếm">
 
-                <select name="logic3">
+<!--                <select name="logic3">
                     <option value="AND" ${param.logic3=='AND'?'selected':''}>Và</option>
                     <option value="OR" ${param.logic3=='OR'?'selected':''}>Hoặc</option>
-                </select>
+                </select>-->
 
             </div>
 

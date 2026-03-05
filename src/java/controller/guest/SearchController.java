@@ -28,9 +28,16 @@ public class SearchController extends HttpServlet {
         if (type == null) {
             type = "all";
         }
-
+        
+        
+        String keyResult = "";
         keyword = keyword.trim();
-
+        if (keyword != null) {
+            keyword = keyword.trim().replaceAll("\\s+", " ");
+            if (!keyword.isEmpty()) {
+                keyResult = keyword;
+            }
+        }
         int page = 1;
         int pageSize = 8;
 
@@ -43,10 +50,10 @@ public class SearchController extends HttpServlet {
         ArrayList<Book> books;
         int totalBooks;
 
-        if (!keyword.isEmpty()) {
+        if (!keyResult.isEmpty()) {
 
-            books = bookDB.searchAdvancedPaging(keyword, type, page, pageSize);
-            totalBooks = bookDB.countSearchAdvanced(keyword, type);
+            books = bookDB.searchAdvancedPaging(keyResult, type, page, pageSize);
+            totalBooks = bookDB.countSearchAdvanced(keyResult, type);
 
         } else {
 
