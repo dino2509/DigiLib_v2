@@ -21,6 +21,11 @@ public class LibrarianBorrowItem {
 
     private String status; // BORROWING / RETURNED / OVERDUE / EXTENDED
 
+    // ====== Return request + fine (for librarian UI) ======
+    private Integer pendingReturnRequestId; // null if none
+    private int overdueDays; // 0 if not overdue
+    private java.math.BigDecimal overdueFineAmount; // null if none
+
     public int getBorrowItemId() { return borrowItemId; }
     public void setBorrowItemId(int borrowItemId) { this.borrowItemId = borrowItemId; }
 
@@ -50,6 +55,15 @@ public class LibrarianBorrowItem {
 
     public Timestamp getReturnedAt() { return returnedAt; }
     public void setReturnedAt(Timestamp returnedAt) { this.returnedAt = returnedAt; }
+
+    public Integer getPendingReturnRequestId() { return pendingReturnRequestId; }
+    public void setPendingReturnRequestId(Integer pendingReturnRequestId) { this.pendingReturnRequestId = pendingReturnRequestId; }
+
+    public int getOverdueDays() { return overdueDays; }
+    public void setOverdueDays(int overdueDays) { this.overdueDays = overdueDays; }
+
+    public java.math.BigDecimal getOverdueFineAmount() { return overdueFineAmount; }
+    public void setOverdueFineAmount(java.math.BigDecimal overdueFineAmount) { this.overdueFineAmount = overdueFineAmount; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

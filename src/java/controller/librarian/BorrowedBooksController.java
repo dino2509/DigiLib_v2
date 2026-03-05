@@ -63,9 +63,16 @@ public class BorrowedBooksController extends HttpServlet {
         String action = req.getParameter("action");
         int borrowItemId = parseInt(req.getParameter("borrowItemId"), -1);
 
-        if ("return".equalsIgnoreCase(action) && borrowItemId > 0) {
+        // optional: for pending return request
+        int returnRequestId = parseInt(req.getParameter("returnRequestId"), -1);
+
+        java.math.BigDecimal damageAmount = parseBigDecimal(req.getParameter("damageAmount"));
+        String damageReason = req.getParameter("damageReason");
+        String decisionNote = req.getParameter("decisionNote");
+
+        if (("return".equalsIgnoreCase(action) || "confirm".equalsIgnoreCase(action)) && borrowItemId > 0) {
             ReturnRequestDBContext rrDao = new ReturnRequestDBContext();
-            boolean ok = rrDao.confirmOrCreateAndAutoConfirm(emp.getEmployeeId(), borrowItemId);
+            boolean ok = rrDao.confirmOrCreateAndAutoConfirm(emp.getEmployeeId(), borrowItemId, damageAmount, damageReason);
 
             if (!ok) {
                 resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&returnError=1");
@@ -73,6 +80,18 @@ public class BorrowedBooksController extends HttpServlet {
             }
 
             resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&returned=1");
+            return;
+        }
+
+        if ("reject".equalsIgnoreCase(action) && returnRequestId > 0) {
+            ReturnRequestDBContext rrDao = new ReturnRequestDBContext();
+            boolean ok = rrDao.reject(emp.getEmployeeId(), returnRequestId,
+                    (decisionNote == null || decisionNote.trim().isEmpty()) ? "Từ chối yêu cầu trả sách" : decisionNote);
+            if (!ok) {
+                resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&rejectError=1");
+                return;
+            }
+            resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&rejected=1");
             return;
         }
 
@@ -85,6 +104,19 @@ public class BorrowedBooksController extends HttpServlet {
             return Integer.parseInt(s.trim());
         } catch (Exception e) {
             return def;
+        }
+    }
+
+    private java.math.BigDecimal parseBigDecimal(String s) {
+        try {
+            if (s == null) return null;
+            s = s.trim();
+            if (s.isEmpty()) return null;
+            java.math.BigDecimal bd = new java.math.BigDecimal(s);
+            if (bd.compareTo(java.math.BigDecimal.ZERO) <= 0) return null;
+            return bd;
+        } catch (Exception e) {
+            return null;
         }
     }
 }
