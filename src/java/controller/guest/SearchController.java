@@ -10,7 +10,7 @@ import model.Book;
 import java.io.IOException;
 import java.util.ArrayList;
 
-@WebServlet("/home/search")
+@WebServlet(urlPatterns = "/home/search")
 public class SearchController extends HttpServlet {
 
     private BookDBContext bookDB = new BookDBContext();
@@ -19,52 +19,38 @@ public class SearchController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        // ===== LẤY KEYWORD =====
         String keyword = request.getParameter("keyword");
         String type = request.getParameter("type");
-
+        // Tránh null
         if (keyword == null) {
             keyword = "";
         }
-        if (type == null) {
-            type = "all";
-        }
 
-        keyword = keyword.trim();
+        keyword = keyword.trim().replaceAll("\\s+", " ");
+        String keyResult = keyword.toLowerCase();
 
-        int page = 1;
-        int pageSize = 8;
-
-        try {
-            page = Integer.parseInt(request.getParameter("page"));
-        } catch (Exception e) {
-            page = 1;
-        }
-
+        // ===== SEARCH =====
         ArrayList<Book> books;
-        int totalBooks;
 
         if (!keyword.isEmpty()) {
 
-            books = bookDB.searchAdvancedPaging(keyword, type, page, pageSize);
-            totalBooks = bookDB.countSearchAdvanced(keyword, type);
+            books = bookDB.searchAdvanced(keyword, type);
 
         } else {
 
-            books = bookDB.getBooksPaging(page, pageSize);
-            totalBooks = bookDB.countBooks();
+            books = bookDB.getFeaturedBooks();
+
         }
 
-        int totalPages = (int) Math.ceil((double) totalBooks / pageSize);
-
+        // ===== SET ATTRIBUTE =====
         request.setAttribute("books", books);
         request.setAttribute("keyword", keyword);
         request.setAttribute("type", type);
-        request.setAttribute("currentPage", page);
-        request.setAttribute("totalPages", totalPages);
-
         request.setAttribute("pageTitle", "Search Result");
         request.setAttribute("contentPage", "/view/guest/search.jsp");
 
+        // ===== FORWARD VỀ LAYOUT =====
         request.getRequestDispatcher("/include/guest/layout.jsp")
                 .forward(request, response);
     }
