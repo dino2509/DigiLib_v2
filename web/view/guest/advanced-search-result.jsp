@@ -149,6 +149,37 @@
         margin-top:20px;
     }
 
+    .pagination{
+        margin-top:40px;
+        display:flex;
+        justify-content:center;
+        gap:10px;
+    }
+
+    .pagination a{
+        padding:8px 14px;
+        border:1px solid #ddd;
+        text-decoration:none;
+        color:#333;
+        border-radius:6px;
+    }
+
+    .pagination a:hover{
+        background:#f97316;
+        color:white;
+    }
+
+    .active-page{
+        background:#f97316;
+        color:white !important;
+        border:none;
+    }
+    .pagination a.active{
+        background:#f97316;
+        color:white;
+        border-color:none;
+    }
+
 </style>
 
 
@@ -315,6 +346,23 @@
             </div>
 
         </c:forEach>
+
+    </div>
+    <div class="pagination">
+
+        <c:if test="${currentPage > 1}">
+            <a href="?page=${currentPage-1}">Previous</a>
+        </c:if>
+
+        <c:forEach begin="1" end="${totalPages}" var="i">
+            <a class="${i==currentPage?'active':''}" href="?page=${i}">
+                ${i}
+            </a>
+        </c:forEach>
+
+        <c:if test="${currentPage < totalPages}">
+            <a href="?page=${currentPage+1}">Next</a>
+        </c:if>
 
     </div>
 

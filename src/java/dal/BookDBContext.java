@@ -1096,8 +1096,7 @@ public class BookDBContext extends DBContext<Book> {
 
         params.add(keyword);
     }
-    
-    
+
     public ArrayList<Book> searchAdvancedPaging(String keyword, String type, int pageIndex, int pageSize) {
 
         ArrayList<Book> books = new ArrayList<>();
@@ -1277,5 +1276,136 @@ public class BookDBContext extends DBContext<Book> {
 
         return 0;
     }
-    
+
+    public int countAdvancedSearch(
+            String field1, String keyword1,
+            String logic1,
+            String field2, String keyword2,
+            String logic2,
+            String field3, String keyword3,
+            String logic3,
+            String field4, String keyword4) {
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(*)
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1=1
+    """);
+
+        ArrayList<String> params = new ArrayList<>();
+
+        buildCondition(sql, params, field1, keyword1, null);
+        buildCondition(sql, params, field2, keyword2, logic1);
+        buildCondition(sql, params, field3, keyword3, logic2);
+        buildCondition(sql, params, field4, keyword4, logic3);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int index = 1;
+
+            for (String p : params) {
+                ps.setString(index++, "%" + p + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public ArrayList<Book> advancedSearchPaging(
+            String field1, String keyword1,
+            String logic1,
+            String field2, String keyword2,
+            String logic2,
+            String field3, String keyword3,
+            String logic3,
+            String field4, String keyword4,
+            int pageIndex, int pageSize) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT 
+            b.book_id,
+            b.title,
+            b.price,
+            b.status,
+            b.created_at,
+            b.cover_url,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1=1
+    """);
+
+        ArrayList<String> params = new ArrayList<>();
+
+        // ===== BUILD CONDITION =====
+        buildCondition(sql, params, field1, keyword1, null);
+        buildCondition(sql, params, field2, keyword2, logic1);
+        buildCondition(sql, params, field3, keyword3, logic2);
+        buildCondition(sql, params, field4, keyword4, logic3);
+
+        sql.append("""
+        ORDER BY b.created_at DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int index = 1;
+
+            for (String p : params) {
+                ps.setString(index++, "%" + p + "%");
+            }
+
+            ps.setInt(index++, (pageIndex - 1) * pageSize);
+            ps.setInt(index, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setCoverUrl(rs.getString("cover_url"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
 }
