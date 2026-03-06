@@ -21,6 +21,9 @@ public class LibrarianBorrowDBContext extends DBContext<LibrarianBorrowItem> {
 
         String where;
         switch (filter) {
+            case "all":
+                where = "1=1";
+                break;
             case "returned":
                 where = "bi.returned_at IS NOT NULL";
                 break;
@@ -88,15 +91,26 @@ public class LibrarianBorrowDBContext extends DBContext<LibrarianBorrowItem> {
 
                 item.setOverdueFineAmount(rs.getBigDecimal("overdue_fine_amount"));
 
-                // overdue days (date boundary, same as SQL CAST(date))
+                // overdue days: count by DAY boundary
+                // - if returned => count from dueDate to returnedAt (date)
+                // - if not returned => count from dueDate to today
                 int overdueDays = 0;
-                if (item.getReturnedAt() == null && item.getDueDate() != null) {
+                if (item.getDueDate() != null) {
                     java.time.LocalDate due = item.getDueDate().toInstant()
                             .atZone(java.time.ZoneId.systemDefault())
                             .toLocalDate();
-                    java.time.LocalDate today = java.time.LocalDate.now();
-                    if (today.isAfter(due)) {
-                        overdueDays = (int) java.time.temporal.ChronoUnit.DAYS.between(due, today);
+
+                    java.time.LocalDate end;
+                    if (item.getReturnedAt() != null) {
+                        end = item.getReturnedAt().toInstant()
+                                .atZone(java.time.ZoneId.systemDefault())
+                                .toLocalDate();
+                    } else {
+                        end = java.time.LocalDate.now();
+                    }
+
+                    if (end.isAfter(due)) {
+                        overdueDays = (int) java.time.temporal.ChronoUnit.DAYS.between(due, end);
                     }
                 }
                 item.setOverdueDays(Math.max(overdueDays, 0));

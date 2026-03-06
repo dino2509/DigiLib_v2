@@ -29,11 +29,14 @@ public class BorrowedBooksController extends HttpServlet {
             return;
         }
 
+        // Filter is handled on client-side (no reload). We still keep this param
+        // to remember which tab should be active after actions.
         String filter = req.getParameter("filter");
-        if (filter == null || filter.trim().isEmpty()) filter = "borrowing";
+        if (filter == null || filter.trim().isEmpty()) filter = "all";
 
         LibrarianBorrowDBContext dao = new LibrarianBorrowDBContext();
-        ArrayList<LibrarianBorrowItem> list = dao.listByFilter(filter);
+        // Always load ALL once; filter on the frontend.
+        ArrayList<LibrarianBorrowItem> list = dao.listByFilter("all");
 
         req.setAttribute("items", list);
         req.setAttribute("filter", filter);
@@ -58,7 +61,7 @@ public class BorrowedBooksController extends HttpServlet {
         }
 
         String filter = req.getParameter("filter");
-        if (filter == null || filter.trim().isEmpty()) filter = "borrowing";
+        if (filter == null || filter.trim().isEmpty()) filter = "all";
 
         String action = req.getParameter("action");
         int borrowItemId = parseInt(req.getParameter("borrowItemId"), -1);
