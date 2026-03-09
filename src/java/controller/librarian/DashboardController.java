@@ -1,5 +1,7 @@
 package controller.librarian;
 
+import dal.BookDBContext;
+import dal.FineDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -8,8 +10,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.math.BigDecimal;
-import dal.FineDBContext;
+import java.util.ArrayList;
 import model.Employee;
+import model.InventoryBookRow;
 
 @WebServlet(urlPatterns = "/librarian/dashboard")
 public class DashboardController extends HttpServlet {
@@ -27,9 +30,7 @@ public class DashboardController extends HttpServlet {
             return;
         }
 
-        // ===== Fines overview for dashboard =====
         FineDBContext fineDao = new FineDBContext();
-        // Update/create overdue fines for current overdue borrow items
         fineDao.refreshOverdueFinesForBorrowingItems();
 
         BigDecimal[] totals = fineDao.getTotals();
@@ -39,6 +40,10 @@ public class DashboardController extends HttpServlet {
         req.setAttribute("paidTotal", totals[1]);
         req.setAttribute("unpaidCount", counts[0]);
         req.setAttribute("paidCount", counts[1]);
+
+        BookDBContext bookDAO = new BookDBContext();
+        ArrayList<InventoryBookRow> inventoryRows = bookDAO.listInventoryRows(null, 0, 8);
+        req.setAttribute("inventoryRows", inventoryRows);
 
         req.getRequestDispatcher("/view/librarian/dashboard.jsp").forward(req, resp);
     }

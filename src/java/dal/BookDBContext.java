@@ -4,11 +4,67 @@ import model.Book;
 import model.Author;
 import model.Category;
 import model.Employee;
+import model.InventoryBookRow;
 
 import java.sql.*;
 import java.util.ArrayList;
 
 public class BookDBContext extends DBContext<Book> {
+
+    // ================== INVENTORY SUMMARY (LIBRARIAN) ==================
+    public int countInventoryRows(String q) {
+        if (q == null) q = "";
+        q = q.trim();
+
+        String sql = "SELECT COUNT(*) FROM Book b WHERE (? = '' OR b.title LIKE ? OR CAST(b.book_id AS NVARCHAR(50)) LIKE ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, q);
+            ps.setString(2, "%" + q + "%");
+            ps.setString(3, "%" + q + "%");
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) return rs.getInt(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public ArrayList<InventoryBookRow> listInventoryRows(String q, int offset, int limit) {
+        ArrayList<InventoryBookRow> rows = new ArrayList<>();
+        if (q == null) q = "";
+        q = q.trim();
+        if (offset < 0) offset = 0;
+        if (limit <= 0) limit = 20;
+        if (limit > 200) limit = 200;
+
+        String sql = "SELECT b.book_id, b.title, COUNT(c.copy_id) AS total_copies "
+                + "FROM Book b "
+                + "LEFT JOIN BookCopy c ON c.book_id = b.book_id "
+                + "WHERE (? = '' OR b.title LIKE ? OR CAST(b.book_id AS NVARCHAR(50)) LIKE ?) "
+                + "GROUP BY b.book_id, b.title "
+                + "ORDER BY b.book_id ASC "
+                + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, q);
+            ps.setString(2, "%" + q + "%");
+            ps.setString(3, "%" + q + "%");
+            ps.setInt(4, offset);
+            ps.setInt(5, limit);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                InventoryBookRow r = new InventoryBookRow();
+                r.setBookId(rs.getInt("book_id"));
+                r.setTitle(rs.getString("title"));
+                r.setTotalCopies(rs.getInt("total_copies"));
+                rows.add(r);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return rows;
+    }
 
     // ================== LIST ALL (ADMIN) ==================
     public ArrayList<Book> listAll() {
@@ -38,7 +94,6 @@ public class BookDBContext extends DBContext<Book> {
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
                 b.setCoverUrl(rs.getString("cover_url"));
-                // ===== AUTHOR =====
                 int authorId = rs.getInt("author_id");
                 if (!rs.wasNull()) {
                     Author a = new Author();
@@ -47,7 +102,6 @@ public class BookDBContext extends DBContext<Book> {
                     b.setAuthor(a);
                 }
 
-                // ===== CATEGORY =====
                 int categoryId = rs.getInt("category_id");
                 if (!rs.wasNull()) {
                     Category c = new Category();
@@ -66,7 +120,6 @@ public class BookDBContext extends DBContext<Book> {
         return books;
     }
 
-    // ================== READ ALL (BASIC) ==================
     @Override
     public ArrayList<Book> list() {
         ArrayList<Book> books = new ArrayList<>();
@@ -84,7 +137,6 @@ public class BookDBContext extends DBContext<Book> {
         return books;
     }
 
-    // ================== READ BY ID ==================
     @Override
     public Book get(int id) {
 
@@ -125,13 +177,11 @@ public class BookDBContext extends DBContext<Book> {
                 b.setCreatedAt(rs.getTimestamp("created_at"));
                 b.setUpdatedAt(rs.getTimestamp("updated_at"));
 
-                // ===== CREATED BY (BẮT BUỘC) =====
                 Employee createBy = new Employee();
                 createBy.setEmployeeId(rs.getInt("create_by_id"));
                 createBy.setFullName(rs.getString("create_by_name"));
                 b.setCreate_by(createBy);
 
-                // ===== UPDATED BY (CÓ THỂ NULL) =====
                 int updateById = rs.getInt("update_by_id");
                 if (!rs.wasNull()) {
                     Employee updateBy = new Employee();
@@ -140,13 +190,11 @@ public class BookDBContext extends DBContext<Book> {
                     b.setUpdate_by(updateBy);
                 }
 
-                // ===== AUTHOR =====
                 Author a = new Author();
                 a.setAuthor_id(rs.getInt("author_id"));
                 a.setAuthor_name(rs.getString("author_name"));
                 b.setAuthor(a);
 
-                // ===== CATEGORY =====
                 Category c = new Category();
                 c.setCategory_id(rs.getInt("category_id"));
                 c.setCategory_name(rs.getString("category_name"));
@@ -162,7 +210,6 @@ public class BookDBContext extends DBContext<Book> {
         return null;
     }
 
-    // ================== CREATE ==================
     @Override
     public void insert(Book b) {
 
@@ -197,7 +244,6 @@ public class BookDBContext extends DBContext<Book> {
         }
     }
 
-    // ================== UPDATE ==================
     @Override
     public void update(Book b) {
 
@@ -232,7 +278,6 @@ public class BookDBContext extends DBContext<Book> {
             ps.setInt(9, b.getAuthor().getAuthor_id());
             ps.setInt(10, b.getCategory().getCategory_id());
 
-            // ===== UPDATED BY (BẮT BUỘC PHẢI CÓ) =====
             if (b.getUpdate_by() == null) {
                 throw new IllegalStateException("Book.update_by is null");
             }
@@ -247,7 +292,6 @@ public class BookDBContext extends DBContext<Book> {
         }
     }
 
-    //====search====
     public ArrayList<Book> search(String keyword,
             Integer authorId,
             Integer categoryId,
@@ -292,7 +336,6 @@ public class BookDBContext extends DBContext<Book> {
             int index = 1;
 
             if (hasKeyword) {
-                // Escape ký tự đặc biệt cho LIKE
                 String safeKeyword = keyword.trim()
                         .replace("\\", "\\\\")
                         .replace("%", "\\%")
@@ -608,7 +651,7 @@ public class BookDBContext extends DBContext<Book> {
                 b.setCurrency(rs.getString("currency"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
-                b.setCoverUrl(rs.getString("cover_url")); // ✅ FIX ẢNH
+                b.setCoverUrl(rs.getString("cover_url"));
 
                 Author a = new Author();
                 a.setAuthor_id(rs.getInt("author_id"));
@@ -630,7 +673,6 @@ public class BookDBContext extends DBContext<Book> {
         return books;
     }
 
-    // ================== DELETE ==================
     @Override
     public void delete(Book b) {
         String sql = "DELETE FROM Book WHERE book_id = ?";
@@ -642,9 +684,6 @@ public class BookDBContext extends DBContext<Book> {
         }
     }
 
-    /**
-     * Gợi ý sách khác (ưu tiên cùng thể loại), loại trừ chính nó.
-     */
     public ArrayList<Book> listRecommended(int bookId, int categoryId, int limit) {
         ArrayList<Book> list = new ArrayList<>();
         String sql = "SELECT TOP (?) b.book_id, b.title, b.cover_url, b.currency, b.price "

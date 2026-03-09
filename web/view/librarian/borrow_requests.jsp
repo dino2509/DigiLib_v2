@@ -18,9 +18,11 @@
             <h3 class="mb-0">📥 Quản lý yêu cầu mượn &amp; đặt trước</h3>
             <div class="text-muted">Gộp Borrow_Request và Reservation_Request theo bộ lọc.</div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#createBorrowModal">
+                + Tạo request mượn
+            </button>
             <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/borrowed-books">Borrowed books</a>
-            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/qna">Q&amp;A</a>
             <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/dashboard">Dashboard</a>
         </div>
     </div>
@@ -30,6 +32,32 @@
     <c:if test="${param.error eq 'not_enough_copies'}">
         <div class="alert alert-danger">Không đủ bản sao (BookCopy) AVAILABLE để duyệt đơn này.</div>
     </c:if>
+
+    <c:if test="${param.msg eq 'created'}">
+        <div class="alert alert-success">Đã tạo Borrow Request (PENDING) từ phía librarian.</div>
+    </c:if>
+
+    <c:if test="${param.error eq 'create_failed'}">
+        <div class="alert alert-danger">Tạo request thất bại. Có thể reader đã có request PENDING cho sách này.</div>
+    </c:if>
+
+    <c:if test="${param.error eq 'invalid_input'}">
+        <div class="alert alert-warning">Thông tin không hợp lệ. Vui lòng chọn Reader và Book.</div>
+    </c:if>
+
+    <c:if test="${param.error eq 'out_of_stock'}">
+        <div class="alert alert-danger">Đầu sách này trong kho đã hết.</div>
+    </c:if>
+
+    <c:if test="${param.error eq 'insufficient_stock'}">
+        <div class="alert alert-warning">
+            Số lượng sách trong kho không đủ để tạo request.
+            <c:if test="${not empty param.available}">
+                Hiện chỉ còn <b>${param.available}</b> copy AVAILABLE.
+            </c:if>
+        </div>
+    </c:if>
+
     <c:if test="${param.msg eq 'cancelled'}">
         <div class="alert alert-success">Đã huỷ đặt trước.</div>
     </c:if>
@@ -208,6 +236,67 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="createBorrowModal" tabindex="-1" aria-labelledby="createBorrowModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="post" action="${pageContext.request.contextPath}/librarian/borrow-requests">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createBorrowModalLabel">Tạo request mượn sách từ phía librarian</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="action" value="create_manual"/>
+                    <input type="hidden" name="filter" value="${filter}"/>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Reader</label>
+                            <select class="form-select" name="readerId" required>
+                                <option value="">-- Chọn Reader --</option>
+                                <c:forEach var="u" items="${readers}">
+                                    <option value="${u.readerId}">#${u.readerId} • ${u.fullName} (${u.email})</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Book</label>
+                            <select class="form-select" name="bookId" required>
+                                <option value="">-- Chọn Book --</option>
+                                <c:forEach var="b" items="${books}">
+                                    <option value="${b.bookId}">#${b.bookId} • ${b.title}</option>
+                                </c:forEach>
+                            </select>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">Quantity</label>
+                            <input class="form-control" type="number" name="quantity" value="1" min="1" max="10"/>
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label">Note (optional)</label>
+                            <input class="form-control" name="note" placeholder="Ghi chú cho request nếu có"/>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="alert alert-warning mb-0">
+                                Request sẽ được tạo với trạng thái <b>PENDING</b>. Hệ thống sẽ kiểm tra số copy <b>AVAILABLE</b> trước khi tạo.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary">Tạo request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 </html>

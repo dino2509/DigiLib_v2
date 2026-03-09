@@ -63,7 +63,25 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
     }
 
     /**
+     * Đếm số copy AVAILABLE của 1 đầu sách
+     */
+    public int countAvailableCopies(int bookId) {
+        String sql = "SELECT COUNT(*) FROM BookCopy WHERE book_id = ? AND status = N'AVAILABLE'";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, bookId);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
      * Tạo 1 borrow request cho 1 cuốn sách (quantity = 1)
+     *
      * @return request_id hoặc null nếu lỗi / đã có pending cho book này
      */
     public Integer createSingleBookRequest(int readerId, int bookId) {
@@ -111,10 +129,77 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
     }
 
     /**
+     * Librarian-side: tạo borrow request thủ công khi reader đến mượn trực tiếp.
+     * - Chỉ cho tạo khi còn đủ copy AVAILABLE trong kho
+     * - Trả về request_id nếu tạo thành công, hoặc null nếu thất bại / đã có pending cho sách này / không đủ sách
+     */
+    public Integer createManualRequest(int readerId, int bookId, int quantity, String note) {
+        if (quantity <= 0) {
+            quantity = 1;
+        }
+        if (quantity > 10) {
+            quantity = 10;
+        }
+
+        try {
+            connection.setAutoCommit(false);
+
+            if (hasPendingForBook(readerId, bookId)) {
+                connection.rollback();
+                connection.setAutoCommit(true);
+                return null;
+            }
+
+            int available = countAvailableCopies(bookId);
+            if (available <= 0 || quantity > available) {
+                connection.rollback();
+                connection.setAutoCommit(true);
+                return null;
+            }
+
+            int requestId;
+            String insHead = "INSERT INTO Borrow_Request (reader_id, status, requested_at, note) "
+                    + "OUTPUT INSERTED.request_id "
+                    + "VALUES (?, N'PENDING', SYSDATETIME(), ?)";
+            try (PreparedStatement ps = connection.prepareStatement(insHead)) {
+                ps.setInt(1, readerId);
+                ps.setString(2, note);
+                ResultSet rs = ps.executeQuery();
+                rs.next();
+                requestId = rs.getInt(1);
+            }
+
+            String insItem = "INSERT INTO Borrow_Request_Item (request_id, book_id, quantity) VALUES (?, ?, ?)";
+            try (PreparedStatement ps = connection.prepareStatement(insItem)) {
+                ps.setInt(1, requestId);
+                ps.setInt(2, bookId);
+                ps.setInt(3, quantity);
+                ps.executeUpdate();
+            }
+
+            connection.commit();
+            connection.setAutoCommit(true);
+            return requestId;
+
+        } catch (Exception e) {
+            try {
+                connection.rollback();
+                connection.setAutoCommit(true);
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
      * Recent list (để Reader/Home dùng)
      */
     public List<BorrowRequest> listRecentWithItemsByReader(int readerId, int limit) {
-        if (limit <= 0) limit = 5;
+        if (limit <= 0) {
+            limit = 5;
+        }
 
         Map<Integer, BorrowRequest> map = new LinkedHashMap<>();
 
@@ -178,21 +263,30 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
     }
 
     /**
-     * ✅ NEW: Reader history list with items theo filter:
+     * Reader history list with items theo filter:
      * - all / pending / approved / rejected
      */
     public List<BorrowRequest> listWithItemsByReaderAndStatus(int readerId, String filter, int limit) {
-        if (limit <= 0) limit = 200;
-        if (filter == null || filter.trim().isEmpty()) filter = "all";
+        if (limit <= 0) {
+            limit = 200;
+        }
+        if (filter == null || filter.trim().isEmpty()) {
+            filter = "all";
+        }
         filter = filter.trim().toLowerCase();
 
         String where = " WHERE r.reader_id = ? ";
         switch (filter) {
-            case "pending" -> where += " AND r.status = N'PENDING' ";
-            case "approved" -> where += " AND r.status = N'APPROVED' ";
-            case "rejected" -> where += " AND r.status = N'REJECTED' ";
-            case "all" -> { /* no-op */ }
-            default -> { /* no-op */ }
+            case "pending" ->
+                where += " AND r.status = N'PENDING' ";
+            case "approved" ->
+                where += " AND r.status = N'APPROVED' ";
+            case "rejected" ->
+                where += " AND r.status = N'REJECTED' ";
+            case "all" -> {
+            }
+            default -> {
+            }
         }
 
         Map<Integer, BorrowRequest> map = new LinkedHashMap<>();
@@ -256,17 +350,26 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
 
     public ArrayList<BorrowRequest> listByStatus(String filter, int limit) {
         ArrayList<BorrowRequest> list = new ArrayList<>();
-        if (limit <= 0) limit = 200;
+        if (limit <= 0) {
+            limit = 200;
+        }
 
-        if (filter == null) filter = "pending";
+        if (filter == null) {
+            filter = "pending";
+        }
         filter = filter.trim().toLowerCase();
 
         String where = switch (filter) {
-            case "pending" -> " WHERE r.status = N'PENDING' ";
-            case "approved" -> " WHERE r.status = N'APPROVED' ";
-            case "rejected" -> " WHERE r.status = N'REJECTED' ";
-            case "all" -> "";
-            default -> " WHERE r.status = N'PENDING' ";
+            case "pending" ->
+                " WHERE r.status = N'PENDING' ";
+            case "approved" ->
+                " WHERE r.status = N'APPROVED' ";
+            case "rejected" ->
+                " WHERE r.status = N'REJECTED' ";
+            case "all" ->
+                "";
+            default ->
+                " WHERE r.status = N'PENDING' ";
         };
 
         String sql = "SELECT TOP (?) r.request_id, r.reader_id, rd.full_name AS reader_name, "
@@ -351,7 +454,7 @@ public class BorrowRequestDBContext extends DBContext<BorrowRequest> {
     }
 
     /**
-     * ✅ APPROVE chuẩn (KHÔNG gọi BorrowDBContext.createBorrowFromRequest)
+     * APPROVE:
      * - Chọn đủ BookCopy AVAILABLE
      * - Update Borrow_Request -> APPROVED
      * - Insert Borrow + Borrow_Item
