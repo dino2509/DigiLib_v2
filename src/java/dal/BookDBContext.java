@@ -1408,4 +1408,66 @@ public class BookDBContext extends DBContext<Book> {
 
         return books;
     }
+
+    public Book getBookById(int id) {
+
+        String sql = "SELECT * FROM Book WHERE book_id = ?";
+
+        try {
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setInt(1, id);
+
+            ResultSet rs = stm.executeQuery();
+
+            if (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setSummary(rs.getString("summary"));
+                b.setDescription(rs.getString("description"));
+                b.setCoverUrl(rs.getString("cover_url"));
+                b.setContentPath(rs.getString("content_path"));
+
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setCurrency(rs.getString("currency"));
+
+                b.setTotalPages(rs.getInt("total_pages"));
+                b.setPreviewPages(rs.getInt("preview_pages"));
+
+                b.setStatus(rs.getString("status"));
+
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setUpdatedAt(rs.getTimestamp("updated_at"));
+
+                // AUTHOR
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                b.setAuthor(a);
+
+                // CATEGORY
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                b.setCategory(c);
+
+                // CREATED BY
+                Employee creator = new Employee();
+                creator.setEmployeeId(rs.getInt("created_by"));
+                b.setCreate_by(creator);
+
+                // UPDATED BY
+                Employee updater = new Employee();
+                updater.setEmployeeId(rs.getInt("updated_by"));
+                b.setUpdate_by(updater);
+
+                return b;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

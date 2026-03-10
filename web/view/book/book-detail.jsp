@@ -150,6 +150,7 @@
                         <a href="${pageContext.request.contextPath}/preview?id=${book.bookId}" class="btn-outline">
                             👁 Đọc thử
                         </a>
+                            
                     </c:otherwise>
                 </c:choose>
             </div>
