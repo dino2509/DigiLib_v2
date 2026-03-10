@@ -20,7 +20,7 @@
                         <div class="card-body">
                             <h5 class="card-title">Quản lý yêu cầu mượn sách</h5>
                             <p class="card-text text-muted">Duyệt / từ chối các yêu cầu mượn sách từ độc giả.</p>
-                            <a class="btn btn-primary" href="${pageContext.request.contextPath}/librarian/requests">Mở</a>
+                            <a class="btn btn-primary" href="${pageContext.request.contextPath}/librarian/borrow-requests">Mở</a>
                         </div>
                     </div>
                 </div>

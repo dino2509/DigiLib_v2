@@ -2,68 +2,100 @@ package model;
 
 import java.sql.Timestamp;
 
+/**
+ * Unified row for "Borrow requests + Reservations" history pages.
+ *
+ * type:
+ *  - BORROW: Borrow_Request
+ *  - RESERVATION: Reservation_Request
+ */
 public class RequestHistoryRow {
 
-    private String type;
-    private int id;
+    private String type; // BORROW / RESERVATION
+    private int id;      // request_id or reservation_id
+
     private int readerId;
     private String readerName;
-    private String status;
-    private Timestamp createdAt;
+
+    private String status;        // PENDING/APPROVED/REJECTED or WAITING/CONVERTED/CANCELLED
+    private Timestamp createdAt;  // requested_at or created_at
+
+    // display summary (borrow: "Book A, Book B" | reservation: book title)
     private String titleSummary;
 
-    private Integer position;
-    private Integer convertedRequestId;
+    // reservation extra
+    private Integer position;             // queue position (WAITING only)
+    private Integer convertedRequestId;   // reservation.converted_request_id
 
-    private Integer borrowItemId;
-    private Integer requestedDays;
-    private Integer maxAllowedDays;
-    private Timestamp oldDueDate;
-    private Timestamp requestedDueDate;
-    private Timestamp approvedDueDate;
+    public String getType() {
+        return type;
+    }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
+    public int getId() {
+        return id;
+    }
 
-    public int getReaderId() { return readerId; }
-    public void setReaderId(int readerId) { this.readerId = readerId; }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-    public String getReaderName() { return readerName; }
-    public void setReaderName(String readerName) { this.readerName = readerName; }
+    public int getReaderId() {
+        return readerId;
+    }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public void setReaderId(int readerId) {
+        this.readerId = readerId;
+    }
 
-    public Timestamp getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Timestamp createdAt) { this.createdAt = createdAt; }
+    public String getReaderName() {
+        return readerName;
+    }
 
-    public String getTitleSummary() { return titleSummary; }
-    public void setTitleSummary(String titleSummary) { this.titleSummary = titleSummary; }
+    public void setReaderName(String readerName) {
+        this.readerName = readerName;
+    }
 
-    public Integer getPosition() { return position; }
-    public void setPosition(Integer position) { this.position = position; }
+    public String getStatus() {
+        return status;
+    }
 
-    public Integer getConvertedRequestId() { return convertedRequestId; }
-    public void setConvertedRequestId(Integer convertedRequestId) { this.convertedRequestId = convertedRequestId; }
+    public void setStatus(String status) {
+        this.status = status;
+    }
 
-    public Integer getBorrowItemId() { return borrowItemId; }
-    public void setBorrowItemId(Integer borrowItemId) { this.borrowItemId = borrowItemId; }
+    public Timestamp getCreatedAt() {
+        return createdAt;
+    }
 
-    public Integer getRequestedDays() { return requestedDays; }
-    public void setRequestedDays(Integer requestedDays) { this.requestedDays = requestedDays; }
+    public void setCreatedAt(Timestamp createdAt) {
+        this.createdAt = createdAt;
+    }
 
-    public Integer getMaxAllowedDays() { return maxAllowedDays; }
-    public void setMaxAllowedDays(Integer maxAllowedDays) { this.maxAllowedDays = maxAllowedDays; }
+    public String getTitleSummary() {
+        return titleSummary;
+    }
 
-    public Timestamp getOldDueDate() { return oldDueDate; }
-    public void setOldDueDate(Timestamp oldDueDate) { this.oldDueDate = oldDueDate; }
+    public void setTitleSummary(String titleSummary) {
+        this.titleSummary = titleSummary;
+    }
 
-    public Timestamp getRequestedDueDate() { return requestedDueDate; }
-    public void setRequestedDueDate(Timestamp requestedDueDate) { this.requestedDueDate = requestedDueDate; }
+    public Integer getPosition() {
+        return position;
+    }
 
-    public Timestamp getApprovedDueDate() { return approvedDueDate; }
-    public void setApprovedDueDate(Timestamp approvedDueDate) { this.approvedDueDate = approvedDueDate; }
+    public void setPosition(Integer position) {
+        this.position = position;
+    }
+
+    public Integer getConvertedRequestId() {
+        return convertedRequestId;
+    }
+
+    public void setConvertedRequestId(Integer convertedRequestId) {
+        this.convertedRequestId = convertedRequestId;
+    }
 }

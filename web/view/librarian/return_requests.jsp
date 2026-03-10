@@ -24,7 +24,7 @@
         </div>
         <div class="d-flex gap-2">
             <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/borrowed-books">Borrowed books</a>
-            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/requests">Borrow requests</a>
+            <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/borrow-requests">Borrow requests</a>
             <a class="btn btn-sm btn-outline-secondary" href="${pageContext.request.contextPath}/librarian/dashboard">Dashboard</a>
         </div>
     </div>

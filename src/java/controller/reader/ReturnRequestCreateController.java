@@ -22,10 +22,11 @@ public class ReturnRequestCreateController extends HttpServlet {
         if (reader == null) return;
 
         int borrowItemId = parseInt(req.getParameter("borrowItemId"), -1);
-        String filter = normalizeFilter(req.getParameter("filter"));
+        String filter = req.getParameter("filter");
+        if (filter == null || filter.trim().isEmpty()) filter = "all";
 
         if (borrowItemId <= 0) {
-            resp.sendRedirect(req.getContextPath() + "/reader/borrowed?filter=" + filter + "&returnError=1");
+            resp.sendRedirect(req.getContextPath() + "/reader/borrowed?filter=" + filter);
             return;
         }
 
@@ -46,15 +47,6 @@ public class ReturnRequestCreateController extends HttpServlet {
             return null;
         }
         return (Reader) session.getAttribute("user");
-    }
-
-    private String normalizeFilter(String filter) {
-        if (filter == null || filter.trim().isEmpty()) return "all";
-        filter = filter.trim().toLowerCase();
-        return switch (filter) {
-            case "all", "returned", "borrowing", "overdue" -> filter;
-            default -> "all";
-        };
     }
 
     private int parseInt(String s, int def) {
