@@ -156,7 +156,8 @@
         <div class="book-cover">
             <c:choose>
                 <c:when test="${not empty book.coverUrl}">
-                    <img src="${pageContext.request.contextPath}${book.coverUrl}">
+                    <img src="${pageContext.request.contextPath}/img/book/${book.coverUrl}">
+<!--                    <img src="${pageContext.request.contextPath}${book.coverUrl}">-->
                 </c:when>
                 <c:otherwise>
                     <img src="${pageContext.request.contextPath}/img/no-cover.png">

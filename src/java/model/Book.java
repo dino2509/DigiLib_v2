@@ -1,39 +1,22 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class Book {
 
-    private int id;
+    
+    
+    
+    private int bookId;
     private String title;
-
-    /**
-     * Backward-compatible field used by older JSPs.
-     * In DB this maps to Book.cover_url.
-     */
-    private String cover;
-
-    /**
-     * Average rating (computed from Review).
-     */
-    private double rating;
-
-    // ===== Extended fields (DB-aligned) =====
     private String summary;
     private String description;
-    private Integer totalPages;
-
-    private Integer authorId;
-    private Integer categoryId;
-    private String categoryName;
-
-    private Double price;
-    private String currency;
-    private Integer reviewCount;
-    private int bookId;
-
     private String coverUrl;
     private String contentPath;
+    private BigDecimal price;
+    private String currency;
+    private int totalPages;
     private int previewPages;
     private String status;
     private Timestamp createdAt;
@@ -42,17 +25,6 @@ public class Book {
     private Category category;
     private Employee create_by;
     private Employee update_by;
-
-    public Book() {
-    }
-
-    public Book(int id, String title, Author author, String cover, double rating) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.cover = cover;
-        this.rating = rating;
-    }
 
     public Author getAuthor() {
         return author;
@@ -103,22 +75,6 @@ public class Book {
         this.title = title;
     }
 
-    public String getCover() {
-        return cover;
-    }
-
-    public void setCover(String cover) {
-        this.cover = cover;
-    }
-
-    public double getRating() {
-        return rating;
-    }
-
-    public void setRating(double rating) {
-        this.rating = rating;
-    }
-
     public String getSummary() {
         return summary;
     }
@@ -133,50 +89,6 @@ public class Book {
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public Integer getTotalPages() {
-        return totalPages;
-    }
-
-    public void setTotalPages(Integer totalPages) {
-        this.totalPages = totalPages;
-    }
-
-    public void setTotalPages(int totalPages) {
-        this.totalPages = totalPages;
-    }
-
-    public Integer getAuthorId() {
-        return authorId;
-    }
-
-    public void setAuthorId(Integer authorId) {
-        this.authorId = authorId;
-    }
-
-    public Integer getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(Integer categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public String getCategoryName() {
-        return categoryName;
-    }
-
-    public void setCategoryName(String categoryName) {
-        this.categoryName = categoryName;
-    }
-
-    public Double getPrice() {
-        return price;
-    }
-
-    public void setPrice(Double price) {
-        this.price = price;
     }
 
     public String getCoverUrl() {
@@ -195,6 +107,14 @@ public class Book {
         this.contentPath = contentPath;
     }
 
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
     public String getCurrency() {
         return currency;
     }
@@ -203,12 +123,12 @@ public class Book {
         this.currency = currency;
     }
 
-    public Integer getReviewCount() {
-        return reviewCount;
+    public int getTotalPages() {
+        return totalPages;
     }
 
-    public void setReviewCount(Integer reviewCount) {
-        this.reviewCount = reviewCount;
+    public void setTotalPages(int totalPages) {
+        this.totalPages = totalPages;
     }
 
     public int getPreviewPages() {
@@ -242,4 +162,5 @@ public class Book {
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
     }
+
 }
