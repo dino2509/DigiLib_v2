@@ -13,42 +13,17 @@ import model.Employee;
 public class ReturnRequestsController extends HttpServlet {
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         HttpSession session = req.getSession(false);
         if (session == null || !(session.getAttribute("user") instanceof Employee)) {
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
-
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return;
-        }
-
-        // Trang return-requests không còn dùng nữa -> chuyển hết sang borrowed-books
-        resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books");
+        resp.sendRedirect(req.getContextPath() + "/librarian/requests?typeFilter=return&statusFilter=all");
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-
-        HttpSession session = req.getSession(false);
-        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return;
-        }
-
-        // Không xử lý POST ở đây nữa -> chuyển sang borrowed-books
-        resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books");
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        doGet(req, resp);
     }
 }

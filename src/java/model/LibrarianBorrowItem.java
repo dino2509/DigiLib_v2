@@ -1,5 +1,6 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 public class LibrarianBorrowItem {
@@ -19,12 +20,18 @@ public class LibrarianBorrowItem {
     private Timestamp dueDate;
     private Timestamp returnedAt;
 
-    private String status; // BORROWING / RETURNED / OVERDUE / EXTENDED
+    private String status;
 
-    // ====== Return request + fine (for librarian UI) ======
-    private Integer pendingReturnRequestId; // null if none
-    private int overdueDays; // 0 if not overdue
-    private java.math.BigDecimal overdueFineAmount; // null if none
+    private Integer pendingReturnRequestId;
+    private int overdueDays;
+    private BigDecimal overdueFineAmount;
+
+    private Integer pendingExtendRequestId;
+    private Integer pendingExtendRequestedDays;
+    private Integer pendingExtendMaxDays;
+    private boolean hasUnpaidFine;
+    private BigDecimal unpaidFineAmount;
+    private String unpaidFineSummary;
 
     public int getBorrowItemId() { return borrowItemId; }
     public void setBorrowItemId(int borrowItemId) { this.borrowItemId = borrowItemId; }
@@ -62,9 +69,27 @@ public class LibrarianBorrowItem {
     public int getOverdueDays() { return overdueDays; }
     public void setOverdueDays(int overdueDays) { this.overdueDays = overdueDays; }
 
-    public java.math.BigDecimal getOverdueFineAmount() { return overdueFineAmount; }
-    public void setOverdueFineAmount(java.math.BigDecimal overdueFineAmount) { this.overdueFineAmount = overdueFineAmount; }
+    public BigDecimal getOverdueFineAmount() { return overdueFineAmount; }
+    public void setOverdueFineAmount(BigDecimal overdueFineAmount) { this.overdueFineAmount = overdueFineAmount; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public Integer getPendingExtendRequestId() { return pendingExtendRequestId; }
+    public void setPendingExtendRequestId(Integer pendingExtendRequestId) { this.pendingExtendRequestId = pendingExtendRequestId; }
+
+    public Integer getPendingExtendRequestedDays() { return pendingExtendRequestedDays; }
+    public void setPendingExtendRequestedDays(Integer pendingExtendRequestedDays) { this.pendingExtendRequestedDays = pendingExtendRequestedDays; }
+
+    public Integer getPendingExtendMaxDays() { return pendingExtendMaxDays; }
+    public void setPendingExtendMaxDays(Integer pendingExtendMaxDays) { this.pendingExtendMaxDays = pendingExtendMaxDays; }
+
+    public boolean isHasUnpaidFine() { return hasUnpaidFine; }
+    public void setHasUnpaidFine(boolean hasUnpaidFine) { this.hasUnpaidFine = hasUnpaidFine; }
+
+    public BigDecimal getUnpaidFineAmount() { return unpaidFineAmount; }
+    public void setUnpaidFineAmount(BigDecimal unpaidFineAmount) { this.unpaidFineAmount = unpaidFineAmount; }
+
+    public String getUnpaidFineSummary() { return unpaidFineSummary; }
+    public void setUnpaidFineSummary(String unpaidFineSummary) { this.unpaidFineSummary = unpaidFineSummary; }
 }

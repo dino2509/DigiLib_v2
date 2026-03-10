@@ -1,11 +1,8 @@
 package model;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
-/**
- * DTO cho màn hình Reader: Sách đang mượn.
- * Không ánh xạ trực tiếp 1 bảng, chỉ gom dữ liệu từ Borrow/Borrow_Item/BookCopy/Book.
- */
 public class BorrowedBookItem {
     private int borrowId;
     private int borrowItemId;
@@ -19,89 +16,64 @@ public class BorrowedBookItem {
     private Timestamp dueDate;
     private Timestamp returnedAt;
 
-    private String borrowStatus;     // Borrow.status
-    private String borrowItemStatus; // Borrow_Item.status
+    private String borrowStatus;
+    private String borrowItemStatus;
+
+    private Integer pendingExtendRequestId;
+    private Integer pendingExtendMaxDays;
+    private Integer pendingExtendRequestedDays;
+    private boolean hasUnpaidFine;
+    private BigDecimal unpaidFineAmount;
+    private String unpaidFineSummary;
 
     public BorrowedBookItem() {
     }
 
-    public int getBorrowId() {
-        return borrowId;
-    }
+    public int getBorrowId() { return borrowId; }
+    public void setBorrowId(int borrowId) { this.borrowId = borrowId; }
 
-    public void setBorrowId(int borrowId) {
-        this.borrowId = borrowId;
-    }
+    public int getBorrowItemId() { return borrowItemId; }
+    public void setBorrowItemId(int borrowItemId) { this.borrowItemId = borrowItemId; }
 
-    public int getBorrowItemId() {
-        return borrowItemId;
-    }
+    public int getCopyId() { return copyId; }
+    public void setCopyId(int copyId) { this.copyId = copyId; }
 
-    public void setBorrowItemId(int borrowItemId) {
-        this.borrowItemId = borrowItemId;
-    }
+    public String getCopyCode() { return copyCode; }
+    public void setCopyCode(String copyCode) { this.copyCode = copyCode; }
 
-    public int getCopyId() {
-        return copyId;
-    }
+    public Book getBook() { return book; }
+    public void setBook(Book book) { this.book = book; }
 
-    public void setCopyId(int copyId) {
-        this.copyId = copyId;
-    }
+    public Timestamp getBorrowDate() { return borrowDate; }
+    public void setBorrowDate(Timestamp borrowDate) { this.borrowDate = borrowDate; }
 
-    public String getCopyCode() {
-        return copyCode;
-    }
+    public Timestamp getDueDate() { return dueDate; }
+    public void setDueDate(Timestamp dueDate) { this.dueDate = dueDate; }
 
-    public void setCopyCode(String copyCode) {
-        this.copyCode = copyCode;
-    }
+    public Timestamp getReturnedAt() { return returnedAt; }
+    public void setReturnedAt(Timestamp returnedAt) { this.returnedAt = returnedAt; }
 
-    public Book getBook() {
-        return book;
-    }
+    public String getBorrowStatus() { return borrowStatus; }
+    public void setBorrowStatus(String borrowStatus) { this.borrowStatus = borrowStatus; }
 
-    public void setBook(Book book) {
-        this.book = book;
-    }
+    public String getBorrowItemStatus() { return borrowItemStatus; }
+    public void setBorrowItemStatus(String borrowItemStatus) { this.borrowItemStatus = borrowItemStatus; }
 
-    public Timestamp getBorrowDate() {
-        return borrowDate;
-    }
+    public Integer getPendingExtendRequestId() { return pendingExtendRequestId; }
+    public void setPendingExtendRequestId(Integer pendingExtendRequestId) { this.pendingExtendRequestId = pendingExtendRequestId; }
 
-    public void setBorrowDate(Timestamp borrowDate) {
-        this.borrowDate = borrowDate;
-    }
+    public Integer getPendingExtendMaxDays() { return pendingExtendMaxDays; }
+    public void setPendingExtendMaxDays(Integer pendingExtendMaxDays) { this.pendingExtendMaxDays = pendingExtendMaxDays; }
 
-    public Timestamp getDueDate() {
-        return dueDate;
-    }
+    public Integer getPendingExtendRequestedDays() { return pendingExtendRequestedDays; }
+    public void setPendingExtendRequestedDays(Integer pendingExtendRequestedDays) { this.pendingExtendRequestedDays = pendingExtendRequestedDays; }
 
-    public void setDueDate(Timestamp dueDate) {
-        this.dueDate = dueDate;
-    }
+    public boolean isHasUnpaidFine() { return hasUnpaidFine; }
+    public void setHasUnpaidFine(boolean hasUnpaidFine) { this.hasUnpaidFine = hasUnpaidFine; }
 
-    public Timestamp getReturnedAt() {
-        return returnedAt;
-    }
+    public BigDecimal getUnpaidFineAmount() { return unpaidFineAmount; }
+    public void setUnpaidFineAmount(BigDecimal unpaidFineAmount) { this.unpaidFineAmount = unpaidFineAmount; }
 
-    public void setReturnedAt(Timestamp returnedAt) {
-        this.returnedAt = returnedAt;
-    }
-
-    public String getBorrowStatus() {
-        return borrowStatus;
-    }
-
-    public void setBorrowStatus(String borrowStatus) {
-        this.borrowStatus = borrowStatus;
-    }
-
-    public String getBorrowItemStatus() {
-        return borrowItemStatus;
-    }
-
-    public void setBorrowItemStatus(String borrowItemStatus) {
-        this.borrowItemStatus = borrowItemStatus;
-    }
+    public String getUnpaidFineSummary() { return unpaidFineSummary; }
+    public void setUnpaidFineSummary(String unpaidFineSummary) { this.unpaidFineSummary = unpaidFineSummary; }
 }

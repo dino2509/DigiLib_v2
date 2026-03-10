@@ -1,11 +1,16 @@
 package controller.librarian;
 
+import dal.BorrowExtendDBContext;
 import dal.LibrarianBorrowDBContext;
 import dal.ReturnRequestDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import model.Employee;
 import model.LibrarianBorrowItem;
@@ -14,91 +19,96 @@ import model.LibrarianBorrowItem;
 public class BorrowedBooksController extends HttpServlet {
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Employee emp = requireLibrarian(req, resp);
+        if (emp == null) return;
 
-        HttpSession session = req.getSession(false);
-        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return;
-        }
-
-        // Filter is handled on client-side (no reload). We still keep this param
-        // to remember which tab should be active after actions.
-        String filter = req.getParameter("filter");
-        if (filter == null || filter.trim().isEmpty()) filter = "all";
+        String filter = normalizeFilter(req.getParameter("filter"));
 
         LibrarianBorrowDBContext dao = new LibrarianBorrowDBContext();
-        // Always load ALL once; filter on the frontend.
         ArrayList<LibrarianBorrowItem> list = dao.listByFilter("all");
 
         req.setAttribute("items", list);
         req.setAttribute("filter", filter);
-
         req.getRequestDispatcher("/view/librarian/borrowed_books.jsp").forward(req, resp);
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-
-        HttpSession session = req.getSession(false);
-        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
-            resp.sendRedirect(req.getContextPath() + "/login");
-            return;
-        }
-
-        Employee emp = (Employee) session.getAttribute("user");
-        if (emp.getRoleId() != 2) {
-            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
-            return;
-        }
-
-        String filter = req.getParameter("filter");
-        if (filter == null || filter.trim().isEmpty()) filter = "all";
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        Employee emp = requireLibrarian(req, resp);
+        if (emp == null) return;
 
         String action = req.getParameter("action");
+        String filter = normalizeFilter(req.getParameter("filter"));
+
         int borrowItemId = parseInt(req.getParameter("borrowItemId"), -1);
-
-        // optional: for pending return request
         int returnRequestId = parseInt(req.getParameter("returnRequestId"), -1);
+        int extendDays = parseInt(req.getParameter("extendDays"), -1);
 
-        java.math.BigDecimal damageAmount = parseBigDecimal(req.getParameter("damageAmount"));
-        String damageReason = req.getParameter("damageReason");
-        String decisionNote = req.getParameter("decisionNote");
+        BigDecimal damageAmount = parseBigDecimal(req.getParameter("damageAmount"));
+        String damageReason = trimToNull(req.getParameter("damageReason"));
+        String decisionNote = trimToNull(req.getParameter("decisionNote"));
+
+        String redirectBase = req.getContextPath() + "/librarian/borrowed-books?filter=" + filter;
 
         if (("return".equalsIgnoreCase(action) || "confirm".equalsIgnoreCase(action)) && borrowItemId > 0) {
             ReturnRequestDBContext rrDao = new ReturnRequestDBContext();
-            boolean ok = rrDao.confirmOrCreateAndAutoConfirm(emp.getEmployeeId(), borrowItemId, damageAmount, damageReason);
-
-            if (!ok) {
-                resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&returnError=1");
-                return;
-            }
-
-            resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&returned=1");
+            boolean ok = rrDao.confirmOrCreateAndAutoConfirm(
+                    emp.getEmployeeId(),
+                    borrowItemId,
+                    damageAmount,
+                    damageReason
+            );
+            resp.sendRedirect(redirectBase + (ok ? "&returned=1" : "&returnError=1"));
             return;
         }
 
         if ("reject".equalsIgnoreCase(action) && returnRequestId > 0) {
             ReturnRequestDBContext rrDao = new ReturnRequestDBContext();
-            boolean ok = rrDao.reject(emp.getEmployeeId(), returnRequestId,
-                    (decisionNote == null || decisionNote.trim().isEmpty()) ? "Từ chối yêu cầu trả sách" : decisionNote);
-            if (!ok) {
-                resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&rejectError=1");
-                return;
-            }
-            resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter + "&rejected=1");
+            boolean ok = rrDao.reject(
+                    emp.getEmployeeId(),
+                    returnRequestId,
+                    decisionNote == null ? "Từ chối yêu cầu trả sách" : decisionNote
+            );
+            resp.sendRedirect(redirectBase + (ok ? "&rejected=1" : "&rejectError=1"));
             return;
         }
 
-        resp.sendRedirect(req.getContextPath() + "/librarian/borrowed-books?filter=" + filter);
+        if ("extend".equalsIgnoreCase(action) && borrowItemId > 0) {
+            if (extendDays < 1) extendDays = 1;
+            if (extendDays > 14) extendDays = 14;
+
+            BorrowExtendDBContext dao = new BorrowExtendDBContext();
+            Integer id = dao.createByLibrarian(emp.getEmployeeId(), borrowItemId, extendDays);
+            resp.sendRedirect(redirectBase + (id != null ? "&extendRequested=1" : "&extendError=1"));
+            return;
+        }
+
+        resp.sendRedirect(redirectBase);
+    }
+
+    private Employee requireLibrarian(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        HttpSession session = req.getSession(false);
+        if (session == null || !(session.getAttribute("user") instanceof Employee)) {
+            resp.sendRedirect(req.getContextPath() + "/login");
+            return null;
+        }
+
+        Employee emp = (Employee) session.getAttribute("user");
+        if (emp.getRoleId() != 2) {
+            resp.sendRedirect(req.getContextPath() + "/view/error/403.jsp");
+            return null;
+        }
+        return emp;
+    }
+
+    private String normalizeFilter(String filter) {
+        if (filter == null || filter.trim().isEmpty()) return "all";
+        filter = filter.trim().toLowerCase();
+        return switch (filter) {
+            case "all", "borrowing", "overdue", "returned" -> filter;
+            default -> "all";
+        };
     }
 
     private int parseInt(String s, int def) {
@@ -110,16 +120,19 @@ public class BorrowedBooksController extends HttpServlet {
         }
     }
 
-    private java.math.BigDecimal parseBigDecimal(String s) {
+    private BigDecimal parseBigDecimal(String s) {
         try {
-            if (s == null) return null;
-            s = s.trim();
-            if (s.isEmpty()) return null;
-            java.math.BigDecimal bd = new java.math.BigDecimal(s);
-            if (bd.compareTo(java.math.BigDecimal.ZERO) <= 0) return null;
-            return bd;
+            if (s == null || s.trim().isEmpty()) return null;
+            BigDecimal bd = new BigDecimal(s.trim());
+            return bd.compareTo(BigDecimal.ZERO) > 0 ? bd : null;
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String trimToNull(String s) {
+        if (s == null) return null;
+        s = s.trim();
+        return s.isEmpty() ? null : s;
     }
 }
