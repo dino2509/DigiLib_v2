@@ -132,10 +132,12 @@
             </c:if>
 
             <div class="back">
+
                 <a href="#" onclick="window.history.back(); return false;">
                     ← Quay lại trang trước
                 </a>
             </div>
+
 
         </div>
 

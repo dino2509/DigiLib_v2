@@ -33,36 +33,6 @@ public class CategoryDBContext extends DBContext<Category> {
         return categories;
     }
 
-    /**
-     * List category kèm số lượng sách trong từng category (không thay đổi DB schema).
-     */
-    public ArrayList<Category> listWithBookCount() {
-        ArrayList<Category> categories = new ArrayList<>();
-        String sql = "SELECT c.category_id, c.category_name, c.description, COUNT(b.book_id) AS book_count "
-                + "FROM Category c "
-                + "LEFT JOIN Book b ON b.category_id = c.category_id "
-                + "GROUP BY c.category_id, c.category_name, c.description "
-                + "ORDER BY c.category_name";
-
-        try (PreparedStatement stm = connection.prepareStatement(sql);
-             ResultSet rs = stm.executeQuery()) {
-
-            while (rs.next()) {
-                Category c = new Category();
-                c.setCategory_id(rs.getInt("category_id"));
-                c.setCategory_name(rs.getString("category_name"));
-                c.setDescription(rs.getString("description"));
-                c.setBookCount(rs.getInt("book_count"));
-                categories.add(c);
-            }
-
-        } catch (SQLException ex) {
-            Logger.getLogger(CategoryDBContext.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        return categories;
-    }
-
     // =========================
     // GET CATEGORY BY ID
     // =========================
@@ -82,9 +52,11 @@ public class CategoryDBContext extends DBContext<Category> {
             }
         } catch (SQLException ex) {
             Logger.getLogger(CategoryDBContext.class.getName()).log(Level.SEVERE, null, ex);
+
         }
         return null;
     }
+
 
     // =========================
     // INSERT CATEGORY
@@ -129,5 +101,6 @@ public class CategoryDBContext extends DBContext<Category> {
         } catch (SQLException ex) {
             Logger.getLogger(CategoryDBContext.class.getName()).log(Level.SEVERE, null, ex);
         }
+
     }
 }

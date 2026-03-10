@@ -49,7 +49,9 @@ public class LoginController extends HttpServlet {
             // ===== ROLE-BASED REDIRECT =====
             if (user instanceof Employee) {
                  Employee e = (Employee) user;
+
 //                 session.setAttribute("employee", e);
+
                 switch (e.getRoleId()) {
                     case 1: // ADMIN
                         response.sendRedirect("admin/dashboard");
@@ -58,6 +60,7 @@ public class LoginController extends HttpServlet {
                     case 2: // LIBRARIAN
                         response.sendRedirect("librarian/dashboard");
                         break;
+
 
 
 

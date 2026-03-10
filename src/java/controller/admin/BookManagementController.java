@@ -13,7 +13,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import model.Author;
 import model.Category;
@@ -149,7 +148,11 @@ public class BookManagementController extends HttpServlet {
         // ===== PRICE =====
         String price = request.getParameter("price");
         if (price != null && !price.isEmpty()) {
-            book.setPrice(new BigDecimal(price));
+            try {
+                book.setPrice(Double.valueOf(price));
+            } catch (NumberFormatException ignore) {
+                book.setPrice(null);
+            }
         }
 
         book.setCurrency(request.getParameter("currency"));

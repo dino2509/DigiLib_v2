@@ -2,188 +2,142 @@ package dal;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import model.Author;
 import model.Book;
-import model.BorrowExtendRequest;
-import model.BorrowedBookItem;
+import model.BorrowedItem;
 
-public class BorrowDBContext extends DBContext<BorrowedBookItem> {
+public class BorrowDBContext extends DBContext<BorrowedItem> {
 
-    @Override
-    public ArrayList<BorrowedBookItem> list() {
-        throw new UnsupportedOperationException("Use listActiveByReader(readerId)");
-    }
+    private static final Logger LOGGER = Logger.getLogger(BorrowDBContext.class.getName());
 
     @Override
-    public BorrowedBookItem get(int id) {
-        throw new UnsupportedOperationException("Not supported");
+    public ArrayList<BorrowedItem> list() {
+        throw new UnsupportedOperationException("Use listByReader(readerId).");
     }
 
-    @Override
-    public void insert(BorrowedBookItem model) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public void update(BorrowedBookItem model) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    @Override
-    public void delete(BorrowedBookItem model) {
-        throw new UnsupportedOperationException("Not supported");
-    }
-
-    public ArrayList<BorrowedBookItem> listActiveByReader(int readerId) {
-        return listHistoryByReader(readerId, "borrowing");
-    }
-
-    public ArrayList<BorrowedBookItem> listHistoryByReader(int readerId, String filter) {
-        ArrayList<BorrowedBookItem> items = new ArrayList<>();
-
-        if (filter == null) filter = "all";
-        filter = filter.trim().toLowerCase();
-
-        String where = switch (filter) {
-            case "returned" -> " AND bi.returned_at IS NOT NULL ";
-            case "borrowing" -> " AND bi.returned_at IS NULL AND bi.due_date >= GETDATE() ";
-            case "overdue" -> " AND bi.returned_at IS NULL AND bi.due_date < GETDATE() ";
-            default -> "";
-        };
-
-        String sql = "SELECT br.borrow_id, br.status AS borrow_status, br.borrow_date, "
-                + "bi.borrow_item_id, bi.due_date, bi.returned_at, bi.status AS borrow_item_status, "
-                + "bc.copy_id, bc.copy_code, b.book_id, b.title, b.cover_url, b.currency, b.price "
-                + "FROM Borrow br "
-                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
-                + "INNER JOIN BookCopy bc ON bc.copy_id = bi.copy_id "
-                + "INNER JOIN Book b ON b.book_id = bc.book_id "
-                + "WHERE br.reader_id = ? " + where
-                + "ORDER BY br.borrow_date DESC, bi.borrow_item_id DESC";
-
-        BorrowExtendDBContext extendDao = new BorrowExtendDBContext();
-        Map<Integer, BorrowExtendRequest> pendingMap = extendDao.mapPendingByReader(readerId);
+    public int countActiveBorrowed(int readerId) {
+        String sql = "\nSELECT COUNT(*) AS total\n" +
+                     "FROM Borrow_Item bi\n" +
+                     "JOIN Borrow b ON b.borrow_id = bi.borrow_id\n" +
+                     "WHERE b.reader_id = ? AND bi.returned_at IS NULL";
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                BorrowedBookItem it = new BorrowedBookItem();
-                it.setBorrowId(rs.getInt("borrow_id"));
-                it.setBorrowStatus(rs.getString("borrow_status"));
-                it.setBorrowDate(rs.getTimestamp("borrow_date"));
-                it.setBorrowItemId(rs.getInt("borrow_item_id"));
-                it.setDueDate(rs.getTimestamp("due_date"));
-                it.setReturnedAt(rs.getTimestamp("returned_at"));
-                it.setBorrowItemStatus(rs.getString("borrow_item_status"));
-                it.setCopyId(rs.getInt("copy_id"));
-                it.setCopyCode(rs.getString("copy_code"));
-
-                Book b = new Book();
-                b.setBookId(rs.getInt("book_id"));
-                b.setTitle(rs.getString("title"));
-                b.setCoverUrl(rs.getString("cover_url"));
-                b.setCurrency(rs.getString("currency"));
-                b.setPrice(rs.getBigDecimal("price"));
-                it.setBook(b);
-
-                BorrowExtendRequest pending = pendingMap.get(it.getBorrowItemId());
-                if (pending != null) {
-                    it.setPendingExtendRequestId(pending.getExtendId());
-                    it.setPendingExtendMaxDays(pending.getMaxAllowedDays());
-                    it.setPendingExtendRequestedDays(pending.getRequestedDays());
-                }
-                BorrowExtendDBContext.FineInfo fineInfo = extendDao.getUnpaidFineInfo(it.getBorrowItemId());
-                it.setHasUnpaidFine(fineInfo.hasUnpaidFine);
-                it.setUnpaidFineAmount(fineInfo.amount);
-                it.setUnpaidFineSummary(fineInfo.summary);
-                items.add(it);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        return 0;
+    }
+
+    public int countDueSoon(int readerId, int withinDays) {
+        if (withinDays <= 0) withinDays = 3;
+        String sql = "\nSELECT COUNT(*) AS total\n" +
+                     "FROM Borrow_Item bi\n" +
+                     "JOIN Borrow b ON b.borrow_id = bi.borrow_id\n" +
+                     "WHERE b.reader_id = ?\n" +
+                     "  AND bi.returned_at IS NULL\n" +
+                     "  AND bi.due_date <= DATEADD(day, ?, SYSUTCDATETIME())";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            ps.setInt(2, withinDays);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        return 0;
+    }
+
+    public ArrayList<BorrowedItem> listByReader(int readerId) {
+        ArrayList<BorrowedItem> items = new ArrayList<>();
+
+        String sql = "\nSELECT\n" +
+                     "  bi.borrow_item_id, bi.due_date, bi.returned_at, bi.status AS borrow_item_status,\n" +
+                     "  bc.copy_code,\n" +
+                     "  bk.book_id, bk.title, bk.cover_url, bk.total_pages,\n" +
+                     "  a.author_name,\n" +
+                     "  CAST(ISNULL(AVG(CAST(r.rating AS float)), 0) AS float) AS avg_rating\n" +
+                     "FROM Borrow_Item bi\n" +
+                     "JOIN Borrow b ON b.borrow_id = bi.borrow_id\n" +
+                     "JOIN BookCopy bc ON bc.copy_id = bi.copy_id\n" +
+                     "JOIN Book bk ON bk.book_id = bc.book_id\n" +
+                     "LEFT JOIN Author a ON a.author_id = bk.author_id\n" +
+                     "LEFT JOIN Review r ON r.book_id = bk.book_id\n" +
+                     "WHERE b.reader_id = ?\n" +
+                     "GROUP BY bi.borrow_item_id, bi.due_date, bi.returned_at, bi.status, bc.copy_code,\n" +
+                     "         bk.book_id, bk.title, bk.cover_url, bk.total_pages, a.author_name\n" +
+                     "ORDER BY bi.returned_at DESC, bi.due_date ASC";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, readerId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Book bk = new Book();
+                    bk.setBookId(rs.getInt("book_id"));
+                    bk.setTitle(rs.getString("title"));
+
+                    Author a = new Author();
+                    a.setAuthor_name(rs.getString("author_name"));
+                    bk.setAuthor(a);
+
+                    bk.setCoverUrl(rs.getString("cover_url"));
+                    Object tpObj = rs.getObject("total_pages");
+                    bk.setTotalPages(tpObj == null ? null : rs.getInt("total_pages"));
+                    bk.setRating(rs.getDouble("avg_rating"));
+
+                    BorrowedItem item = new BorrowedItem();
+                    item.setBorrowItemId(rs.getInt("borrow_item_id"));
+                    item.setBook(bk);
+                    item.setCopyCode(rs.getString("copy_code"));
+                    item.setStatus(rs.getString("borrow_item_status"));
+
+                    java.sql.Timestamp due = rs.getTimestamp("due_date");
+                    if (due != null) item.setDueDate(due.toLocalDateTime());
+                    java.sql.Timestamp returned = rs.getTimestamp("returned_at");
+                    if (returned != null) item.setReturnedAt(returned.toLocalDateTime());
+
+                    if (item.getReturnedAt() == null && item.getDueDate() != null) {
+                        LocalDateTime now = LocalDateTime.now();
+                        if (item.getDueDate().isBefore(now)) {
+                            item.setStatus("overdue");
+                        }
+                    }
+                    items.add(item);
+                }
+            }
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
         }
 
         return items;
     }
 
-    public boolean isBookCurrentlyBorrowed(int readerId, int bookId) {
-        String sql = "SELECT TOP 1 1 "
-                + "FROM Borrow br "
-                + "INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id "
-                + "INNER JOIN BookCopy bc ON bc.copy_id = bi.copy_id "
-                + "WHERE br.reader_id = ? "
-                + "AND bc.book_id = ? "
-                + "AND bi.returned_at IS NULL";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ps.setInt(2, bookId);
-            ResultSet rs = ps.executeQuery();
-            return rs.next();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+    @Override
+    public BorrowedItem get(int id) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
-    public int countActiveBorrowedItems(int readerId) {
-        String sql = "SELECT COUNT(*) FROM Borrow br INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id WHERE br.reader_id = ? AND bi.returned_at IS NULL";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
+    @Override
+    public void insert(BorrowedItem model) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
-    public int countDueSoon(int readerId, int days) {
-        String sql = "SELECT COUNT(*) FROM Borrow br INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id WHERE br.reader_id = ? AND bi.returned_at IS NULL AND bi.due_date <= DATEADD(day, ?, GETDATE())";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ps.setInt(2, days);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
+    @Override
+    public void update(BorrowedItem model) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 
-    public int countOverdueBorrowedItems(int readerId) {
-        String sql = "SELECT COUNT(*) FROM Borrow br INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id WHERE br.reader_id = ? AND bi.returned_at IS NULL AND bi.due_date < GETDATE()";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public int countAllBorrowedItems(int readerId) {
-        String sql = "SELECT COUNT(*) FROM Borrow br INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id WHERE br.reader_id = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    public int countReturnedBorrowedItems(int readerId) {
-        String sql = "SELECT COUNT(*) FROM Borrow br INNER JOIN Borrow_Item bi ON bi.borrow_id = br.borrow_id WHERE br.reader_id = ? AND bi.returned_at IS NOT NULL";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setInt(1, readerId);
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return 0;
+    @Override
+    public void delete(BorrowedItem model) {
+        throw new UnsupportedOperationException("Not supported.");
     }
 }
