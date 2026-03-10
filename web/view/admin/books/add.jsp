@@ -23,7 +23,6 @@
             inset 0 1px 0 rgba(255,255,255,0.6);
     }
 
-    /* ===== Title ===== */
     .add-title {
         display: flex;
         align-items: center;
@@ -46,7 +45,6 @@
         background: linear-gradient(90deg, #fb923c, #ea580c);
     }
 
-    /* ===== Labels ===== */
     label {
         font-weight: 600;
         color: #374151;
@@ -54,7 +52,6 @@
         font-size: 14px;
     }
 
-    /* ===== Inputs ===== */
     .form-control,
     .form-select {
         height: 48px;
@@ -76,13 +73,26 @@
         box-shadow: 0 0 0 4px rgba(251,146,60,0.25);
     }
 
-    /* ===== Row spacing ===== */
     .row.g-4 > [class^="col"] {
         display: flex;
         flex-direction: column;
     }
 
-    /* ===== Footer ===== */
+    /* ===== COVER PREVIEW ===== */
+    .cover-preview {
+        display: flex;
+        justify-content: center;
+        margin-top: 10px;
+    }
+
+    .cover-preview img {
+        max-height: 220px;
+        border-radius: 14px;
+        border: 1px solid #fed7aa;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        display: none;
+    }
+
     .form-footer {
         display: flex;
         justify-content: space-between;
@@ -92,7 +102,6 @@
         border-top: 1px dashed #fed7aa;
     }
 
-    /* ===== Buttons ===== */
     .btn-save {
         background: linear-gradient(135deg, #fb923c, #ea580c);
         color: #fff;
@@ -103,16 +112,11 @@
         border: none;
         cursor: pointer;
         transition: all 0.3s ease;
-        letter-spacing: 0.3px;
     }
 
     .btn-save:hover {
         transform: translateY(-2px);
         box-shadow: 0 14px 30px rgba(249,115,22,0.45);
-    }
-
-    .btn-save:active {
-        transform: translateY(0);
     }
 
     .btn-back {
@@ -129,7 +133,6 @@
         text-decoration: underline;
     }
 
-    /* ===== Select2 ===== */
     .select2-container .select2-selection--single {
         height: 48px;
         border-radius: 14px;
@@ -146,7 +149,6 @@
     }
 </style>
 
-
 <div class="add-wrapper">
     <div class="add-card">
 
@@ -154,7 +156,10 @@
             ➕ Thêm sách mới
         </div>
 
-        <form action="${pageContext.request.contextPath}/admin/books/add" method="post">
+        <!-- ❗ multipart/form-data -->
+        <form action="${pageContext.request.contextPath}/admin/books/add"
+              method="post"
+              enctype="multipart/form-data">
 
             <div class="row g-4">
 
@@ -166,8 +171,8 @@
                 <div class="col-md-3">
                     <label>Trạng thái</label>
                     <select name="status" class="form-select">
-                        <option value="ACTIVE">Active</option>
-                        <option value="INACTIVE">Inactive</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
                     </select>
                 </div>
 
@@ -203,9 +208,17 @@
                     <input type="number" step="1000" name="price" class="form-control">
                 </div>
 
+                <!-- ===== UPLOAD COVER IMAGE ===== -->
                 <div class="col-md-6">
-                    <label>Cover URL</label>
-                    <input type="text" name="cover_url" value="/img/book/" class="form-control">
+                    <label>Ảnh bìa (Cover Image)</label>
+                    <input type="file"
+                           name="cover_url"
+                           class="form-control"
+                           accept="image/*"
+                           onchange="previewCover(this)">
+                    <div class="cover-preview">
+                        <img id="coverPreview">
+                    </div>
                 </div>
 
                 <div class="col-md-12">
@@ -241,7 +254,19 @@
 </div>
 
 <script>
-    $('.select2').select2({
-        width: '100%'
-    });
+    $('.select2').select2({width: '100%'});
+
+    function previewCover(input) {
+        const file = input.files[0];
+        if (!file)
+            return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = document.getElementById('coverPreview');
+            img.src = e.target.result;
+            img.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
 </script>

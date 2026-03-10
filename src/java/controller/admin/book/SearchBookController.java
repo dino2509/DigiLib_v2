@@ -14,6 +14,7 @@ import model.Category;
 import java.io.IOException;
 import java.util.ArrayList;
 
+/// khong dung
 @WebServlet(name = "SearchBookController", urlPatterns = {"/admin/books/search"})
 public class SearchBookController extends HttpServlet {
 
@@ -25,11 +26,23 @@ public class SearchBookController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ===== LẤY THAM SỐ SEARCH =====
         String keyword = request.getParameter("keyword");
+        String keyResult = null;
+
+        if (keyword != null) {
+            keyword = keyword.trim().replaceAll("\\s+", " ");
+            if (!keyword.isEmpty()) {
+                keyResult = keyword;
+            }
+        }
+
         String authorRaw = request.getParameter("author_id");
         String categoryRaw = request.getParameter("category_id");
         String status = request.getParameter("status");
+
+        if (status != null && status.trim().isEmpty()) {
+            status = null;
+        }
 
         Integer authorId = null;
         Integer categoryId = null;
@@ -45,33 +58,33 @@ public class SearchBookController extends HttpServlet {
             // ignore
         }
 
-        // ===== SEARCH BOOK =====
         ArrayList<Book> books = bookDB.search(
-                keyword,
+                keyResult,
                 authorId,
                 categoryId,
                 status
         );
 
-        // ===== LOAD DATA CHO FILTER =====
-        ArrayList<Author> authors = authorDB.list();
-        ArrayList<Category> categories = categoryDB.list();
-
-        // ===== SET ATTRIBUTE =====
         request.setAttribute("books", books);
-        request.setAttribute("authors", authors);
-        request.setAttribute("categories", categories);
+        request.setAttribute("authors", authorDB.list());
+        request.setAttribute("categories", categoryDB.list());
 
         request.setAttribute("keyword", keyword);
         request.setAttribute("authorId", authorId);
         request.setAttribute("categoryId", categoryId);
         request.setAttribute("status", status);
 
-        // ===== FORWARD =====
         
+        
+        
+        
+        
+        request.setAttribute("pageTitle", "Search Book");
+        request.setAttribute("activeMenu", "book");
+        request.setAttribute("contentPage", "../../view/admin/books/list.jsp");
 
-        request.getRequestDispatcher("list")
+        request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
-
     }
+
 }

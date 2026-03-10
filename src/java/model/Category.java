@@ -1,30 +1,12 @@
 package model;
 
 public class Category {
-
-    private int id;
-    private String name;
-    private String description;
-    private int bookCount;
     private int category_id;
     private String category_name;
+    private String description;
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-    
+    // NOTE: Không phải cột DB, chỉ dùng để hiển thị thống kê (COUNT(Book))
+    private int bookCount;
 
     public Category() {
     }
@@ -49,7 +31,6 @@ public class Category {
 
     public void setCategory_name(String category_name) {
         this.category_name = category_name;
-
     }
 
     public String getDescription() {
@@ -59,7 +40,6 @@ public class Category {
     public void setDescription(String description) {
         this.description = description;
     }
-
 
     public int getBookCount() {
         return bookCount;
