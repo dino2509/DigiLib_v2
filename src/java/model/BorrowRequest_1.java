@@ -3,7 +3,7 @@ package model;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 
-public class BorrowRequest {
+public class BorrowRequest_1 {
     private int requestId;
     private int readerId;
     private String readerName;
