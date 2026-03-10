@@ -1,6 +1,6 @@
 <%-- 
-    Document   : dashboard
-    Created on : Jan 24, 2026, 12:31:51 PM
+    Document   : footer
+    Created on : Jan 13, 2026, 8:30:32 AM
     Author     : Nhat
 --%>
 

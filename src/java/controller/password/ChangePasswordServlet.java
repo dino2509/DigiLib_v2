@@ -3,7 +3,7 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 
-package controller.auth.change_pw;
+package controller.password;
 
 import dal.ReaderDBContext;
 import jakarta.servlet.ServletException;
