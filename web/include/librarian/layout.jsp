@@ -214,7 +214,7 @@
 
                 <div class="submenu">
 
-                    <a href="borrow-requests" class="${activeMenu=='borrowRequests'?'active':''}">Borrow Requests</a>
+                    <a href="requests" class="${activeMenu=='borrowRequests'?'active':''}">Borrow Requests</a>
                     <a href="borrows" class="${activeMenu=='borrows'?'active':''}">Borrow Records</a>
                     <a href="borrow-extend" class="${activeMenu=='extend'?'active':''}">Extensions</a>
 

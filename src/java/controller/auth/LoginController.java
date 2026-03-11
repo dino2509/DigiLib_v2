@@ -67,7 +67,7 @@ public class LoginController extends HttpServlet {
                 }
 
             } else if (user instanceof Reader) {
-                response.sendRedirect("reader/home");
+                response.sendRedirect("reader/dashboard");
             }
 
         } else {

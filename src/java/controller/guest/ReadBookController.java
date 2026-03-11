@@ -28,6 +28,6 @@ public class ReadBookController extends HttpServlet {
 
         request.setAttribute("book", book);
 
-        request.getRequestDispatcher("view/guest/read.jsp").forward(request, response);
+        request.getRequestDispatcher("view/book/read.jsp").forward(request, response);
     }
 }

@@ -45,3 +45,5 @@ public class BorrowRequest {
     public ArrayList<BorrowRequestItem> getItems() { return items; }
     public void setItems(ArrayList<BorrowRequestItem> items) { this.items = items; }
 }
+
+

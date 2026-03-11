@@ -17,7 +17,8 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
     @Override
     public BorrowedBookItem get(int id) {
-        throw new UnsupportedOperationException("Not supported");
+                throw new UnsupportedOperationException("Not supported");
+
     }
 
     @Override

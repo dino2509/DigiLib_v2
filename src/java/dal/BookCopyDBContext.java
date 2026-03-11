@@ -118,4 +118,29 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
             e.printStackTrace();
         }
     }
+    public int getAvailableCopies(int bookId) {
+
+        String sql = """
+        SELECT COUNT(*)
+        FROM BookCopy
+        WHERE book_id = ?
+        AND status = 'available'
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, bookId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
 }
