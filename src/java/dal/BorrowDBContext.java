@@ -3,12 +3,159 @@ package dal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import model.Book;
+import model.Borrow;
 import model.BorrowExtendRequest;
+import model.BorrowItem;
 import model.BorrowedBookItem;
 
 public class BorrowDBContext extends DBContext<BorrowedBookItem> {
+
+    public int countBorrows() {
+
+        try {
+
+            String sql = "SELECT COUNT(*) FROM Borrow";
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public List<Borrow> getBorrowsByPage(int page, int pageSize) {
+
+        List<Borrow> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+            SELECT b.borrow_id,
+                   r.full_name,
+                   b.borrow_date,
+                   b.status
+            FROM Borrow b
+            JOIN Reader r ON b.reader_id = r.reader_id
+            ORDER BY b.borrow_id DESC
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """;
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setInt(1, (page - 1) * pageSize);
+            ps.setInt(2, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Borrow b = new Borrow();
+
+                b.setBorrowId(rs.getInt("borrow_id"));
+                b.setReaderName(rs.getString("full_name"));
+                b.setBorrowDate(rs.getTimestamp("borrow_date"));
+                b.setStatus(rs.getString("status"));
+
+                list.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public List<Borrow> getAllBorrows() {
+
+        List<Borrow> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+                SELECT b.borrow_id,
+                       r.full_name,
+                       b.borrow_date,
+                       b.status
+                FROM Borrow b
+                JOIN Reader r ON b.reader_id = r.reader_id
+                ORDER BY b.borrow_id DESC
+            """;
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Borrow b = new Borrow();
+
+                b.setBorrowId(rs.getInt("borrow_id"));
+                b.setReaderName(rs.getString("full_name"));
+                b.setBorrowDate(rs.getTimestamp("borrow_date"));
+                b.setStatus(rs.getString("status"));
+
+                list.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public List<BorrowItem> getBorrowedBooks(int readerId) {
+
+        List<BorrowItem> list = new ArrayList<>();
+
+        String sql = """
+        SELECT b.title,
+               br.borrow_date,
+               bi.due_date,
+               bi.status
+        FROM Borrow br
+        JOIN Borrow_Item bi ON br.borrow_id = bi.borrow_id
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        WHERE br.reader_id = ?
+        ORDER BY br.borrow_date DESC
+    """;
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, readerId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowItem item = new BorrowItem();
+
+                item.setBookTitle(rs.getString("title"));
+                item.setBorrowDate(rs.getTimestamp("borrow_date"));
+                item.setDueDate(rs.getTimestamp("due_date"));
+                item.setStatus(rs.getString("status"));
+
+                list.add(item);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 
     @Override
     public ArrayList<BorrowedBookItem> list() {
@@ -17,7 +164,7 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
     @Override
     public BorrowedBookItem get(int id) {
-                throw new UnsupportedOperationException("Not supported");
+        throw new UnsupportedOperationException("Not supported");
 
     }
 
@@ -43,14 +190,20 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
     public ArrayList<BorrowedBookItem> listHistoryByReader(int readerId, String filter) {
         ArrayList<BorrowedBookItem> items = new ArrayList<>();
 
-        if (filter == null) filter = "all";
+        if (filter == null) {
+            filter = "all";
+        }
         filter = filter.trim().toLowerCase();
 
         String where = switch (filter) {
-            case "returned" -> " AND bi.returned_at IS NOT NULL ";
-            case "borrowing" -> " AND bi.returned_at IS NULL AND bi.due_date >= GETDATE() ";
-            case "overdue" -> " AND bi.returned_at IS NULL AND bi.due_date < GETDATE() ";
-            default -> "";
+            case "returned" ->
+                " AND bi.returned_at IS NOT NULL ";
+            case "borrowing" ->
+                " AND bi.returned_at IS NULL AND bi.due_date >= GETDATE() ";
+            case "overdue" ->
+                " AND bi.returned_at IS NULL AND bi.due_date < GETDATE() ";
+            default ->
+                "";
         };
 
         String sql = "SELECT br.borrow_id, br.status AS borrow_status, br.borrow_date, "
@@ -132,7 +285,9 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, readerId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -145,7 +300,9 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
             ps.setInt(1, readerId);
             ps.setInt(2, days);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -157,7 +314,9 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, readerId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -169,7 +328,9 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, readerId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -181,7 +342,9 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, readerId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

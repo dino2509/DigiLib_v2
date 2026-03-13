@@ -62,10 +62,10 @@
                 📖 ${book.title}
             </div>
 
-            <a class="back-btn"
+<!--            <a class="back-btn"
                href="${pageContext.request.contextPath}/book-detail?id=${book.bookId}">
                 ← Back
-            </a>
+            </a>-->
 
         </div>
 

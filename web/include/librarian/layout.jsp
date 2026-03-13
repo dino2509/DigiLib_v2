@@ -22,8 +22,6 @@
                 background:#f4f6f9;
             }
 
-            /* SIDEBAR */
-
             .sidebar{
                 width:260px;
                 height:100vh;
@@ -39,6 +37,10 @@
                 font-size:22px;
                 font-weight:bold;
                 border-bottom:1px solid rgba(255,255,255,0.2);
+            }
+
+            .menu{
+                position:relative;
             }
 
             .menu-header{
@@ -64,6 +66,10 @@
                 background:#ff8a1f;
             }
 
+            .menu:hover .submenu{
+                display:block;
+            }
+
             .submenu a{
                 display:block;
                 padding:10px 40px;
@@ -83,13 +89,9 @@
                 font-weight:600;
             }
 
-            /* MAIN */
-
             .main{
                 margin-left:260px;
             }
-
-            /* TOPBAR */
 
             .topbar{
                 height:60px;
@@ -112,13 +114,9 @@
                 color:#666;
             }
 
-            /* CONTENT */
-
             .content{
                 padding:30px;
             }
-
-            /* DASHBOARD CARDS */
 
             .cards{
                 display:grid;
@@ -146,8 +144,6 @@
                 margin-top:5px;
             }
 
-            /* TABLE */
-
             table{
                 width:100%;
                 border-collapse:collapse;
@@ -169,6 +165,26 @@
                 border-bottom:1px solid #eee;
             }
 
+            .user-box{
+                display:flex;
+                align-items:center;
+                gap:20px;
+            }
+
+            .logout-btn{
+                text-decoration:none;
+                background:#ff7a00;
+                color:white;
+                padding:6px 12px;
+                border-radius:4px;
+                font-size:14px;
+                transition:0.2s;
+            }
+
+            .logout-btn:hover{
+                background:#e56700;
+            }
+
         </style>
 
     </head>
@@ -181,145 +197,136 @@
                 📚 DigiLib
             </div>
 
-
             <!-- BOOK MANAGEMENT -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-book"></i> Book Management</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="books" class="${activeMenu=='books'?'active':''}">Books</a>
-                    <a href="book-copies" class="${activeMenu=='copies'?'active':''}">Book Copies</a>
-                    <a href="authors" class="${activeMenu=='authors'?'active':''}">Authors</a>
-                    <a href="categories" class="${activeMenu=='categories'?'active':''}">Categories</a>
+                    <a href="${pageContext.request.contextPath}/books" class="${activeMenu=='books'?'active':''}">Books</a>
+                    <a href="${pageContext.request.contextPath}/book-copies" class="${activeMenu=='copies'?'active':''}">Book Copies</a>
+                    <a href="${pageContext.request.contextPath}/authors" class="${activeMenu=='authors'?'active':''}">Authors</a>
+                    <a href="${pageContext.request.contextPath}/categories" class="${activeMenu=='categories'?'active':''}">Categories</a>
 
                 </div>
 
             </div>
 
-
             <!-- BORROW -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-right-left"></i> Borrow</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="requests" class="${activeMenu=='borrowRequests'?'active':''}">Borrow Requests</a>
-                    <a href="borrows" class="${activeMenu=='borrows'?'active':''}">Borrow Records</a>
-                    <a href="borrow-extend" class="${activeMenu=='extend'?'active':''}">Extensions</a>
+                    <a href="${pageContext.request.contextPath}/librarian/requests" class="${activeMenu=='borrowRequests'?'active':''}">Borrow Requests</a>
+                    <a href="${pageContext.request.contextPath}/librarian/borrows" class="${activeMenu=='borrows'?'active':''}">Borrow Records</a>
+                    <a href="${pageContext.request.contextPath}/librarian/borrow-extend" class="${activeMenu=='extend'?'active':''}">Extensions</a>
 
                 </div>
 
             </div>
 
-
             <!-- RESERVATION -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-calendar"></i> Reservations</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="reservations" class="${activeMenu=='reservations'?'active':''}">
+                    <a href="${pageContext.request.contextPath}/librarian/reservations"
+                       class="${activeMenu=='reservations'?'active':''}">
                         Reservations
+                    </a>
+
+                    <a href="${pageContext.request.contextPath}/librarian/reservation-queue"
+                       class="${activeMenu=='reservations-queue'?'active':''}">
+                         Reservation Queue
                     </a>
 
                 </div>
 
             </div>
 
-
             <!-- STORE -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-cart-shopping"></i> Ebook Store</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="orders" class="${activeMenu=='orders'?'active':''}">Orders</a>
-                    <a href="payments" class="${activeMenu=='payments'?'active':''}">Payments</a>
+                    <a href="${pageContext.request.contextPath}/librarian/orders" class="${activeMenu=='orders'?'active':''}">Orders</a>
+                    <a href="${pageContext.request.contextPath}/librarian/payments" class="${activeMenu=='payments'?'active':''}">Payments</a>
 
                 </div>
 
             </div>
 
-
             <!-- READERS -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-user"></i> Readers</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="readers" class="${activeMenu=='readers'?'active':''}">Readers</a>
-                    <a href="reading-history" class="${activeMenu=='history'?'active':''}">Reading History</a>
+                    <a href="${pageContext.request.contextPath}/librarian/readers" class="${activeMenu=='readers'?'active':''}">Readers</a>
+                    <a href="${pageContext.request.contextPath}/librarian/reading-history" class="${activeMenu=='history'?'active':''}">Reading History</a>
 
                 </div>
 
             </div>
 
-
             <!-- FINES -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-money-bill"></i> Fines</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="fines" class="${activeMenu=='fines'?'active':''}">Fines</a>
-                    <a href="fine-types" class="${activeMenu=='fineTypes'?'active':''}">Fine Types</a>
+                    <a href="${pageContext.request.contextPath}/librarian/fines" class="${activeMenu=='fines'?'active':''}">Fines</a>
+                    <a href="${pageContext.request.contextPath}/librarian/fine-types" class="${activeMenu=='fineTypes'?'active':''}">Fine Types</a>
 
                 </div>
 
             </div>
 
-
             <!-- SYSTEM -->
-
             <div class="menu">
 
-                <div class="menu-header" onclick="toggleMenu(this)">
+                <div class="menu-header">
                     <span><i class="fa-solid fa-gear"></i> System</span>
                     <i class="fa-solid fa-chevron-down"></i>
                 </div>
 
                 <div class="submenu">
 
-                    <a href="notifications" class="${activeMenu=='notifications'?'active':''}">Notifications</a>
-                    <a href="employees" class="${activeMenu=='employees'?'active':''}">Employees</a>
+                    <a href="${pageContext.request.contextPath}/librarian/notifications" class="${activeMenu=='notifications'?'active':''}">Notifications</a>
+                    <a href="${pageContext.request.contextPath}/librarian/employees" class="${activeMenu=='employees'?'active':''}">Employees</a>
 
                 </div>
 
             </div>
 
         </div>
-
 
         <div class="main">
 
@@ -329,13 +336,20 @@
                     ${pageTitle}
                 </div>
 
-                <div class="user">
-                    <i class="fa-solid fa-user"></i>
-                    ${sessionScope.user.fullName}
+                <div class="user-box">
+
+                    <div class="user">
+                        <i class="fa-solid fa-user"></i>
+                        ${sessionScope.user.fullName}
+                    </div>
+
+                    <a href="${pageContext.request.contextPath}/logout" class="logout-btn">
+                        <i class="fa-solid fa-right-from-bracket"></i> Logout
+                    </a>
+
                 </div>
 
             </div>
-
 
             <div class="content">
 
@@ -344,23 +358,6 @@
             </div>
 
         </div>
-
-
-        <script>
-
-            function toggleMenu(el) {
-
-                let submenu = el.nextElementSibling;
-
-                if (submenu.style.display === "block") {
-                    submenu.style.display = "none";
-                } else {
-                    submenu.style.display = "block";
-                }
-
-            }
-
-        </script>
 
     </body>
 
