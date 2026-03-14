@@ -70,7 +70,7 @@ public class LoginGoogleController extends HttpServlet {
         HttpSession session = request.getSession();
         session.setAttribute("user", reader);
 
-        response.sendRedirect(request.getContextPath()+"/reader/home");
+        response.sendRedirect(request.getContextPath()+"/reader/dashboard");
     }
 
     // ================== GOOGLE API ==================

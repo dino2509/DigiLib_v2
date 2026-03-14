@@ -1,4 +1,4 @@
-package model;
+package model.borrow;
 
 import java.util.Date;
 

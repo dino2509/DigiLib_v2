@@ -1,6 +1,7 @@
-package model;
+package model.borrow;
 
 import java.sql.Timestamp;
+import model.Book;
 
 public class BorrowExtendRequest {
 

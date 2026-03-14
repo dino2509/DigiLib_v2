@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
-import model.Borrow;
+import model.borrow.Borrow;
 
 import java.io.IOException;
 import java.util.List;

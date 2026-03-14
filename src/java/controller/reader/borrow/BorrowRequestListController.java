@@ -8,7 +8,7 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
-import model.BorrowRequest;
+import model.borrow.BorrowRequest;
 import model.Reader;
 
 @WebServlet("/reader/borrow-requests")

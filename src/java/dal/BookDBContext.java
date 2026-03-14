@@ -7,8 +7,11 @@ import model.Employee;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.List;
 
 public class BookDBContext extends DBContext<Book> {
+
+    
 
     // ================== LIST ALL (ADMIN) ==================
     public ArrayList<Book> listAll() {
@@ -726,7 +729,10 @@ public class BookDBContext extends DBContext<Book> {
         FROM Book b
         LEFT JOIN Author a ON b.author_id = a.author_id
         LEFT JOIN Category c ON b.category_id = c.category_id
+                     
         WHERE 1 = 1
+        
+        
     """;
 
         if (keyword != null && !keyword.isEmpty()) {
@@ -743,7 +749,7 @@ public class BookDBContext extends DBContext<Book> {
         }
 
         sql += """
-        ORDER BY b.book_id ASC
+        ORDER BY b.book_id DESC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """;
 
@@ -1310,6 +1316,81 @@ public class BookDBContext extends DBContext<Book> {
             }
 
             ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public List<Book> getFreeEbooks(int page, int pageSize) {
+
+        List<Book> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+                SELECT book_id,
+                       title,
+                       cover_url,
+                       content_path,
+                       total_pages
+                FROM Book
+                WHERE price = 0 
+                  OR price IS NULL
+                  AND content_path IS NOT NULL
+                  AND status = 'ACTIVE'
+                ORDER BY created_at DESC
+                OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+                """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+
+            stm.setInt(1, (page - 1) * pageSize);
+            stm.setInt(2, pageSize);
+
+            ResultSet rs = stm.executeQuery();
+
+            while (rs.next()) {
+
+                Book e = new Book();
+
+                e.setBookId(rs.getInt("book_id"));
+                e.setTitle(rs.getString("title"));
+                e.setCoverUrl(rs.getString("cover_url"));
+                e.setContentPath(rs.getString("content_path"));
+                e.setTotalPages(rs.getInt("total_pages"));
+
+                list.add(e);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int countFreeEbooks() {
+
+        try {
+
+            String sql = """
+                SELECT COUNT(*)
+                FROM Book
+                WHERE price = 0
+                  AND content_path IS NOT NULL
+                  AND status = 'ACTIVE'
+                """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+
+            ResultSet rs = stm.executeQuery();
 
             if (rs.next()) {
                 return rs.getInt(1);

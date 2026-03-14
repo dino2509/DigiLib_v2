@@ -207,10 +207,10 @@
 
                 <div class="submenu">
 
-                    <a href="${pageContext.request.contextPath}/books" class="${activeMenu=='books'?'active':''}">Books</a>
-                    <a href="${pageContext.request.contextPath}/book-copies" class="${activeMenu=='copies'?'active':''}">Book Copies</a>
-                    <a href="${pageContext.request.contextPath}/authors" class="${activeMenu=='authors'?'active':''}">Authors</a>
-                    <a href="${pageContext.request.contextPath}/categories" class="${activeMenu=='categories'?'active':''}">Categories</a>
+                    <a href="${pageContext.request.contextPath}/librarian/books" class="${activeMenu=='books'?'active':''}">Books</a>
+                    <a href="${pageContext.request.contextPath}/librarian/book-copies" class="${activeMenu=='copies'?'active':''}">Book Copies</a>
+                    <a href="${pageContext.request.contextPath}/librarian/authors" class="${activeMenu=='authors'?'active':''}">Authors</a>
+                    <a href="${pageContext.request.contextPath}/librarian/categories" class="${activeMenu=='categories'?'active':''}">Categories</a>
 
                 </div>
 
@@ -228,7 +228,8 @@
 
                     <a href="${pageContext.request.contextPath}/librarian/requests" class="${activeMenu=='borrowRequests'?'active':''}">Borrow Requests</a>
                     <a href="${pageContext.request.contextPath}/librarian/borrows" class="${activeMenu=='borrows'?'active':''}">Borrow Records</a>
-                    <a href="${pageContext.request.contextPath}/librarian/borrow-extend" class="${activeMenu=='extend'?'active':''}">Extensions</a>
+
+                    <a href="${pageContext.request.contextPath}/librarian/borrow-extend" class="${activeMenu=='extensions'?'active':''}">Extensions</a>
 
                 </div>
 

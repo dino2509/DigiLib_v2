@@ -6,12 +6,196 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import model.Book;
-import model.BorrowExtendRequest;
+import model.borrow.BorrowExtend;
+import model.borrow.BorrowExtendRequest;
+import model.borrow.BorrowItem;
 
 public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
+
+    public void createExtendRequest(int borrowItemId, String requestedDate) {
+
+        String sql = """
+INSERT INTO Borrow_Extend
+(
+borrow_item_id,
+old_due_date,
+requested_due_date,
+status,
+requested_at
+)
+SELECT
+borrow_item_id,
+due_date,
+?,
+'PENDING',
+GETDATE()
+FROM Borrow_Item
+WHERE borrow_item_id = ?
+""";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setString(1, requestedDate);
+            ps.setInt(2, borrowItemId);
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public boolean hasExtendRequest(int borrowItemId) {
+
+        String sql = """
+SELECT COUNT(*)
+FROM Borrow_Extend
+WHERE borrow_item_id = ?
+AND status IN ('PENDING','APPROVED')
+""";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, borrowItemId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+    public List<BorrowExtend> getPendingExtends() {
+
+        List<BorrowExtend> list = new ArrayList<>();
+
+        String sql = """
+    SELECT 
+        be.extend_id,
+        be.borrow_item_id,
+        bk.title,
+        bc.copy_code,
+        be.old_due_date,
+        be.requested_due_date,
+        be.status,
+        be.requested_at
+    FROM Borrow_Extend be
+    JOIN Borrow_Item bi ON be.borrow_item_id = bi.borrow_item_id
+    JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+    JOIN Book bk ON bc.book_id = bk.book_id
+    WHERE be.status = 'PENDING'
+    ORDER BY be.requested_at
+    """;
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowExtend e = new BorrowExtend();
+
+                e.setExtendId(rs.getInt("extend_id"));
+                e.setBorrowItemId(rs.getInt("borrow_item_id"));
+                e.setBookTitle(rs.getString("title"));
+                e.setCopyCode(rs.getString("copy_code"));
+                e.setOldDueDate(rs.getTimestamp("old_due_date"));
+                e.setRequestedDueDate(rs.getTimestamp("requested_due_date"));
+                e.setStatus(rs.getString("status"));
+
+                list.add(e);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public void approveExtend(int extendId, int employeeId) {
+
+        String sql1 = """
+    UPDATE Borrow_Extend
+    SET status='APPROVED',
+        approved_due_date = requested_due_date,
+        processed_at = GETDATE(),
+        approved_by_employee_id = ?
+    WHERE extend_id = ?
+    """;
+
+        String sql2 = """
+    UPDATE Borrow_Item
+    SET due_date = (
+        SELECT requested_due_date 
+        FROM Borrow_Extend 
+        WHERE extend_id = ?
+    )
+    WHERE borrow_item_id = (
+        SELECT borrow_item_id 
+        FROM Borrow_Extend 
+        WHERE extend_id = ?
+    )
+    """;
+
+        try {
+
+            connection.setAutoCommit(false);
+
+            PreparedStatement ps1 = connection.prepareStatement(sql1);
+            ps1.setInt(1, employeeId);
+            ps1.setInt(2, extendId);
+            ps1.executeUpdate();
+
+            PreparedStatement ps2 = connection.prepareStatement(sql2);
+            ps2.setInt(1, extendId);
+            ps2.setInt(2, extendId);
+            ps2.executeUpdate();
+
+            connection.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void rejectExtend(int extendId, int employeeId) {
+
+        String sql = """
+    UPDATE Borrow_Extend
+    SET status='REJECTED',
+        processed_at = GETDATE(),
+        approved_by_employee_id = ?
+    WHERE extend_id = ?
+    """;
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setInt(1, employeeId);
+            ps.setInt(2, extendId);
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     @Override
     public ArrayList<BorrowExtendRequest> list() {
@@ -38,6 +222,161 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
         throw new UnsupportedOperationException("Not supported");
     }
 
+    public void createExtendRequest(int borrowItemId) {
+
+        String sql = """
+        INSERT INTO Borrow_Extend
+        (
+            borrow_item_id,
+            old_due_date,
+            requested_due_date,
+            status,
+            requested_at
+        )
+        SELECT
+            borrow_item_id,
+            due_date,
+            DATEADD(day, 7, due_date),
+            'PENDING',
+            GETDATE()
+        FROM Borrow_Item
+        WHERE borrow_item_id = ?
+        """;
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, borrowItemId);
+            ps.executeUpdate();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void approveExtend(int extendId) {
+
+        try {
+
+            connection.setAutoCommit(false);
+
+            String sql1 = """
+        UPDATE Borrow_Item
+        SET due_date = (
+            SELECT requested_due_date
+            FROM Borrow_Extend
+            WHERE extend_id = ?
+        )
+        WHERE borrow_item_id = (
+            SELECT borrow_item_id
+            FROM Borrow_Extend
+            WHERE extend_id = ?
+        )
+        """;
+
+            PreparedStatement stm1 = connection.prepareStatement(sql1);
+
+            stm1.setInt(1, extendId);
+            stm1.setInt(2, extendId);
+            stm1.executeUpdate();
+
+            String sql2 = """
+        UPDATE Borrow_Extend
+        SET status = 'APPROVED',
+            approved_due_date = requested_due_date,
+            processed_at = GETDATE()
+        WHERE extend_id = ?
+        """;
+
+            PreparedStatement stm2 = connection.prepareStatement(sql2);
+            stm2.setInt(1, extendId);
+            stm2.executeUpdate();
+
+            connection.commit();
+
+        } catch (Exception e) {
+
+            try {
+                connection.rollback();
+            } catch (Exception ex) {
+            }
+
+            e.printStackTrace();
+        }
+    }
+
+    public void rejectExtend(int extendId) {
+
+        try {
+
+            String sql = """
+        UPDATE Borrow_Extend
+        SET status = 'REJECTED',
+            processed_at = GETDATE()
+        WHERE extend_id = ?
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setInt(1, extendId);
+
+            stm.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<BorrowExtend> getExtendRequests() {
+
+        List<BorrowExtend> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+        SELECT 
+            be.extend_id,
+            be.borrow_item_id,
+            be.old_due_date,
+            be.requested_due_date,
+            be.status,
+            be.requested_at,
+            b.title,
+            bc.copy_code
+        FROM Borrow_Extend be
+        JOIN Borrow_Item bi ON be.borrow_item_id = bi.borrow_item_id
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        WHERE be.status = 'PENDING'
+        ORDER BY be.requested_at
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            ResultSet rs = stm.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowExtend e = new BorrowExtend();
+
+                e.setExtendId(rs.getInt("extend_id"));
+                e.setBorrowItemId(rs.getInt("borrow_item_id"));
+                e.setOldDueDate(rs.getTimestamp("old_due_date"));
+                e.setRequestedDueDate(rs.getTimestamp("requested_due_date"));
+                e.setRequestedAt(rs.getTimestamp("requested_at"));
+                e.setStatus(rs.getString("status"));
+
+                e.setBookTitle(rs.getString("title"));
+                e.setCopyCode(rs.getString("copy_code"));
+
+                list.add(e);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
     public Set<Integer> listPendingBorrowItemIdsByReader(int readerId) {
         Set<Integer> ids = new HashSet<>();
         String sql = "SELECT borrow_item_id FROM Borrow_Extend WHERE status = N'PENDING' AND borrow_item_id IN ("
@@ -45,7 +384,9 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, readerId);
             ResultSet rs = ps.executeQuery();
-            while (rs.next()) ids.add(rs.getInt(1));
+            while (rs.next()) {
+                ids.add(rs.getInt(1));
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -145,7 +486,9 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 list.add(mapRow(rs));
-                if (limit > 0 && list.size() >= limit) break;
+                if (limit > 0 && list.size() >= limit) {
+                    break;
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -158,7 +501,9 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, extendId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapRow(rs);
+            if (rs.next()) {
+                return mapRow(rs);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -245,7 +590,9 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, extendId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapRow(rs);
+            if (rs.next()) {
+                return mapRow(rs);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -259,10 +606,16 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, borrowItemId);
             ResultSet rs = ps.executeQuery();
-            if (!rs.next()) return info;
+            if (!rs.next()) {
+                return info;
+            }
             int actualReaderId = rs.getInt("reader_id");
-            if (expectedReaderId != null && actualReaderId != expectedReaderId) return info;
-            if (rs.getTimestamp("returned_at") != null) return info;
+            if (expectedReaderId != null && actualReaderId != expectedReaderId) {
+                return info;
+            }
+            if (rs.getTimestamp("returned_at") != null) {
+                return info;
+            }
             info.valid = true;
             info.borrowItemId = borrowItemId;
             info.borrowId = rs.getInt("borrow_id");
@@ -290,7 +643,9 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setInt(1, borrowItemId);
             ResultSet rs = ps.executeQuery();
-            if (rs.next()) return mapRow(rs);
+            if (rs.next()) {
+                return mapRow(rs);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -365,6 +720,7 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
     }
 
     private static class EligibilityInfo {
+
         boolean valid;
         int borrowItemId;
         int borrowId;
@@ -377,6 +733,7 @@ public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
     }
 
     public static class FineInfo {
+
         public boolean hasUnpaidFine;
         public java.math.BigDecimal amount;
         public String summary;

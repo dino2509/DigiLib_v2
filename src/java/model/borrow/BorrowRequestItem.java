@@ -1,4 +1,4 @@
-package model;
+package model.borrow;
 
 public class BorrowRequestItem {
     private int requestItemId;

@@ -61,9 +61,8 @@
             <div class="title">
                 📖 ${book.title}
             </div>
-
-<!--            <a class="back-btn"
-               href="${pageContext.request.contextPath}/book-detail?id=${book.bookId}">
+<!--
+            <a class="back-btn" href="#" onclick="history.back(); return false;">
                 ← Back
             </a>-->
 

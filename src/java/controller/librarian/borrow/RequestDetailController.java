@@ -4,8 +4,8 @@ import dal.BorrowRequestDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-import model.BorrowRequest;
-import model.BorrowRequestItem;
+import model.borrow.BorrowRequest;
+import model.borrow.BorrowRequestItem;
 
 import java.io.IOException;
 import java.util.List;

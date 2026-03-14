@@ -2,16 +2,288 @@ package dal;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import model.Book;
-import model.Borrow;
-import model.BorrowExtendRequest;
-import model.BorrowItem;
-import model.BorrowedBookItem;
+import model.borrow.Borrow;
+import model.borrow.BorrowDetailItem;
+import model.borrow.BorrowExtendRequest;
+import model.borrow.BorrowItem;
+import model.borrow.BorrowedBook;
+import model.borrow.BorrowedBookItem;
 
 public class BorrowDBContext extends DBContext<BorrowedBookItem> {
+
+    public void returnBorrow(int borrowId) {
+
+        try {
+
+            connection.setAutoCommit(false);
+
+            // 1️⃣ lấy danh sách copy trong borrow
+            String sqlItems = """
+        SELECT copy_id, due_date
+        FROM Borrow_Item
+        WHERE borrow_id = ?
+          AND returned_at IS NULL
+        """;
+
+            PreparedStatement stmItems = connection.prepareStatement(sqlItems);
+            stmItems.setInt(1, borrowId);
+
+            ResultSet rs = stmItems.executeQuery();
+
+            while (rs.next()) {
+
+                int copyId = rs.getInt("copy_id");
+                Timestamp dueDate = rs.getTimestamp("due_date");
+
+                // 2️⃣ update Borrow_Item
+                String sqlUpdateItem = """
+            UPDATE Borrow_Item
+            SET returned_at = GETDATE(),
+                status = 'RETURNED'
+            WHERE borrow_id = ?
+              AND copy_id = ?
+            """;
+
+                PreparedStatement stmUpdateItem
+                        = connection.prepareStatement(sqlUpdateItem);
+
+                stmUpdateItem.setInt(1, borrowId);
+                stmUpdateItem.setInt(2, copyId);
+                stmUpdateItem.executeUpdate();
+
+                // 3️⃣ update BookCopy
+                String sqlCopy = """
+            UPDATE BookCopy
+            SET status = 'AVAILABLE'
+            WHERE copy_id = ?
+            """;
+
+                PreparedStatement stmCopy
+                        = connection.prepareStatement(sqlCopy);
+
+                stmCopy.setInt(1, copyId);
+                stmCopy.executeUpdate();
+
+                // 4️⃣ kiểm tra overdue để tạo Fine
+                Timestamp now = new Timestamp(System.currentTimeMillis());
+
+                if (dueDate.before(now)) {
+
+                    long diff = now.getTime() - dueDate.getTime();
+                    long days = diff / (1000 * 60 * 60 * 24);
+
+                    String sqlFine = """
+                INSERT INTO Fine
+                (reader_id, amount, created_at)
+                SELECT reader_id, ?, GETDATE()
+                FROM Borrow
+                WHERE borrow_id = ?
+                """;
+
+                    PreparedStatement stmFine
+                            = connection.prepareStatement(sqlFine);
+
+                    stmFine.setLong(1, days * 5000); // 5000 VND / day
+                    stmFine.setInt(2, borrowId);
+
+                    stmFine.executeUpdate();
+                }
+
+            }
+
+            // 5️⃣ cập nhật Borrow status
+            String sqlBorrow = """
+        UPDATE Borrow
+        SET status = 'RETURNED'
+        WHERE borrow_id = ?
+        """;
+
+            PreparedStatement stmBorrow
+                    = connection.prepareStatement(sqlBorrow);
+
+            stmBorrow.setInt(1, borrowId);
+            stmBorrow.executeUpdate();
+
+            connection.commit();
+
+        } catch (Exception e) {
+
+            try {
+                connection.rollback();
+            } catch (Exception ex) {
+            }
+
+            e.printStackTrace();
+        }
+    }
+
+    public Borrow getBorrow(int borrowId) {
+
+        Borrow b = null;
+
+        try {
+
+            String sql = """
+        SELECT b.borrow_id,
+               b.borrow_date,
+               b.status,
+               r.full_name
+        FROM Borrow b
+        JOIN Reader r ON b.reader_id = r.reader_id
+        WHERE b.borrow_id = ?
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setInt(1, borrowId);
+
+            ResultSet rs = stm.executeQuery();
+
+            if (rs.next()) {
+
+                b = new Borrow();
+
+                b.setBorrowId(rs.getInt("borrow_id"));
+                b.setBorrowDate(rs.getTimestamp("borrow_date"));
+                b.setStatus(rs.getString("status"));
+                b.setReaderName(rs.getString("full_name"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return b;
+    }
+
+    public List<BorrowDetailItem> getBorrowItems(int borrowId) {
+
+        List<BorrowDetailItem> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+        SELECT 
+            bi.borrow_item_id,
+            b.title,
+            bc.copy_code,
+            bi.due_date,
+            bi.returned_at,
+            bi.status
+        FROM Borrow_Item bi
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        WHERE bi.borrow_id = ?
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setInt(1, borrowId);
+
+            ResultSet rs = stm.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowDetailItem item = new BorrowDetailItem();
+
+                item.setBorrowItemId(rs.getInt("borrow_item_id"));
+                item.setBookTitle(rs.getString("title"));
+                item.setCopyCode(rs.getString("copy_code"));
+
+                item.setDueDate(rs.getTimestamp("due_date"));
+                item.setReturnedAt(rs.getTimestamp("returned_at"));
+                item.setStatus(rs.getString("status"));
+
+                list.add(item);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public List<BorrowItem> getBorrowItemsNotReturned() {
+
+        List<BorrowItem> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+        SELECT bi.borrow_item_id,
+               bi.borrow_id,
+               bi.copy_id,
+               bi.due_date,
+               bc.copy_code,
+               b.title
+        FROM Borrow_Item bi
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        WHERE bi.returned_at IS NULL
+        ORDER BY bi.due_date
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+            ResultSet rs = stm.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowItem item = new BorrowItem();
+
+                item.setBorrowItemId(rs.getInt("borrow_item_id"));
+                item.setBorrowId(rs.getInt("borrow_id"));
+                item.setCopyId(rs.getInt("copy_id"));
+                item.setBookTitle(rs.getString("title"));
+                item.setCopyCode(rs.getString("copy_code"));
+                item.setDueDate(rs.getTimestamp("due_date"));
+
+                list.add(item);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public void returnBook(int borrowItemId, int copyId) {
+
+        try {
+
+            connection.setAutoCommit(false);
+
+            String sql1 = """
+        UPDATE Borrow_Item
+        SET returned_at = GETDATE(),
+            status = 'RETURNED'
+        WHERE borrow_item_id = ?
+        """;
+
+            PreparedStatement stm1 = connection.prepareStatement(sql1);
+            stm1.setInt(1, borrowItemId);
+            stm1.executeUpdate();
+
+            String sql2 = """
+        UPDATE BookCopy
+        SET status = 'AVAILABLE'
+        WHERE copy_id = ?
+        """;
+
+            PreparedStatement stm2 = connection.prepareStatement(sql2);
+            stm2.setInt(1, copyId);
+            stm2.executeUpdate();
+
+            connection.commit();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
     public int countBorrows() {
 
@@ -113,23 +385,173 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
         return list;
     }
+public List<BorrowItem> getBorrowedBooks(int readerId, int page, int pageSize) {
+
+    List<BorrowItem> list = new ArrayList<>();
+
+    String sql = """
+SELECT
+bi.borrow_item_id,
+bk.title AS book_title,
+bc.copy_code,
+bi.due_date,
+bi.status,
+DATEDIFF(day, GETDATE(), bi.due_date) AS remaining_days,
+be.status AS extend_status
+
+FROM Borrow_Item bi
+JOIN Borrow b ON bi.borrow_id = b.borrow_id
+JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+JOIN Book bk ON bc.book_id = bk.book_id
+
+LEFT JOIN Borrow_Extend be
+ON be.extend_id = (
+    SELECT TOP 1 extend_id
+    FROM Borrow_Extend
+    WHERE borrow_item_id = bi.borrow_item_id
+    ORDER BY requested_at DESC
+)
+
+WHERE b.reader_id = ?
+AND bi.returned_at IS NULL
+
+ORDER BY bi.due_date
+
+OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+""";
+
+    try {
+
+        PreparedStatement ps = connection.prepareStatement(sql);
+
+        ps.setInt(1, readerId);
+        ps.setInt(2, (page - 1) * pageSize);
+        ps.setInt(3, pageSize);
+
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+
+            BorrowItem item = new BorrowItem();
+
+            item.setBorrowItemId(rs.getInt("borrow_item_id"));
+            item.setBookTitle(rs.getString("book_title"));
+            item.setCopyCode(rs.getString("copy_code"));
+            item.setDueDate(rs.getTimestamp("due_date"));
+            item.setStatus(rs.getString("status"));
+            item.setRemainingDays(rs.getInt("remaining_days"));
+            item.setExtendStatus(rs.getString("extend_status"));
+
+            list.add(item);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+public int countBorrowedBooks(int readerId) {
+
+    String sql = """
+SELECT COUNT(*)
+FROM Borrow_Item bi
+JOIN Borrow b ON bi.borrow_id = b.borrow_id
+WHERE b.reader_id = ?
+AND bi.returned_at IS NULL
+""";
+
+    try {
+
+        PreparedStatement ps = connection.prepareStatement(sql);
+        ps.setInt(1, readerId);
+
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return 0;
+}
+    public List<BorrowedBook> getBorrowedBooks() {
+
+        List<BorrowedBook> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+        SELECT 
+            bi.borrow_item_id,
+            bi.borrow_id,
+            bi.due_date,
+            b.title,
+            bc.copy_code,
+            br.borrow_date,
+            r.full_name
+        FROM Borrow_Item bi
+        JOIN Borrow br ON bi.borrow_id = br.borrow_id
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        JOIN Reader r ON br.reader_id = r.reader_id
+        WHERE bi.returned_at IS NULL
+        ORDER BY bi.due_date
+        """;
+
+            PreparedStatement stm = connection.prepareStatement(sql);
+
+            ResultSet rs = stm.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowedBook bb = new BorrowedBook();
+
+                bb.setBorrowItemId(rs.getInt("borrow_item_id"));
+                bb.setBorrowId(rs.getInt("borrow_id"));
+                bb.setBookTitle(rs.getString("title"));
+                bb.setCopyCode(rs.getString("copy_code"));
+                bb.setBorrowDate(rs.getTimestamp("borrow_date"));
+                bb.setDueDate(rs.getTimestamp("due_date"));
+                bb.setReaderName(rs.getString("full_name"));
+
+                list.add(bb);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
 
     public List<BorrowItem> getBorrowedBooks(int readerId) {
 
         List<BorrowItem> list = new ArrayList<>();
 
         String sql = """
-        SELECT b.title,
-               br.borrow_date,
-               bi.due_date,
-               bi.status
-        FROM Borrow br
-        JOIN Borrow_Item bi ON br.borrow_id = bi.borrow_id
-        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
-        JOIN Book b ON bc.book_id = b.book_id
-        WHERE br.reader_id = ?
-        ORDER BY br.borrow_date DESC
-    """;
+SELECT
+bi.borrow_item_id,
+bk.title AS book_title,
+bc.copy_code,
+bi.due_date,
+bi.status,
+DATEDIFF(day, GETDATE(), bi.due_date) AS remaining_days,
+be.status AS extend_status
+FROM Borrow_Item bi
+JOIN Borrow b ON bi.borrow_id = b.borrow_id
+JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+JOIN Book bk ON bc.book_id = bk.book_id
+LEFT JOIN Borrow_Extend be 
+ON bi.borrow_item_id = be.borrow_item_id
+AND be.status IN ('PENDING','APPROVED')
+WHERE b.reader_id = ?
+AND bi.returned_at IS NULL
+ORDER BY bi.due_date
+""";
 
         try {
 
@@ -142,10 +564,13 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
                 BorrowItem item = new BorrowItem();
 
-                item.setBookTitle(rs.getString("title"));
-                item.setBorrowDate(rs.getTimestamp("borrow_date"));
+                item.setBorrowItemId(rs.getInt("borrow_item_id"));
+                item.setBookTitle(rs.getString("book_title"));
+                item.setCopyCode(rs.getString("copy_code"));
                 item.setDueDate(rs.getTimestamp("due_date"));
                 item.setStatus(rs.getString("status"));
+                item.setRemainingDays(rs.getInt("remaining_days"));
+                item.setExtendStatus(rs.getString("extend_status"));
 
                 list.add(item);
             }

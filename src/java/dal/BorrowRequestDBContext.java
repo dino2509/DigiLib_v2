@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import model.BorrowRequest;
-import model.BorrowRequestItem;
+import model.borrow.BorrowRequest;
+import model.borrow.BorrowRequestItem;
 
 public class BorrowRequestDBContext extends DBContext {
 
