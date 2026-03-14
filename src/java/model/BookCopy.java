@@ -8,10 +8,19 @@ public class BookCopy {
     private int bookId;
     private String copyCode;
     private String status;
+    private String bookTitle; 
     private LocalDateTime createdAt;
 
     // Constructor không tham số
     public BookCopy() {
+    }
+
+    public String getBookTitle() {
+        return bookTitle;
+    }
+
+    public void setBookTitle(String bookTitle) {
+        this.bookTitle = bookTitle;
     }
 
     // Constructor đầy đủ

@@ -46,6 +46,8 @@
         background:#fafafa;
     }
 
+    /* status badges */
+
     .badge{
         padding:4px 10px;
         border-radius:4px;
@@ -57,6 +59,18 @@
         background:#fff3cd;
         color:#856404;
     }
+
+    .badge-approved{
+        background:#d4edda;
+        color:#155724;
+    }
+
+    .badge-rejected{
+        background:#f8d7da;
+        color:#721c24;
+    }
+
+    /* buttons */
 
     .btn{
         border:none;
@@ -76,10 +90,41 @@
         color:white;
     }
 
+    .btn-approve:hover{
+        background:#1e7e34;
+    }
+
+    .btn-reject:hover{
+        background:#bd2130;
+    }
+
+    /* empty */
+
     .empty{
         text-align:center;
         padding:25px;
         color:#888;
+    }
+
+    /* pagination */
+
+    .pagination{
+        text-align:center;
+        padding:15px;
+    }
+
+    .pagination a{
+        padding:6px 10px;
+        margin:2px;
+        border:1px solid #ddd;
+        text-decoration:none;
+        color:#333;
+    }
+
+    .pagination a.active{
+        background:#ff7a00;
+        color:white;
+        border-color:#ff7a00;
     }
 
 </style>
@@ -94,6 +139,7 @@
         <table class="extend-table">
 
             <thead>
+
                 <tr>
                     <th>Book</th>
                     <th>Copy Code</th>
@@ -102,75 +148,142 @@
                     <th>Status</th>
                     <th>Action</th>
                 </tr>
+
             </thead>
 
             <tbody>
 
-                <c:if test="${empty extendList}">
-                    <tr>
-                        <td colspan="6" class="empty">
-                            No extend requests found
-                        </td>
-                    </tr>
-                </c:if>
+                <c:choose>
 
-                <c:forEach var="e" items="${extendList}">
+                    <c:when test="${not empty extendList}">
 
-                    <tr>
+                        <c:forEach var="e" items="${extendList}">
 
-                        <td>
-                            <strong>${e.bookTitle}</strong>
-                        </td>
+                            <tr>
 
-                        <td>${e.copyCode}</td>
+                                <td>
+                                    <strong>${e.bookTitle}</strong>
+                                </td>
 
-                        <td>
-                            <fmt:formatDate value="${e.oldDueDate}" pattern="yyyy-MM-dd"/>
-                        </td>
+                                <td>${e.copyCode}</td>
 
-                        <td>
-                            <fmt:formatDate value="${e.requestedDueDate}" pattern="yyyy-MM-dd"/>
-                        </td>
+                                <td>
+                                    <fmt:formatDate value="${e.oldDueDate}" pattern="yyyy-MM-dd"/>
+                                </td>
 
-                        <td>
-                            <span class="badge badge-pending">
-                                Pending
-                            </span>
-                        </td>
+                                <td>
+                                    <fmt:formatDate value="${e.requestedDueDate}" pattern="yyyy-MM-dd"/>
+                                </td>
 
-                        <td>
+                                <td>
 
-                            <form method="post"
-                                  action="${pageContext.request.contextPath}/librarian/process-extend"
-                                  style="display:flex; gap:8px;">
+                                    <c:choose>
 
-                                <input type="hidden" name="extendId" value="${e.extendId}">
+                                        <c:when test="${e.status eq 'PENDING'}">
+                                            <span class="badge badge-pending">Pending</span>
+                                        </c:when>
 
-                                <button class="btn btn-approve"
-                                        name="action"
-                                        value="approve"
-                                        onclick="return confirm('Approve this extend request?')">
-                                    Approve
-                                </button>
+                                        <c:when test="${e.status eq 'APPROVED'}">
+                                            <span class="badge badge-approved">Approved</span>
+                                        </c:when>
 
-                                <button class="btn btn-reject"
-                                        name="action"
-                                        value="reject"
-                                        onclick="return confirm('Reject this extend request?')">
-                                    Reject
-                                </button>
+                                        <c:when test="${e.status eq 'REJECTED'}">
+                                            <span class="badge badge-rejected">Rejected</span>
+                                        </c:when>
 
-                            </form>
+                                    </c:choose>
 
-                        </td>
+                                </td>
 
-                    </tr>
+                                <td>
 
-                </c:forEach>
+                                    <c:choose>
+
+                                        <c:when test="${e.status eq 'PENDING'}">
+
+                                            <form method="post"
+                                                  action="${pageContext.request.contextPath}/librarian/process-extend"
+                                                  style="display:flex; gap:8px;">
+
+                                                <input type="hidden" name="extendId" value="${e.extendId}">
+
+                                                <button class="btn btn-approve"
+                                                        name="action"
+                                                        value="approve"
+                                                        onclick="return confirm('Approve this extend request?')">
+
+                                                    Approve
+
+                                                </button>
+
+                                                <button class="btn btn-reject"
+                                                        name="action"
+                                                        value="reject"
+                                                        onclick="return confirm('Reject this extend request?')">
+
+                                                    Reject
+
+                                                </button>
+
+                                            </form>
+
+                                        </c:when>
+
+                                        <c:otherwise>
+
+                                            -
+
+                                        </c:otherwise>
+
+                                    </c:choose>
+
+                                </td>
+
+                            </tr>
+
+                        </c:forEach>
+
+                    </c:when>
+
+                    <c:otherwise>
+
+                        <tr>
+
+                            <td colspan="6" class="empty">
+                                No extend requests found
+                            </td>
+
+                        </tr>
+
+                    </c:otherwise>
+
+                </c:choose>
 
             </tbody>
 
         </table>
+
+    </div>
+
+
+    <!-- Pagination -->
+
+    <div class="pagination">
+
+        <c:if test="${totalPages > 1}">
+
+            <c:forEach begin="1" end="${totalPages}" var="i">
+
+                <a href="${pageContext.request.contextPath}/librarian/borrow-extend?page=${i}"
+                   class="${i == currentPage ? 'active' : ''}">
+
+                    ${i}
+
+                </a>
+
+            </c:forEach>
+
+        </c:if>
 
     </div>
 

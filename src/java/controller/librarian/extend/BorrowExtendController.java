@@ -20,19 +20,33 @@ public class BorrowExtendController extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+        throws ServletException, IOException {
 
-        List<BorrowExtend> list = dao.getPendingExtends();
+    int page = 1;
+    int pageSize = 6;
 
-        request.setAttribute("extendList", list);
+    String pageParam = request.getParameter("page");
 
-        request.setAttribute("pageTitle", "Borrow Extend Requests");
-        request.setAttribute("activeMenu", "extensions");
-
-        request.setAttribute("contentPage","/view/librarian/borrow/borrow_extend.jsp");
-
-        request.getRequestDispatcher("/include/librarian/layout.jsp")
-                .forward(request, response);
+    if(pageParam != null){
+        page = Integer.parseInt(pageParam);
     }
 
+    int totalRecords = dao.countExtendRequests();
+    int totalPages = (int)Math.ceil((double)totalRecords/pageSize);
+
+    List<BorrowExtend> extendList =
+            dao.getExtendRequests(page,pageSize);
+
+    request.setAttribute("extendList",extendList);
+    request.setAttribute("currentPage",page);
+    request.setAttribute("totalPages",totalPages);
+
+    request.setAttribute("pageTitle","Borrow Extend Requests");
+    request.setAttribute("activeMenu","extend");
+    request.setAttribute("contentPage",
+            "/view/librarian/borrow/borrow_extend.jsp");
+
+    request.getRequestDispatcher("/include/librarian/layout.jsp")
+            .forward(request,response);
+}
 }

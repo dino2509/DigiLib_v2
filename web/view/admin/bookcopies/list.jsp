@@ -1,261 +1,309 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <style>
-    .page-wrap {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: #ffffff;
-        padding: 28px 30px;
-        border-radius: 18px;
-        border: 1px solid #fed7aa;
-        box-shadow: 0 16px 36px rgba(0,0,0,0.08);
+
+    .page-wrap{
+        max-width:1200px;
+        margin:auto;
+        background:#fff;
+        padding:28px;
+        border-radius:16px;
+        border:1px solid #fed7aa;
     }
 
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+    .page-header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
     }
 
-    .page-header h2 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 700;
-        color: #ea580c;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+    .btn-add{
+        background:#f97316;
+        padding:10px 18px;
+        border-radius:999px;
+        color:white;
+        text-decoration:none;
+        font-weight:600;
     }
 
-    .btn-add {
-        background: linear-gradient(135deg, #f97316, #ea580c);
-        color: #fff;
-        padding: 10px 22px;
-        border-radius: 999px;
-        font-size: 14px;
-        font-weight: 600;
-        text-decoration: none;
+    .filter-bar{
+        display:flex;
+        gap:10px;
+        align-items:center;
+        margin-bottom:20px;
     }
 
-    .btn-add:hover {
-        box-shadow: 0 6px 18px rgba(249,115,22,0.45);
-        color: #fff;
+    .filter-bar input,
+    .filter-bar select{
+        padding:6px 10px;
+        border-radius:8px;
+        border:1px solid #ddd;
     }
 
-    /* FILTER */
-    .filter-bar {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 20px;
+    .btn-filter{
+        background:#f97316;
+        color:white;
+        border:none;
+        padding:6px 12px;
+        border-radius:6px;
     }
 
-    .filter-bar input {
-        width: 120px;
-        padding: 6px 10px;
-        border-radius: 8px;
-        border: 1px solid #ddd;
-        font-size: 14px;
+    .btn-clear{
+        background:#e5e7eb;
+        padding:6px 12px;
+        border-radius:6px;
+        text-decoration:none;
     }
 
-    .filter-bar button,
-    .filter-bar a {
-        padding: 6px 14px;
-        border-radius: 8px;
-        font-size: 14px;
-        text-decoration: none;
-        border: none;
-        cursor: pointer;
+    table{
+        width:100%;
+        border-collapse:collapse;
     }
 
-    .btn-filter {
-        background: #f97316;
-        color: #fff;
+    thead th{
+        background:#fff7ed;
+        padding:12px;
+        color:#9a3412;
     }
 
-    .btn-clear {
-        background: #e5e7eb;
-        color: #374151;
+    tbody td{
+        padding:12px;
+        border-bottom:1px solid #eee;
+        text-align:center;
     }
 
-    /* TABLE */
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 14px;
+    .badge-status{
+        padding:4px 12px;
+        border-radius:999px;
+        font-size:12px;
+        color:white;
+        font-weight:600;
     }
 
-    thead th {
-        background: #fff7ed;
-        color: #9a3412;
-        font-weight: 700;
-        padding: 14px 12px;
-        border-bottom: 2px solid #fed7aa;
-        text-align: center;
+    .AVAILABLE{
+        background:#16a34a;
+    }
+    .BORROWED{
+        background:#f59e0b;
     }
 
-    tbody td {
-        padding: 14px 12px;
-        border-bottom: 1px solid #f1f1f1;
-        text-align: center;
-        vertical-align: middle;
+    .action-group{
+        display:flex;
+        justify-content:center;
+        gap:8px;
     }
 
-    tbody tr:hover {
-        background: #fff7ed;
+    .action-btn{
+        padding:6px 12px;
+        border-radius:999px;
+        color:white;
+        text-decoration:none;
+        font-size:13px;
     }
 
-    /* STATUS */
-    .badge-status {
-        padding: 5px 14px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #fff;
-        display: inline-block;
+    .btn-edit{
+        background:#f59e0b;
+    }
+    .btn-delete{
+        background:#dc2626;
     }
 
-    .AVAILABLE {
-        background: #16a34a;
-    }
-    .BORROWED {
-        background: #f59e0b;
-    }
-    .LOST {
-        background: #dc2626;
-    }
-    .DAMAGED {
-        background: #92400e;
-    }
-    .INACTIVE {
-        background: #9ca3af;
+    .pagination{
+        margin-top:25px;
+        display:flex;
+        justify-content:center;
+        gap:6px;
     }
 
-    /* ACTION */
-    .action-btn {
-        padding: 6px 12px;
-        font-size: 13px;
-        border-radius: 999px;
-        text-decoration: none;
-        color: #fff;
-        font-weight: 600;
-        margin: 0 3px;
+    .page-btn{
+        padding:6px 12px;
+        border-radius:6px;
+        border:1px solid #ddd;
+        text-decoration:none;
+        color:#374151;
     }
 
-    .btn-edit {
-        background: #f59e0b;
+    .page-btn.active{
+        background:#f97316;
+        color:white;
+        border:none;
     }
 
-    .btn-delete {
-        background: #dc2626;
+    .book-title{
+        font-weight:600;
     }
 
-    .btn-edit:hover {
-        background: #d97706;
+    .book-id{
+        font-size:12px;
+        color:#6b7280;
     }
 
-    .btn-delete:hover {
-        background: #b91c1c;
-    }
-
-    .text-muted {
-        color: #6b7280;
-        font-style: italic;
-    }
-
-    .empty-row {
-        padding: 30px;
-        text-align: center;
-        color: #6b7280;
-        font-style: italic;
-    }
 </style>
+
 
 <div class="page-wrap">
 
-    <!-- HEADER -->
     <div class="page-header">
+
         <h2>📚 Book Copy Management</h2>
 
         <a href="${pageContext.request.contextPath}/admin/bookcopies?action=add"
            class="btn-add">
             + Add Book Copy
         </a>
+
     </div>
 
+
     <!-- FILTER -->
+
     <form method="get"
           action="${pageContext.request.contextPath}/admin/bookcopies/list"
           class="filter-bar">
 
         <span>Book ID:</span>
-        <input type="number" name="book_id" value="${bookId}"/>
 
-        <button type="submit" class="btn-filter">Filter</button>
-        <a href="${pageContext.request.contextPath}/admin/bookcopies/list"
-           class="btn-clear">Clear</a>
+        <input type="number"
+               name="book_id"
+               value="${bookId}"/>
+
+        <span>Status:</span>
+
+        <select name="status">
+
+            <option value="">All</option>
+
+            <option value="AVAILABLE"
+                    <c:if test="${status eq 'AVAILABLE'}">selected</c:if>>
+                        Available
+                    </option>
+
+                    <option value="BORROWED"
+                    <c:if test="${status eq 'BORROWED'}">selected</c:if>>
+                        Borrowed
+                    </option>
+
+            </select>
+
+            <button class="btn-filter">Filter</button>
+
+            <a href="${pageContext.request.contextPath}/admin/bookcopies/list"
+           class="btn-clear">
+            Clear
+        </a>
+
     </form>
 
-    <!-- TABLE -->
+
     <table>
+
         <thead>
+
             <tr>
                 <th>ID</th>
-                <th>Book ID</th>
+                <th>Book</th>
                 <th>Copy Code</th>
                 <th>Status</th>
-                <th>Created At</th>
-                <th width="200">Actions</th>
+                <th>Created</th>
+                <th width="220">Actions</th>
             </tr>
+
         </thead>
 
         <tbody>
+
             <c:forEach items="${bookCopies}" var="c">
+
                 <tr>
+
                     <td>${c.copyId}</td>
-                    <td>${c.bookId}</td>
-                    <td><strong>${c.copyCode}</strong></td>
 
                     <td>
+
+                        <div class="book-title">${c.bookTitle}</div>
+                        <div class="book-id">ID: ${c.bookId}</div>
+
+                    </td>
+
+                    <td><b>${c.copyCode}</b></td>
+
+                    <td>
+
                         <span class="badge-status ${c.status}">
                             ${c.status}
                         </span>
+
                     </td>
 
                     <td>${c.createdAt}</td>
 
                     <td>
-                        <a class="action-btn btn-edit"
-                           href="${pageContext.request.contextPath}/admin/bookcopies?action=edit&id=${c.copyId}">
-                            ✏ Edit
-                        </a>
 
-                        <c:if test="${c.status ne 'BORROWED'}">
-                            <a class="action-btn btn-delete"
-                               href="${pageContext.request.contextPath}/admin/bookcopies?action=delete&id=${c.copyId}"
-                               onclick="return confirm('Deactivate this book copy?');">
-                                ❌ Deactivate
+                        <div class="action-group">
+
+                            <a class="action-btn btn-edit"
+                               href="${pageContext.request.contextPath}/admin/bookcopies?action=edit&id=${c.copyId}">
+                                Edit
                             </a>
-                        </c:if>
 
-                        <c:if test="${c.status eq 'BORROWED'}">
-                            <span class="text-muted">(Borrowed)</span>
-                        </c:if>
+                            <c:if test="${c.status ne 'BORROWED'}">
+
+                                <a class="action-btn btn-delete"
+                                   href="${pageContext.request.contextPath}/admin/bookcopies?action=delete&id=${c.copyId}"
+                                   onclick="return confirm('Deactivate this copy?')">
+                                    Deactivate
+                                </a>
+
+                            </c:if>
+
+                            <c:if test="${c.status eq 'BORROWED'}">
+
+                                <span style="color:#6b7280">(Borrowed)</span>
+
+                            </c:if>
+
+                        </div>
+
                     </td>
+
                 </tr>
+
             </c:forEach>
+
 
             <c:if test="${empty bookCopies}">
                 <tr>
-                    <td colspan="6" class="empty-row">
-                        No book copies found.
-                    </td>
+                    <td colspan="6">No copies found</td>
                 </tr>
             </c:if>
+
         </tbody>
+
     </table>
+
+
+
+    <!-- PAGINATION -->
+
+    <c:if test="${totalPages > 1}">
+        <div class="pagination">
+
+            <c:forEach begin="1" end="${totalPages}" var="p">
+
+                <a class="page-btn <c:if test='${p == page}'>active</c:if>"
+                   href="${pageContext.request.contextPath}/admin/bookcopies/list?page=${p}
+                   <c:if test='${not empty bookId}'>&book_id=${bookId}</c:if>
+                   <c:if test='${not empty status}'>&status=${status}</c:if>">
+
+                   ${p}
+
+                </a>
+
+            </c:forEach>
+
+        </div>
+    </c:if>
 
 </div>

@@ -7,9 +7,7 @@ import model.BookCopy;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.*;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -28,8 +26,8 @@ public class CreateController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Load danh sách Book để chọn
         ArrayList<Book> books = bookDB.list();
+
         request.setAttribute("books", books);
         request.setAttribute("pageTitle", "Add Book Copy");
         request.setAttribute("activeMenu", "bookcopy");
@@ -37,8 +35,6 @@ public class CreateController extends HttpServlet {
 
         request.getRequestDispatcher("/include/admin/layout.jsp")
                 .forward(request, response);
-//        request.getRequestDispatcher("../../view/admin/bookcopies/add.jsp")
-//                .forward(request, response);
     }
 
     // =========================
@@ -48,17 +44,37 @@ public class CreateController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
 
-        BookCopy copy = new BookCopy();
+        int bookId = Integer.parseInt(request.getParameter("book_id"));
 
-        copy.setBookId(Integer.parseInt(request.getParameter("book_id")));
-        copy.setCopyCode(request.getParameter("copy_code"));
+        int quantity = Integer.parseInt(request.getParameter("quantity"));
+
+        String prefix = request.getParameter("prefix");
 
         String status = request.getParameter("status");
-        copy.setStatus((status == null || status.isEmpty()) ? "AVAILABLE" : status);
 
-        copy.setCreatedAt(new Timestamp(System.currentTimeMillis()).toLocalDateTime());
+        if (status == null || status.isEmpty()) {
+            status = "AVAILABLE";
+        }
 
-        bookCopyDB.insert(copy);
+        if (prefix == null || prefix.isEmpty()) {
+            prefix = "CP";
+        }
+
+        for (int i = 0; i < quantity; i++) {
+
+            int nextNumber = bookCopyDB.getNextCopyNumber(bookId);
+
+            String copyCode = prefix + String.format("%03d", nextNumber);
+
+            BookCopy copy = new BookCopy();
+
+            copy.setBookId(bookId);
+            copy.setCopyCode(copyCode);
+            copy.setStatus(status);
+            copy.setCreatedAt(new Timestamp(System.currentTimeMillis()).toLocalDateTime());
+
+            bookCopyDB.insert(copy);
+        }
 
         response.sendRedirect(request.getContextPath() + "/admin/bookcopies/list");
     }

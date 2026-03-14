@@ -16,6 +16,86 @@ import model.borrow.BorrowItem;
 
 public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
 
+    public List<BorrowExtend> getExtendRequests(int page, int pageSize) {
+
+        List<BorrowExtend> list = new ArrayList<>();
+
+        String sql = """
+SELECT
+be.extend_id,
+bk.title AS book_title,
+bc.copy_code,
+be.old_due_date,
+be.requested_due_date,
+be.status,
+be.requested_at
+
+FROM Borrow_Extend be
+JOIN Borrow_Item bi ON be.borrow_item_id = bi.borrow_item_id
+JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+JOIN Book bk ON bc.book_id = bk.book_id
+
+ORDER BY
+CASE 
+WHEN be.status = 'PENDING' THEN 0
+WHEN be.status = 'REJECTED' THEN 1
+WHEN be.status = 'APPROVED' THEN 2
+END,
+be.requested_at DESC
+
+OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+""";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+
+            ps.setInt(1, (page - 1) * pageSize);
+            ps.setInt(2, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowExtend e = new BorrowExtend();
+
+                e.setExtendId(rs.getInt("extend_id"));
+                e.setBookTitle(rs.getString("book_title"));
+                e.setCopyCode(rs.getString("copy_code"));
+                e.setOldDueDate(rs.getTimestamp("old_due_date"));
+                e.setRequestedDueDate(rs.getTimestamp("requested_due_date"));
+                e.setStatus(rs.getString("status"));
+
+                list.add(e);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int countExtendRequests() {
+
+        String sql = "SELECT COUNT(*) FROM Borrow_Extend";
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     public void createExtendRequest(int borrowItemId, String requestedDate) {
 
         String sql = """
