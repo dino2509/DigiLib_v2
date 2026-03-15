@@ -25,19 +25,46 @@ public class BorrowController extends HttpServlet {
             int pageSize = 10;
 
             String pageParam = request.getParameter("page");
+            String search = request.getParameter("search");
+            String status = request.getParameter("status");
 
-            if (pageParam != null) {
-                page = Integer.parseInt(pageParam);
+            // tránh null
+            if (search == null) {
+                search = "";
+            }
+            if (status == null) {
+                status = "";
             }
 
-            int totalRecords = dao.countBorrows();
+            // parse page
+            if (pageParam != null && !pageParam.isEmpty()) {
+                try {
+                    page = Integer.parseInt(pageParam);
+                } catch (NumberFormatException e) {
+                    page = 1;
+                }
+            }
+
+            // total records
+            int totalRecords = dao.countBorrows(search, status);
             int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
 
-            List<Borrow> borrows = dao.getBorrowsByPage(page, pageSize);
+            if (page > totalPages && totalPages != 0) {
+                page = totalPages;
+            }
 
+            // get data
+            List<Borrow> borrows
+                    = dao.getBorrowsByPage(search, status, page, pageSize);
+
+            // send data to JSP
             request.setAttribute("borrows", borrows);
             request.setAttribute("currentPage", page);
             request.setAttribute("totalPages", totalPages);
+
+            // giữ filter
+            request.setAttribute("search", search);
+            request.setAttribute("status", status);
 
             request.setAttribute("pageTitle", "Borrow Records");
             request.setAttribute("activeMenu", "borrows");

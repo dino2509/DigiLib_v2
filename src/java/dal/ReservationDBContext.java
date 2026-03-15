@@ -7,6 +7,110 @@ import java.util.List;
 
 public class ReservationDBContext extends DBContext {
 
+    public int fulfillReservation(int reservationId) throws SQLException {
+
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+        try {
+
+            connection.setAutoCommit(false);
+
+            /* 1. Get reservation info */
+            String getReservation = """
+            SELECT r.reader_id, ri.book_id, ri.quantity
+            FROM Reservation r
+            JOIN Reservation_Item ri 
+                ON r.reservation_id = ri.reservation_id
+            WHERE r.reservation_id = ?
+        """;
+
+            ps = connection.prepareStatement(getReservation);
+            ps.setInt(1, reservationId);
+            rs = ps.executeQuery();
+
+            if (!rs.next()) {
+                throw new SQLException("Reservation not found");
+            }
+
+            int readerId = rs.getInt("reader_id");
+            int bookId = rs.getInt("book_id");
+            int quantity = rs.getInt("quantity");
+
+            rs.close();
+            ps.close();
+
+            /* 2. Create Borrow_Request */
+            String insertRequest = """
+            INSERT INTO Borrow_Request
+            (reader_id, status, requested_at)
+            VALUES (?, 'PENDING', GETDATE())
+        """;
+
+            ps = connection.prepareStatement(insertRequest,
+                    Statement.RETURN_GENERATED_KEYS);
+
+            ps.setInt(1, readerId);
+            ps.executeUpdate();
+
+            rs = ps.getGeneratedKeys();
+            int requestId = -1;
+
+            if (rs.next()) {
+                requestId = rs.getInt(1);
+            }
+
+            rs.close();
+            ps.close();
+
+            /* 3. Create Borrow_Request_Item */
+            String insertItem = """
+            INSERT INTO Borrow_Request_Item
+            (request_id, book_id, quantity)
+            VALUES (?, ?, ?)
+        """;
+
+            ps = connection.prepareStatement(insertItem);
+            ps.setInt(1, requestId);
+            ps.setInt(2, bookId);
+            ps.setInt(3, quantity);
+            ps.executeUpdate();
+
+            ps.close();
+
+            /* 4. Update Reservation */
+            String updateReservation = """
+            UPDATE Reservation
+            SET status = 'FULFILLED',
+                fulfilled_at = GETDATE()
+            WHERE reservation_id = ?
+        """;
+
+            ps = connection.prepareStatement(updateReservation);
+            ps.setInt(1, reservationId);
+            ps.executeUpdate();
+
+            connection.commit();
+            return requestId;
+
+        } catch (SQLException e) {
+
+            connection.rollback();
+            throw e;
+
+        } finally {
+
+            connection.setAutoCommit(true);
+
+            if (rs != null) {
+                rs.close();
+            }
+            if (ps != null) {
+                ps.close();
+            }
+        }
+    }
+
     public List<Reservation> getReservationsByReader(int readerId) {
 
         List<Reservation> list = new ArrayList<>();
@@ -116,6 +220,161 @@ public class ReservationDBContext extends DBContext {
         }
     }
 
+    public int countReservations(String search, String status) {
+
+        StringBuilder sql = new StringBuilder("""
+
+SELECT COUNT(*)
+
+FROM Reservation r
+
+JOIN Reader rd
+ON r.reader_id = rd.reader_id
+
+JOIN Reservation_Item ri
+ON r.reservation_id = ri.reservation_id
+
+JOIN Book b
+ON ri.book_id = b.book_id
+
+WHERE 1=1
+
+""");
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (rd.full_name LIKE ? OR b.title LIKE ?) ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND r.status = ? ");
+        }
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
+
+            int index = 1;
+
+            if (search != null && !search.isEmpty()) {
+                ps.setString(index++, "%" + search + "%");
+                ps.setString(index++, "%" + search + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public List<Reservation> getReservations(
+            String search,
+            String status,
+            int page,
+            int pageSize) {
+
+        List<Reservation> list = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+
+SELECT
+r.reservation_id,
+rd.full_name,
+b.title,
+ri.quantity,
+r.created_at,
+r.status,
+
+(
+SELECT COUNT(*)
+FROM BookCopy bc
+WHERE bc.book_id = b.book_id
+AND bc.status = 'AVAILABLE'
+) AS available_copies
+
+FROM Reservation r
+
+JOIN Reader rd
+ON r.reader_id = rd.reader_id
+
+JOIN Reservation_Item ri
+ON r.reservation_id = ri.reservation_id
+
+JOIN Book b
+ON ri.book_id = b.book_id
+
+WHERE 1=1
+
+""");
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (rd.full_name LIKE ? OR b.title LIKE ?) ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND r.status = ? ");
+        }
+
+        sql.append("""
+
+ORDER BY r.created_at DESC
+OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+
+""");
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
+
+            int index = 1;
+
+            if (search != null && !search.isEmpty()) {
+                ps.setString(index++, "%" + search + "%");
+                ps.setString(index++, "%" + search + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
+            ps.setInt(index++, (page - 1) * pageSize);
+            ps.setInt(index, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Reservation r = new Reservation();
+
+                r.setReservationId(rs.getInt("reservation_id"));
+                r.setReaderName(rs.getString("full_name"));
+                r.setBookTitle(rs.getString("title"));
+                r.setQuantity(rs.getInt("quantity"));
+                r.setCreatedAt(rs.getTimestamp("created_at"));
+                r.setStatus(rs.getString("status"));
+
+                r.setAvailableCopies(rs.getInt("available_copies"));
+
+                list.add(r);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
     public List<Reservation> getAllReservations() {
 
         List<Reservation> list = new ArrayList<>();
@@ -209,137 +468,6 @@ public class ReservationDBContext extends DBContext {
         }
 
         return list;
-    }
-
-    public void fulfillReservation(int reservationId) {
-
-        try {
-
-            connection.setAutoCommit(false);
-
-            // 1 lấy reservation info
-            String sql1 = """
-        SELECT reader_id
-        FROM Reservation
-        WHERE reservation_id = ?
-        """;
-
-            PreparedStatement ps1 = connection.prepareStatement(sql1);
-            ps1.setInt(1, reservationId);
-
-            ResultSet rs = ps1.executeQuery();
-
-            int readerId = 0;
-
-            if (rs.next()) {
-                readerId = rs.getInt("reader_id");
-            }
-
-            // 2 tạo Borrow
-            String sql2 = """
-        INSERT INTO Borrow
-        (reader_id, borrow_date, status, created_at)
-        VALUES (?, GETDATE(), 'BORROWING', GETDATE())
-        """;
-
-            PreparedStatement ps2 = connection.prepareStatement(sql2);
-            ps2.setInt(1, readerId);
-            ps2.executeUpdate();
-
-            // lấy borrow id
-            String getBorrowId = "SELECT SCOPE_IDENTITY()";
-            Statement st = connection.createStatement();
-            ResultSet rs2 = st.executeQuery(getBorrowId);
-
-            int borrowId = 0;
-
-            if (rs2.next()) {
-                borrowId = rs2.getInt(1);
-            }
-
-            // 3 lấy book từ reservation item
-            String sql3 = """
-        SELECT book_id, quantity
-        FROM Reservation_Item
-        WHERE reservation_id = ?
-        """;
-
-            PreparedStatement ps3 = connection.prepareStatement(sql3);
-            ps3.setInt(1, reservationId);
-
-            ResultSet rs3 = ps3.executeQuery();
-
-            while (rs3.next()) {
-
-                int bookId = rs3.getInt("book_id");
-
-                // lấy book copy available
-                String sql4 = """
-            SELECT TOP 1 copy_id
-            FROM BookCopy
-            WHERE book_id = ?
-            AND status = 'AVAILABLE'
-            """;
-
-                PreparedStatement ps4 = connection.prepareStatement(sql4);
-                ps4.setInt(1, bookId);
-
-                ResultSet rs4 = ps4.executeQuery();
-
-                if (rs4.next()) {
-
-                    int copyId = rs4.getInt("copy_id");
-
-                    // tạo borrow item
-                    String sql5 = """
-                INSERT INTO Borrow_Item
-                (borrow_id, copy_id, due_date, status)
-                VALUES (?, ?, DATEADD(day,14,GETDATE()), 'BORROWING')
-                """;
-
-                    PreparedStatement ps5 = connection.prepareStatement(sql5);
-
-                    ps5.setInt(1, borrowId);
-                    ps5.setInt(2, copyId);
-
-                    ps5.executeUpdate();
-
-                    // update book copy
-                    String sql6 = """
-                UPDATE BookCopy
-                SET status = 'BORROWED'
-                WHERE copy_id = ?
-                """;
-
-                    PreparedStatement ps6 = connection.prepareStatement(sql6);
-                    ps6.setInt(1, copyId);
-                    ps6.executeUpdate();
-                }
-            }
-
-            // 4 update reservation
-            String sql7 = """
-        UPDATE Reservation
-        SET status = 'FULFILLED',
-            fulfilled_at = GETDATE()
-        WHERE reservation_id = ?
-        """;
-
-            PreparedStatement ps7 = connection.prepareStatement(sql7);
-            ps7.setInt(1, reservationId);
-            ps7.executeUpdate();
-
-            connection.commit();
-
-        } catch (Exception e) {
-
-            try {
-                connection.rollback();
-            } catch (Exception ex) {
-            }
-
-            e.printStackTrace();
-        }
     }
 
     public void cancelReservation(int reservationId) {

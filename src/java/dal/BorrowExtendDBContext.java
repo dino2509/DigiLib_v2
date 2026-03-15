@@ -16,11 +16,12 @@ import model.borrow.BorrowItem;
 
 public class BorrowExtendDBContext extends DBContext<BorrowExtendRequest> {
 
-    public List<BorrowExtend> getExtendRequests(int page, int pageSize) {
+    public List<BorrowExtend> getExtendRequests(String search, String status, int page, int pageSize) {
 
         List<BorrowExtend> list = new ArrayList<>();
 
-        String sql = """
+        StringBuilder sql = new StringBuilder("""
+
 SELECT
 be.extend_id,
 bk.title AS book_title,
@@ -35,23 +36,49 @@ JOIN Borrow_Item bi ON be.borrow_item_id = bi.borrow_item_id
 JOIN BookCopy bc ON bi.copy_id = bc.copy_id
 JOIN Book bk ON bc.book_id = bk.book_id
 
+WHERE 1=1
+
+""");
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (bk.title LIKE ? OR bc.copy_code LIKE ?) ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND be.status = ? ");
+        }
+
+        sql.append("""
+
 ORDER BY
-CASE 
-WHEN be.status = 'PENDING' THEN 0
-WHEN be.status = 'REJECTED' THEN 1
-WHEN be.status = 'APPROVED' THEN 2
+CASE
+WHEN be.status='PENDING' THEN 0
+WHEN be.status='REJECTED' THEN 1
+WHEN be.status='APPROVED' THEN 2
 END,
 be.requested_at DESC
 
 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-""";
+
+""");
 
         try {
 
-            PreparedStatement ps = connection.prepareStatement(sql);
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
 
-            ps.setInt(1, (page - 1) * pageSize);
-            ps.setInt(2, pageSize);
+            int index = 1;
+
+            if (search != null && !search.isEmpty()) {
+                ps.setString(index++, "%" + search + "%");
+                ps.setString(index++, "%" + search + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
+            ps.setInt(index++, (page - 1) * pageSize);
+            ps.setInt(index, pageSize);
 
             ResultSet rs = ps.executeQuery();
 
@@ -65,8 +92,10 @@ OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
                 e.setOldDueDate(rs.getTimestamp("old_due_date"));
                 e.setRequestedDueDate(rs.getTimestamp("requested_due_date"));
                 e.setStatus(rs.getString("status"));
+                e.setRequestedAt(rs.getTimestamp("requested_at"));
 
                 list.add(e);
+
             }
 
         } catch (Exception e) {
@@ -74,15 +103,47 @@ OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
         }
 
         return list;
+
     }
 
-    public int countExtendRequests() {
+    public int countExtendRequests(String search, String status) {
 
-        String sql = "SELECT COUNT(*) FROM Borrow_Extend";
+        StringBuilder sql = new StringBuilder("""
+
+SELECT COUNT(*)
+
+FROM Borrow_Extend be
+JOIN Borrow_Item bi ON be.borrow_item_id = bi.borrow_item_id
+JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+JOIN Book bk ON bc.book_id = bk.book_id
+
+WHERE 1=1
+
+""");
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (bk.title LIKE ? OR bc.copy_code LIKE ?) ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND be.status = ? ");
+        }
 
         try {
 
-            PreparedStatement ps = connection.prepareStatement(sql);
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
+
+            int index = 1;
+
+            if (search != null && !search.isEmpty()) {
+                ps.setString(index++, "%" + search + "%");
+                ps.setString(index++, "%" + search + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -94,6 +155,7 @@ OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
         }
 
         return 0;
+
     }
 
     public void createExtendRequest(int borrowItemId, String requestedDate) {

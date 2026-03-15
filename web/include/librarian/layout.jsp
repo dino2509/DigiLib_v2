@@ -250,10 +250,10 @@
                         Reservations
                     </a>
 
-                    <a href="${pageContext.request.contextPath}/librarian/reservation-queue"
+<!--                    <a href="${pageContext.request.contextPath}/librarian/reservation-queue"
                        class="${activeMenu=='reservations-queue'?'active':''}">
                          Reservation Queue
-                    </a>
+                    </a>-->
 
                 </div>
 

@@ -3,6 +3,7 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
+
 <style>
 
     .extend-wrapper{
@@ -14,6 +15,37 @@
         margin-bottom:20px;
         color:#333;
     }
+
+    /* FILTER BAR */
+
+    .filter-bar{
+        display:flex;
+        justify-content:space-between;
+        margin-bottom:15px;
+    }
+
+    .filter-bar form{
+        display:flex;
+        gap:10px;
+    }
+
+    .filter-bar input,
+    .filter-bar select{
+        padding:6px 8px;
+        border:1px solid #ddd;
+        border-radius:4px;
+    }
+
+    .btn-filter{
+        background:#ff7a00;
+        color:white;
+        border:none;
+        padding:6px 10px;
+        border-radius:4px;
+        cursor:pointer;
+    }
+
+    /* CARD */
 
     .extend-card{
         background:white;
@@ -46,7 +78,7 @@
         background:#fafafa;
     }
 
-    /* status badges */
+    /* STATUS */
 
     .badge{
         padding:4px 10px;
@@ -70,7 +102,12 @@
         color:#721c24;
     }
 
-    /* buttons */
+    /* ACTION */
+
+    .actions form{
+        display:flex;
+        gap:6px;
+    }
 
     .btn{
         border:none;
@@ -98,7 +135,12 @@
         background:#bd2130;
     }
 
-    /* empty */
+    .processed{
+        font-size:12px;
+        color:#777;
+    }
+
+    /* EMPTY */
 
     .empty{
         text-align:center;
@@ -106,19 +148,26 @@
         color:#888;
     }
 
-    /* pagination */
+    /* PAGINATION */
 
     .pagination{
-        text-align:center;
-        padding:15px;
+        display:flex;
+        justify-content:center;
+        margin-top:20px;
+        gap:5px;
     }
 
     .pagination a{
-        padding:6px 10px;
-        margin:2px;
+        padding:6px 12px;
         border:1px solid #ddd;
         text-decoration:none;
         color:#333;
+        border-radius:4px;
+    }
+
+    .pagination a:hover{
+        background:#ff7a00;
+        color:white;
     }
 
     .pagination a.active{
@@ -134,24 +183,69 @@
 
     <h2 class="page-title">Borrow Extend Requests</h2>
 
-    <div class="extend-card">
 
-        <table class="extend-table">
+    <!-- FILTER BAR -->
 
-            <thead>
+    <div class="filter-bar">
 
-                <tr>
-                    <th>Book</th>
-                    <th>Copy Code</th>
-                    <th>Old Due Date</th>
-                    <th>Requested Date</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
+        <form method="get"
+              action="${pageContext.request.contextPath}/librarian/borrow-extend">
 
-            </thead>
+            <input type="text"
+                   name="search"
+                   value="${search}"
+                   placeholder="Search book or copy code">
 
-            <tbody>
+            <select name="status">
+
+                <option value="">All Status</option>
+
+                <option value="PENDING"
+                        <c:if test="${status=='PENDING'}">selected</c:if>>
+                            Pending
+                        </option>
+
+                        <option value="APPROVED"
+                        <c:if test="${status=='APPROVED'}">selected</c:if>>
+                            Approved
+                        </option>
+
+                        <option value="REJECTED"
+                        <c:if test="${status=='REJECTED'}">selected</c:if>>
+                            Rejected
+                        </option>
+
+                </select>
+
+                <button class="btn-filter">
+                    Filter
+                </button>
+
+            </form>
+
+        </div>
+
+
+
+        <div class="extend-card">
+
+            <table class="extend-table">
+
+                <thead>
+
+                    <tr>
+                        <th>Book</th>
+                        <th>Copy Code</th>
+                        <th>Old Due</th>
+                        <th>Requested Due</th>
+                        <th>Requested At</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
 
                 <c:choose>
 
@@ -176,6 +270,10 @@
                                 </td>
 
                                 <td>
+                                    <fmt:formatDate value="${e.requestedAt}" pattern="yyyy-MM-dd HH:mm"/>
+                                </td>
+
+                                <td>
 
                                     <c:choose>
 
@@ -195,47 +293,38 @@
 
                                 </td>
 
-                                <td>
+                                <td class="actions">
 
-                                    <c:choose>
+                                    <c:if test="${e.status eq 'PENDING'}">
 
-                                        <c:when test="${e.status eq 'PENDING'}">
+                                        <form method="post"
+                                              action="${pageContext.request.contextPath}/librarian/process-extend">
 
-                                            <form method="post"
-                                                  action="${pageContext.request.contextPath}/librarian/process-extend"
-                                                  style="display:flex; gap:8px;">
+                                            <input type="hidden"
+                                                   name="extendId"
+                                                   value="${e.extendId}">
 
-                                                <input type="hidden" name="extendId" value="${e.extendId}">
+                                            <button class="btn btn-approve"
+                                                    name="action"
+                                                    value="approve"
+                                                    onclick="return confirm('Approve this extend request?')">
+                                                Approve
+                                            </button>
 
-                                                <button class="btn btn-approve"
-                                                        name="action"
-                                                        value="approve"
-                                                        onclick="return confirm('Approve this extend request?')">
+                                            <button class="btn btn-reject"
+                                                    name="action"
+                                                    value="reject"
+                                                    onclick="return confirm('Reject this extend request?')">
+                                                Reject
+                                            </button>
 
-                                                    Approve
+                                        </form>
 
-                                                </button>
+                                    </c:if>
 
-                                                <button class="btn btn-reject"
-                                                        name="action"
-                                                        value="reject"
-                                                        onclick="return confirm('Reject this extend request?')">
-
-                                                    Reject
-
-                                                </button>
-
-                                            </form>
-
-                                        </c:when>
-
-                                        <c:otherwise>
-
-                                            -
-
-                                        </c:otherwise>
-
-                                    </c:choose>
+                                    <c:if test="${e.status ne 'PENDING'}">
+                                        <span class="processed">Processed</span>
+                                    </c:if>
 
                                 </td>
 
@@ -248,11 +337,9 @@
                     <c:otherwise>
 
                         <tr>
-
-                            <td colspan="6" class="empty">
+                            <td colspan="7" class="empty">
                                 No extend requests found
                             </td>
-
                         </tr>
 
                     </c:otherwise>
@@ -266,24 +353,33 @@
     </div>
 
 
-    <!-- Pagination -->
+
+    <!-- PAGINATION -->
 
     <div class="pagination">
 
-        <c:if test="${totalPages > 1}">
+        <c:forEach begin="1" end="${totalPages}" var="i">
 
-            <c:forEach begin="1" end="${totalPages}" var="i">
+            <c:url var="pageUrl" value="/librarian/borrow-extend">
 
-                <a href="${pageContext.request.contextPath}/librarian/borrow-extend?page=${i}"
-                   class="${i == currentPage ? 'active' : ''}">
+                <c:param name="page" value="${i}"/>
 
-                    ${i}
+                <c:if test="${not empty search}">
+                    <c:param name="search" value="${search}"/>
+                </c:if>
 
-                </a>
+                <c:if test="${not empty status}">
+                    <c:param name="status" value="${status}"/>
+                </c:if>
 
-            </c:forEach>
+            </c:url>
 
-        </c:if>
+            <a href="${pageContext.request.contextPath}${pageUrl}"
+               class="${i==currentPage?'active':''}">
+                ${i}
+            </a>
+
+        </c:forEach>
 
     </div>
 

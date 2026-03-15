@@ -51,29 +51,51 @@ public class BorrowRequestDBContext extends DBContext {
         return list;
     }
 
-    public List<BorrowRequest> getRequestsByPage(int page, int pageSize) {
+    public List<BorrowRequest> getRequestsByPage(String reader, String status, int page, int pageSize) {
 
         List<BorrowRequest> list = new ArrayList<>();
 
         int offset = (page - 1) * pageSize;
 
-        String sql = """
-                 SELECT br.request_id,
-                        r.full_name,
-                        br.status,
-                        br.requested_at
-                 FROM Borrow_Request br
-                 JOIN Reader r ON br.reader_id = r.reader_id
-                 ORDER BY br.requested_at ASC
-                 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-                 """;
+        StringBuilder sql = new StringBuilder("""
+            SELECT br.request_id,
+                   r.full_name,
+                   br.status,
+                   br.requested_at
+            FROM Borrow_Request br
+            JOIN Reader r ON br.reader_id = r.reader_id
+            WHERE 1=1
+            """);
+
+        if (reader != null && !reader.isEmpty()) {
+            sql.append(" AND r.full_name LIKE ? ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND br.status = ? ");
+        }
+
+        sql.append("""
+            ORDER BY br.requested_at DESC
+            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+            """);
 
         try {
 
-            PreparedStatement ps = connection.prepareStatement(sql);
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
 
-            ps.setInt(1, offset);
-            ps.setInt(2, pageSize);
+            int index = 1;
+
+            if (reader != null && !reader.isEmpty()) {
+                ps.setString(index++, "%" + reader + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
+            ps.setInt(index++, offset);
+            ps.setInt(index, pageSize);
 
             ResultSet rs = ps.executeQuery();
 
@@ -96,13 +118,37 @@ public class BorrowRequestDBContext extends DBContext {
         return list;
     }
 
-    public int countRequests() {
+    public int countRequests(String reader, String status) {
 
-        String sql = "SELECT COUNT(*) FROM Borrow_Request";
+        StringBuilder sql = new StringBuilder("""
+            SELECT COUNT(*)
+            FROM Borrow_Request br
+            JOIN Reader r ON br.reader_id = r.reader_id
+            WHERE 1=1
+            """);
+
+        if (reader != null && !reader.isEmpty()) {
+            sql.append(" AND r.full_name LIKE ? ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND br.status = ? ");
+        }
 
         try {
 
-            PreparedStatement ps = connection.prepareStatement(sql);
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
+
+            int index = 1;
+
+            if (reader != null && !reader.isEmpty()) {
+                ps.setString(index++, "%" + reader + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -260,18 +306,19 @@ public class BorrowRequestDBContext extends DBContext {
     public BorrowRequest getRequestById(int id) {
 
         String sql = """
-        SELECT br.request_id,
-               r.full_name,
-               br.status,
-               br.requested_at
+        SELECT 
+            br.request_id,
+            r.full_name,
+            br.status,
+            br.requested_at
         FROM Borrow_Request br
-        JOIN Reader r ON br.reader_id = r.reader_id
+        JOIN Reader r 
+            ON br.reader_id = r.reader_id
         WHERE br.request_id = ?
         """;
 
-        try {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
-            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setInt(1, id);
 
             ResultSet rs = ps.executeQuery();
@@ -300,16 +347,39 @@ public class BorrowRequestDBContext extends DBContext {
         List<BorrowRequestItem> list = new ArrayList<>();
 
         String sql = """
-        SELECT b.title,
-               bri.quantity
+        SELECT
+            bri.request_item_id,
+            bri.request_id,
+            bri.book_id,
+            bri.quantity,
+
+            b.title,
+            b.summary,
+            b.cover_url,
+            b.total_pages,
+            b.isbn,
+
+            a.author_name,
+            c.category_name
+
         FROM Borrow_Request_Item bri
-        JOIN Book b ON bri.book_id = b.book_id
+
+        JOIN Book b
+            ON bri.book_id = b.book_id
+
+        LEFT JOIN Author a
+            ON b.author_id = a.author_id
+
+        LEFT JOIN Category c
+            ON b.category_id = c.category_id
+
         WHERE bri.request_id = ?
+
+        ORDER BY bri.request_item_id
         """;
 
-        try {
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
-            PreparedStatement ps = connection.prepareStatement(sql);
             ps.setInt(1, requestId);
 
             ResultSet rs = ps.executeQuery();
@@ -318,7 +388,21 @@ public class BorrowRequestDBContext extends DBContext {
 
                 BorrowRequestItem item = new BorrowRequestItem();
 
+                item.setRequestItemId(rs.getInt("request_item_id"));
+                item.setRequestId(rs.getInt("request_id"));
+
+                item.setBookId(rs.getInt("book_id"));
                 item.setBookTitle(rs.getString("title"));
+
+                item.setSummary(rs.getString("summary"));
+                item.setCoverUrl(rs.getString("cover_url"));
+                item.setTotalPages(rs.getInt("total_pages"));
+
+                item.setIsbn((Integer) rs.getObject("isbn"));
+
+                item.setAuthorName(rs.getString("author_name"));
+                item.setCategoryName(rs.getString("category_name"));
+
                 item.setQuantity(rs.getInt("quantity"));
 
                 list.add(item);

@@ -26,7 +26,8 @@ public class BorrowDetailController extends HttpServlet {
         request.setAttribute("borrow", borrow);
         request.setAttribute("items", items);
 
-        request.setAttribute("pageTitle", "Borrow Detail");
+        request.setAttribute("pageTitle", "Borrow Detail #" + borrowId);
+        request.setAttribute("activeMenu", "borrows");
         request.setAttribute("contentPage", "/view/librarian/borrow/borrow-detail.jsp");
 
         request.getRequestDispatcher("/include/librarian/layout.jsp")

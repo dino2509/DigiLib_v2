@@ -5,27 +5,39 @@ import java.sql.Timestamp;
 
 public class Book {
 
-    
-    
-    
     private int bookId;
+
     private String title;
     private String summary;
     private String description;
+
     private String coverUrl;
     private String contentPath;
+
     private BigDecimal price;
     private String currency;
+
     private int totalPages;
     private int previewPages;
+
     private String status;
+
     private Timestamp createdAt;
     private Timestamp updatedAt;
+
+    // NEW FIELD
+    private Integer isbn;
+
     private Author author;
     private Category category;
+
     private Employee create_by;
     private Employee update_by;
 
+    public Book() {
+    }
+
+    // ===== RELATIONSHIP =====
     public Author getAuthor() {
         return author;
     }
@@ -58,7 +70,7 @@ public class Book {
         this.update_by = update_by;
     }
 
-    // ===== GETTER & SETTER =====
+    // ===== BASIC INFO =====
     public int getBookId() {
         return bookId;
     }
@@ -107,6 +119,7 @@ public class Book {
         this.contentPath = contentPath;
     }
 
+    // ===== PRICE =====
     public BigDecimal getPrice() {
         return price;
     }
@@ -123,6 +136,7 @@ public class Book {
         this.currency = currency;
     }
 
+    // ===== PAGES =====
     public int getTotalPages() {
         return totalPages;
     }
@@ -139,6 +153,7 @@ public class Book {
         this.previewPages = previewPages;
     }
 
+    // ===== STATUS =====
     public String getStatus() {
         return status;
     }
@@ -147,6 +162,7 @@ public class Book {
         this.status = status;
     }
 
+    // ===== TIMESTAMP =====
     public Timestamp getCreatedAt() {
         return createdAt;
     }
@@ -161,6 +177,15 @@ public class Book {
 
     public void setUpdatedAt(Timestamp updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    // ===== ISBN =====
+    public Integer getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(Integer isbn) {
+        this.isbn = isbn;
     }
 
 }

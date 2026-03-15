@@ -167,30 +167,64 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         try {
 
             String sql = """
-        SELECT 
+        SELECT
             bi.borrow_item_id,
+
+            b.book_id,
             b.title,
+            b.summary,
+            b.cover_url,
+            b.total_pages,
+            b.status AS book_status,
+
+            a.name AS author_name,
+            c.name AS category_name,
+
             bc.copy_code,
+
             bi.due_date,
             bi.returned_at,
             bi.status
+
         FROM Borrow_Item bi
-        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
-        JOIN Book b ON bc.book_id = b.book_id
+
+        JOIN BookCopy bc
+        ON bi.copy_id = bc.copy_id
+
+        JOIN Book b
+        ON bc.book_id = b.book_id
+
+        LEFT JOIN Author a
+        ON b.author_id = a.author_id
+
+        LEFT JOIN Category c
+        ON b.category_id = c.category_id
+
         WHERE bi.borrow_id = ?
+        ORDER BY bi.borrow_item_id
         """;
 
-            PreparedStatement stm = connection.prepareStatement(sql);
-            stm.setInt(1, borrowId);
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, borrowId);
 
-            ResultSet rs = stm.executeQuery();
+            ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
 
                 BorrowDetailItem item = new BorrowDetailItem();
 
                 item.setBorrowItemId(rs.getInt("borrow_item_id"));
+
+                item.setBookId(rs.getInt("book_id"));
                 item.setBookTitle(rs.getString("title"));
+                item.setSummary(rs.getString("summary"));
+                item.setCoverUrl(rs.getString("cover_url"));
+                item.setTotalPages(rs.getInt("total_pages"));
+                item.setBookStatus(rs.getString("book_status"));
+
+                item.setAuthorName(rs.getString("author_name"));
+                item.setCategoryName(rs.getString("category_name"));
+
                 item.setCopyCode(rs.getString("copy_code"));
 
                 item.setDueDate(rs.getTimestamp("due_date"));
@@ -285,13 +319,38 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         }
     }
 
-    public int countBorrows() {
+    public int countBorrows(String search, String status) {
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(*)
+        FROM Borrow b
+        JOIN Reader r ON b.reader_id = r.reader_id
+        WHERE 1=1
+    """);
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (r.full_name LIKE ? OR CAST(b.borrow_id AS VARCHAR) LIKE ?) ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND b.status = ? ");
+        }
 
         try {
 
-            String sql = "SELECT COUNT(*) FROM Borrow";
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
 
-            PreparedStatement ps = connection.prepareStatement(sql);
+            int index = 1;
+
+            if (search != null && !search.isEmpty()) {
+                ps.setString(index++, "%" + search + "%");
+                ps.setString(index++, "%" + search + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -305,27 +364,53 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         return 0;
     }
 
-    public List<Borrow> getBorrowsByPage(int page, int pageSize) {
+    public List<Borrow> getBorrowsByPage(String search, String status, int page, int pageSize) {
 
         List<Borrow> list = new ArrayList<>();
 
+        int offset = (page - 1) * pageSize;
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT 
+            b.borrow_id,
+            r.full_name,
+            b.borrow_date,
+            b.status
+        FROM Borrow b
+        JOIN Reader r ON b.reader_id = r.reader_id
+        WHERE 1=1
+    """);
+
+        if (search != null && !search.isEmpty()) {
+            sql.append(" AND (r.full_name LIKE ? OR CAST(b.borrow_id AS VARCHAR) LIKE ?) ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND b.status = ? ");
+        }
+
+        sql.append("""
+        ORDER BY b.borrow_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """);
+
         try {
 
-            String sql = """
-            SELECT b.borrow_id,
-                   r.full_name,
-                   b.borrow_date,
-                   b.status
-            FROM Borrow b
-            JOIN Reader r ON b.reader_id = r.reader_id
-            ORDER BY b.borrow_id DESC
-            OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
-        """;
+            PreparedStatement ps = connection.prepareStatement(sql.toString());
 
-            PreparedStatement ps = connection.prepareStatement(sql);
+            int index = 1;
 
-            ps.setInt(1, (page - 1) * pageSize);
-            ps.setInt(2, pageSize);
+            if (search != null && !search.isEmpty()) {
+                ps.setString(index++, "%" + search + "%");
+                ps.setString(index++, "%" + search + "%");
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(index++, status);
+            }
+
+            ps.setInt(index++, offset);
+            ps.setInt(index, pageSize);
 
             ResultSet rs = ps.executeQuery();
 
@@ -385,11 +470,12 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
         return list;
     }
-public List<BorrowItem> getBorrowedBooks(int readerId, int page, int pageSize) {
 
-    List<BorrowItem> list = new ArrayList<>();
+    public List<BorrowItem> getBorrowedBooks(int readerId, int page, int pageSize) {
 
-    String sql = """
+        List<BorrowItem> list = new ArrayList<>();
+
+        String sql = """
 SELECT
 bi.borrow_item_id,
 bk.title AS book_title,
@@ -420,40 +506,41 @@ ORDER BY bi.due_date
 OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
 """;
 
-    try {
+        try {
 
-        PreparedStatement ps = connection.prepareStatement(sql);
+            PreparedStatement ps = connection.prepareStatement(sql);
 
-        ps.setInt(1, readerId);
-        ps.setInt(2, (page - 1) * pageSize);
-        ps.setInt(3, pageSize);
+            ps.setInt(1, readerId);
+            ps.setInt(2, (page - 1) * pageSize);
+            ps.setInt(3, pageSize);
 
-        ResultSet rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery();
 
-        while (rs.next()) {
+            while (rs.next()) {
 
-            BorrowItem item = new BorrowItem();
+                BorrowItem item = new BorrowItem();
 
-            item.setBorrowItemId(rs.getInt("borrow_item_id"));
-            item.setBookTitle(rs.getString("book_title"));
-            item.setCopyCode(rs.getString("copy_code"));
-            item.setDueDate(rs.getTimestamp("due_date"));
-            item.setStatus(rs.getString("status"));
-            item.setRemainingDays(rs.getInt("remaining_days"));
-            item.setExtendStatus(rs.getString("extend_status"));
+                item.setBorrowItemId(rs.getInt("borrow_item_id"));
+                item.setBookTitle(rs.getString("book_title"));
+                item.setCopyCode(rs.getString("copy_code"));
+                item.setDueDate(rs.getTimestamp("due_date"));
+                item.setStatus(rs.getString("status"));
+                item.setRemainingDays(rs.getInt("remaining_days"));
+                item.setExtendStatus(rs.getString("extend_status"));
 
-            list.add(item);
+                list.add(item);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return list;
     }
 
-    return list;
-}
-public int countBorrowedBooks(int readerId) {
+    public int countBorrowedBooks(int readerId) {
 
-    String sql = """
+        String sql = """
 SELECT COUNT(*)
 FROM Borrow_Item bi
 JOIN Borrow b ON bi.borrow_id = b.borrow_id
@@ -461,23 +548,24 @@ WHERE b.reader_id = ?
 AND bi.returned_at IS NULL
 """;
 
-    try {
+        try {
 
-        PreparedStatement ps = connection.prepareStatement(sql);
-        ps.setInt(1, readerId);
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, readerId);
 
-        ResultSet rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery();
 
-        if (rs.next()) {
-            return rs.getInt(1);
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return 0;
     }
 
-    return 0;
-}
     public List<BorrowedBook> getBorrowedBooks() {
 
         List<BorrowedBook> list = new ArrayList<>();

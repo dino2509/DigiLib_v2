@@ -24,19 +24,32 @@ public class BorrowRequestController extends HttpServlet {
             int pageSize = 10;
 
             String pageParam = request.getParameter("page");
+            String reader = request.getParameter("reader");
+            String status = request.getParameter("status");
 
-            if (pageParam != null) {
+            if (pageParam != null && !pageParam.isEmpty()) {
                 page = Integer.parseInt(pageParam);
             }
 
-            int totalRecords = borrowRequestDAO.countRequests();
+            if (reader == null) {
+                reader = "";
+            }
+            if (status == null) {
+                status = "";
+            }
+
+            int totalRecords = borrowRequestDAO.countRequests(reader, status);
             int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
 
-            List<BorrowRequest> requests = borrowRequestDAO.getRequestsByPage(page, pageSize);
+            List<BorrowRequest> requests
+                    = borrowRequestDAO.getRequestsByPage(reader, status, page, pageSize);
 
             request.setAttribute("requests", requests);
             request.setAttribute("currentPage", page);
             request.setAttribute("totalPages", totalPages);
+
+            request.setAttribute("reader", reader);
+            request.setAttribute("status", status);
 
             request.setAttribute("pageTitle", "Borrow Requests");
             request.setAttribute("activeMenu", "borrowRequests");

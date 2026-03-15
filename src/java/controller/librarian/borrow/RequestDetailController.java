@@ -21,20 +21,37 @@ public class RequestDetailController extends HttpServlet {
 
         try {
 
-            int id = Integer.parseInt(request.getParameter("id"));
+            String idParam = request.getParameter("id");
+
+            if (idParam == null) {
+                response.sendRedirect(request.getContextPath() + "/librarian/requests");
+                return;
+            }
+
+            int id = Integer.parseInt(idParam);
 
             BorrowRequest borrowRequest = dao.getRequestById(id);
+
+            if (borrowRequest == null) {
+                response.sendRedirect(request.getContextPath() + "/librarian/requests");
+                return;
+            }
+
             List<BorrowRequestItem> items = dao.getRequestItems(id);
 
             request.setAttribute("request", borrowRequest);
             request.setAttribute("items", items);
 
-            request.setAttribute("pageTitle", "Request Detail");
+            request.setAttribute("pageTitle", "Borrow Request #" + id);
             request.setAttribute("activeMenu", "borrowRequests");
             request.setAttribute("contentPage", "/view/librarian/borrow/request-detail.jsp");
 
             request.getRequestDispatcher("/include/librarian/layout.jsp")
                     .forward(request, response);
+
+        } catch (NumberFormatException e) {
+
+            response.sendRedirect(request.getContextPath() + "/librarian/requests");
 
         } catch (Exception e) {
 
