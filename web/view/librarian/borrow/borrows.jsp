@@ -1,12 +1,31 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
-<style>.page-header{
+
+<style>
+
+    .borrow-wrapper{
+        background:white;
+        padding:20px;
+        border-radius:8px;
+        box-shadow:0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    /* HEADER */
+
+    .page-header{
         display:flex;
         justify-content:space-between;
         align-items:center;
         margin-bottom:20px;
     }
+
+    .page-header h2{
+        font-size:22px;
+        color:#444;
+    }
+
+    /* FILTER */
 
     .filter-box{
         display:flex;
@@ -15,30 +34,69 @@
 
     .filter-box input,
     .filter-box select{
-        padding:8px;
+        padding:8px 10px;
         border:1px solid #ddd;
         border-radius:4px;
+        font-size:14px;
     }
 
     .btn-search{
         background:#ff7a00;
         border:none;
         color:white;
-        padding:8px 10px;
+        padding:8px 12px;
         border-radius:4px;
         cursor:pointer;
+        transition:0.2s;
+    }
+
+    .btn-search:hover{
+        background:#e56700;
+    }
+
+    /* TABLE */
+
+    .table-box{
+        overflow-x:auto;
+    }
+
+    .borrow-table{
+        width:100%;
+        border-collapse:collapse;
+        background:white;
     }
 
     .borrow-table thead{
         position:sticky;
         top:0;
         background:#ff7a00;
+        color:white;
     }
 
+    .borrow-table th{
+        padding:12px;
+        text-align:left;
+        font-size:14px;
+    }
+
+    .borrow-table td{
+        padding:12px;
+        border-bottom:1px solid #eee;
+        font-size:14px;
+    }
+
+    .borrow-table tr:hover{
+        background:#fff5ed;
+    }
+
+    /* ID */
+
     .borrow-id{
-        font-weight:bold;
+        font-weight:600;
         color:#ff7a00;
     }
+
+    /* READER */
 
     .reader-cell{
         display:flex;
@@ -46,8 +104,10 @@
         align-items:center;
     }
 
+    /* STATUS */
+
     .status{
-        padding:5px 10px;
+        padding:4px 10px;
         border-radius:20px;
         font-size:12px;
         font-weight:600;
@@ -66,34 +126,39 @@
         color:#155724;
     }
 
+    /* ACTION BUTTONS */
+
     .actions{
         display:flex;
         gap:6px;
     }
 
     .btn{
-        padding:6px 8px;
+        padding:6px 10px;
         border-radius:4px;
         text-decoration:none;
-        color:white;
         font-size:13px;
         display:flex;
         align-items:center;
-        justify-content:center;
+        gap:4px;
     }
 
     .btn.view{
         background:#17a2b8;
+        color:white;
     }
 
     .btn.return{
         background:#28a745;
+        color:white;
     }
 
     .btn.extend{
         background:#ffc107;
         color:#333;
     }
+
+    /* EMPTY */
 
     .empty{
         text-align:center;
@@ -107,17 +172,8 @@
         display:block;
     }
 
-    .pagination a{
-        padding:6px 12px;
-        background:#eee;
-        border-radius:4px;
-        text-decoration:none;
-    }
+    /* PAGINATION */
 
-    .pagination a.active{
-        background:#ff7a00;
-        color:white;
-    }
     .pagination{
         margin-top:25px;
         display:flex;
@@ -146,7 +202,9 @@
         color:white;
         font-weight:bold;
     }
+
 </style>
+
 
 
 <div class="borrow-wrapper">
@@ -219,20 +277,12 @@
                                 </td>
 
                                 <td class="reader-cell">
-
                                     <i class="fa-solid fa-user"></i>
-
-                                    <span>
-                                        ${b.readerName}
-                                    </span>
-
+                                    <span>${b.readerName}</span>
                                 </td>
 
                                 <td>
-
-                                    <fmt:formatDate value="${b.borrowDate}"
-                                                    pattern="yyyy-MM-dd HH:mm"/>
-
+                                    <fmt:formatDate value="${b.borrowDate}" pattern="yyyy-MM-dd HH:mm"/>
                                 </td>
 
                                 <td>
@@ -242,10 +292,8 @@
                                         <c:when test="${b.status == 'BORROWING'}">
 
                                             <span class="status borrowing">
-
                                                 <i class="fa-solid fa-book"></i>
                                                 Borrowing
-
                                             </span>
 
                                         </c:when>
@@ -253,10 +301,8 @@
                                         <c:when test="${b.status == 'RETURNED'}">
 
                                             <span class="status returned">
-
                                                 <i class="fa-solid fa-check"></i>
                                                 Returned
-
                                             </span>
 
                                         </c:when>
@@ -359,7 +405,9 @@
 
             <a href="${pageUrl}"
                class="page-btn ${i==currentPage?'active':''}">
+
                 ${i}
+
             </a>
 
         </c:forEach>

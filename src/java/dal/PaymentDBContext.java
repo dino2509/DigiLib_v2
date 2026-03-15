@@ -8,6 +8,116 @@ import model.Payment;
 
 public class PaymentDBContext extends DBContext {
 
+    public List<Payment> getPaymentsByPage(int page, int pageSize, String search, String status) {
+
+        List<Payment> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+        SELECT p.payment_id,
+               p.order_id,
+               r.full_name,
+               p.amount,
+               p.payment_method,
+               p.payment_status,
+               p.transaction_code,
+               p.paid_at
+        FROM Payment p
+        JOIN [Order] o ON p.order_id = o.order_id
+        JOIN Reader r ON o.reader_id = r.reader_id
+        WHERE
+        (? IS NULL OR r.full_name LIKE '%' + ? + '%'
+                     OR CAST(p.order_id AS VARCHAR) LIKE '%' + ? + '%'
+                     OR p.transaction_code LIKE '%' + ? + '%')
+        AND
+        (? IS NULL OR p.payment_status = ?)
+        ORDER BY p.paid_at DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """;
+
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, search);
+                ps.setString(2, search);
+                ps.setString(3, search);
+                ps.setString(4, search);
+
+                ps.setString(5, status);
+                ps.setString(6, status);
+
+                ps.setInt(7, (page - 1) * pageSize);
+                ps.setInt(8, pageSize);
+
+                try (ResultSet rs = ps.executeQuery()) {
+
+                    while (rs.next()) {
+
+                        Payment p = new Payment();
+
+                        p.setPaymentId(rs.getInt("payment_id"));
+                        p.setOrderId(rs.getInt("order_id"));
+                        p.setReaderName(rs.getString("full_name"));
+                        p.setAmount(rs.getBigDecimal("amount"));
+                        p.setPaymentMethod(rs.getString("payment_method"));
+                        p.setPaymentStatus(rs.getString("payment_status"));
+                        p.setTransactionCode(rs.getString("transaction_code"));
+                        p.setPaidAt(rs.getTimestamp("paid_at"));
+
+                        list.add(p);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int countPayments(String search, String status) {
+
+        try {
+
+            String sql = """
+        SELECT COUNT(*)
+        FROM Payment p
+        JOIN [Order] o ON p.order_id = o.order_id
+        JOIN Reader r ON o.reader_id = r.reader_id
+        WHERE
+        (? IS NULL OR r.full_name LIKE '%' + ? + '%'
+                     OR CAST(p.order_id AS VARCHAR) LIKE '%' + ? + '%'
+                     OR p.transaction_code LIKE '%' + ? + '%')
+        AND
+        (? IS NULL OR p.payment_status = ?)
+        """;
+
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, search);
+                ps.setString(2, search);
+                ps.setString(3, search);
+                ps.setString(4, search);
+
+                ps.setString(5, status);
+                ps.setString(6, status);
+
+                try (ResultSet rs = ps.executeQuery()) {
+
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     public void createPayment(int orderId, double amount, String method) {
 
         String sql = """

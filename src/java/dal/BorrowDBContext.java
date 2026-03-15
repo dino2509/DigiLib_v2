@@ -2,11 +2,12 @@ package dal;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import model.Book;
+import model.BorrowDetail;
 import model.borrow.Borrow;
 import model.borrow.BorrowDetailItem;
 import model.borrow.BorrowExtendRequest;
@@ -16,13 +17,131 @@ import model.borrow.BorrowedBookItem;
 
 public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
+    public void extendBorrowByBorrowId(int borrowId, Date newDueDate) {
+
+        String sql = """
+        UPDATE Borrow_Item
+        SET due_date = ?
+        WHERE borrow_id = ?
+        AND status = 'BORROWING'
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setDate(1, newDueDate);
+            ps.setInt(2, borrowId);
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public List<BorrowDetail> getBorrowItems(int borrowId) {
+
+        List<BorrowDetail> list = new ArrayList<>();
+
+        String sql = """
+        SELECT 
+            bi.borrow_item_id,
+            bi.copy_id,
+            bc.copy_code,
+            b.book_id,
+            b.title,
+            b.cover_url,
+            bi.due_date,
+            bi.returned_at,
+            bi.status
+        FROM Borrow_Item bi
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        WHERE bi.borrow_id = ?
+    """;
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, borrowId);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                BorrowDetail d = new BorrowDetail();
+
+                d.setBorrowItemId(rs.getInt("borrow_item_id"));
+                d.setCopyId(rs.getInt("copy_id"));
+                d.setCopyCode(rs.getString("copy_code"));
+
+                d.setBookId(rs.getInt("book_id"));
+                d.setTitle(rs.getString("title"));
+                d.setCoverUrl(rs.getString("cover_url"));
+
+                d.setDueDate(rs.getDate("due_date"));
+                d.setReturnedAt(rs.getDate("returned_at"));
+                d.setStatus(rs.getString("status"));
+
+                list.add(d);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public Borrow getBorrowInfo(int borrowId) {
+
+        String sql = """
+        SELECT 
+            b.borrow_id,
+            b.borrow_date,
+            b.status,
+            r.full_name AS reader_name,
+            r.email
+        FROM Borrow b
+        JOIN Reader r ON b.reader_id = r.reader_id
+        WHERE b.borrow_id = ?
+    """;
+
+        try {
+
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, borrowId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+
+                Borrow b = new Borrow();
+
+                b.setBorrowId(rs.getInt("borrow_id"));
+                b.setBorrowDate(rs.getDate("borrow_date"));
+                b.setStatus(rs.getString("status"));
+
+                b.setReaderName(rs.getString("reader_name"));
+                b.setReaderEmail(rs.getString("email"));
+
+                return b;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    
     public void returnBorrow(int borrowId) {
 
         try {
 
             connection.setAutoCommit(false);
 
-            // 1️⃣ lấy danh sách copy trong borrow
+            
             String sqlItems = """
         SELECT copy_id, due_date
         FROM Borrow_Item
@@ -158,87 +277,6 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         }
 
         return b;
-    }
-
-    public List<BorrowDetailItem> getBorrowItems(int borrowId) {
-
-        List<BorrowDetailItem> list = new ArrayList<>();
-
-        try {
-
-            String sql = """
-        SELECT
-            bi.borrow_item_id,
-
-            b.book_id,
-            b.title,
-            b.summary,
-            b.cover_url,
-            b.total_pages,
-            b.status AS book_status,
-
-            a.name AS author_name,
-            c.name AS category_name,
-
-            bc.copy_code,
-
-            bi.due_date,
-            bi.returned_at,
-            bi.status
-
-        FROM Borrow_Item bi
-
-        JOIN BookCopy bc
-        ON bi.copy_id = bc.copy_id
-
-        JOIN Book b
-        ON bc.book_id = b.book_id
-
-        LEFT JOIN Author a
-        ON b.author_id = a.author_id
-
-        LEFT JOIN Category c
-        ON b.category_id = c.category_id
-
-        WHERE bi.borrow_id = ?
-        ORDER BY bi.borrow_item_id
-        """;
-
-            PreparedStatement ps = connection.prepareStatement(sql);
-            ps.setInt(1, borrowId);
-
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-
-                BorrowDetailItem item = new BorrowDetailItem();
-
-                item.setBorrowItemId(rs.getInt("borrow_item_id"));
-
-                item.setBookId(rs.getInt("book_id"));
-                item.setBookTitle(rs.getString("title"));
-                item.setSummary(rs.getString("summary"));
-                item.setCoverUrl(rs.getString("cover_url"));
-                item.setTotalPages(rs.getInt("total_pages"));
-                item.setBookStatus(rs.getString("book_status"));
-
-                item.setAuthorName(rs.getString("author_name"));
-                item.setCategoryName(rs.getString("category_name"));
-
-                item.setCopyCode(rs.getString("copy_code"));
-
-                item.setDueDate(rs.getTimestamp("due_date"));
-                item.setReturnedAt(rs.getTimestamp("returned_at"));
-                item.setStatus(rs.getString("status"));
-
-                list.add(item);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return list;
     }
 
     public List<BorrowItem> getBorrowItemsNotReturned() {

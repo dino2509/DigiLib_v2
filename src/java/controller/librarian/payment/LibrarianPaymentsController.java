@@ -21,23 +21,38 @@ public class LibrarianPaymentsController extends HttpServlet {
         int pageSize = 10;
 
         String pageParam = request.getParameter("page");
-        if (pageParam != null) {
+        String search = request.getParameter("search");
+        String status = request.getParameter("status");
+
+        if (pageParam != null && !pageParam.isEmpty()) {
             page = Integer.parseInt(pageParam);
         }
 
-        int totalPayments = paymentDB.countPayments();
+        if (search != null && search.trim().isEmpty()) {
+            search = null;
+        }
+
+        if (status != null && status.trim().isEmpty()) {
+            status = null;
+        }
+
+        int totalPayments = paymentDB.countPayments(search, status);
         int totalPages = (int) Math.ceil((double) totalPayments / pageSize);
 
-        List<Payment> payments = paymentDB.getPaymentsByPage(page, pageSize);
+        List<Payment> payments = paymentDB.getPaymentsByPage(page, pageSize, search, status);
 
         request.setAttribute("payments", payments);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
+        request.setAttribute("search", search);
+        request.setAttribute("status", status);
+
         request.setAttribute("pageTitle", "Payments");
         request.setAttribute("activeMenu", "payments");
         request.setAttribute("contentPage", "/view/librarian/payment/payments.jsp");
 
-        request.getRequestDispatcher("/include/librarian/layout.jsp").forward(request, response);
+        request.getRequestDispatcher("/include/librarian/layout.jsp")
+                .forward(request, response);
     }
 }

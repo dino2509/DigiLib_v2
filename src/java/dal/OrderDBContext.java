@@ -306,6 +306,108 @@ public class OrderDBContext extends DBContext {
         return 0;
     }
 
+    public List<Order> getOrdersByPage(int page, int pageSize, String search, String status) {
+
+        List<Order> list = new ArrayList<>();
+
+        try {
+
+            String sql = """
+        SELECT o.order_id,
+               o.reader_id,
+               r.full_name,
+               o.total_amount,
+               o.currency,
+               o.status,
+               o.created_at
+        FROM [Order] o
+        JOIN Reader r ON o.reader_id = r.reader_id
+        WHERE
+        (? IS NULL OR r.full_name LIKE '%' + ? + '%' 
+                     OR CAST(o.order_id AS VARCHAR) LIKE '%' + ? + '%')
+        AND
+        (? IS NULL OR o.status = ?)
+        ORDER BY o.created_at DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+        """;
+
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, search);
+                ps.setString(2, search);
+                ps.setString(3, search);
+
+                ps.setString(4, status);
+                ps.setString(5, status);
+
+                ps.setInt(6, (page - 1) * pageSize);
+                ps.setInt(7, pageSize);
+
+                try (ResultSet rs = ps.executeQuery()) {
+
+                    while (rs.next()) {
+
+                        Order o = new Order();
+
+                        o.setOrderId(rs.getInt("order_id"));
+                        o.setReaderId(rs.getInt("reader_id"));
+                        o.setReaderName(rs.getString("full_name"));
+                        o.setTotalAmount(rs.getBigDecimal("total_amount"));
+                        o.setCurrency(rs.getString("currency"));
+                        o.setStatus(rs.getString("status"));
+                        o.setCreatedAt(rs.getTimestamp("created_at"));
+
+                        list.add(o);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int countOrders(String search, String status) {
+
+        try {
+
+            String sql = """
+        SELECT COUNT(*)
+        FROM [Order] o
+        JOIN Reader r ON o.reader_id = r.reader_id
+        WHERE
+        (? IS NULL OR r.full_name LIKE '%' + ? + '%' 
+                     OR CAST(o.order_id AS VARCHAR) LIKE '%' + ? + '%')
+        AND
+        (? IS NULL OR o.status = ?)
+        """;
+
+            try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+                ps.setString(1, search);
+                ps.setString(2, search);
+                ps.setString(3, search);
+
+                ps.setString(4, status);
+                ps.setString(5, status);
+
+                try (ResultSet rs = ps.executeQuery()) {
+
+                    if (rs.next()) {
+                        return rs.getInt(1);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     public void clearCart(int cartId) {
 
         String sql = "DELETE FROM Cart_Item WHERE cart_id = ?";

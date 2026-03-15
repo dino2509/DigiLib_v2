@@ -1,27 +1,30 @@
 package controller.librarian.borrow;
 
 import dal.BorrowDBContext;
-import jakarta.servlet.ServletException;
+import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
+
 import model.borrow.Borrow;
-import model.borrow.BorrowDetailItem;
+import model.BorrowDetail;
 
 import java.io.IOException;
+
 import java.util.List;
 
 @WebServlet("/librarian/borrow-detail")
 public class BorrowDetailController extends HttpServlet {
 
-    BorrowDBContext dao = new BorrowDBContext();
+    BorrowDBContext borrowDB = new BorrowDBContext();
 
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         int borrowId = Integer.parseInt(request.getParameter("id"));
 
-        Borrow borrow = dao.getBorrow(borrowId);
-        List<BorrowDetailItem> items = dao.getBorrowItems(borrowId);
+        Borrow borrow = borrowDB.getBorrowInfo(borrowId);
+        List<BorrowDetail> items = borrowDB.getBorrowItems(borrowId);
 
         request.setAttribute("borrow", borrow);
         request.setAttribute("items", items);
