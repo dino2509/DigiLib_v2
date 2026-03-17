@@ -192,7 +192,9 @@
             <p class="meta">
                 Thể loại: <strong>${book.category.category_name}</strong>
             </p>
-
+            <p class="meta">
+                ISBN: <strong>${book.isbn}</strong>
+            </p>
             <!-- RATING -->
 
             <div class="rating">
@@ -206,7 +208,7 @@
 
                 <c:choose>
 
-                    <c:when test="${book.price == null || book.price == 0}">
+                    <c:when test="${book.price == null || book.price eq 0}">
                         <span class="free">Miễn phí</span>
                     </c:when>
 

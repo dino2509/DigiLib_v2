@@ -11,8 +11,6 @@ import java.util.List;
 
 public class BookDBContext extends DBContext<Book> {
 
-    
-
     // ================== LIST ALL (ADMIN) ==================
     public ArrayList<Book> listAll() {
         ArrayList<Book> books = new ArrayList<>();
@@ -127,7 +125,7 @@ public class BookDBContext extends DBContext<Book> {
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
                 b.setUpdatedAt(rs.getTimestamp("updated_at"));
-
+                b.setIsbn(rs.getInt("isbn"));
                 // ===== CREATED BY (BẮT BUỘC) =====
                 Employee createBy = new Employee();
                 createBy.setEmployeeId(rs.getInt("create_by_id"));
@@ -1007,7 +1005,7 @@ public class BookDBContext extends DBContext<Book> {
         WHERE 1=1
     """);
 
-        ArrayList<String> params = new ArrayList<>();
+        ArrayList<Object> params = new ArrayList<>();
 
         // ===== BUILD CONDITION =====
         buildCondition(sql, params, field1, keyword1, null);
@@ -1056,63 +1054,25 @@ public class BookDBContext extends DBContext<Book> {
         return books;
     }
 
-    private void buildCondition(StringBuilder sql,
-            ArrayList<String> params,
-            String field,
-            String keyword,
-            String logic) {
-
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return;
-        }
-
-        if (logic != null) {
-            sql.append(" ").append(logic).append(" ");
-        } else {
-            sql.append(" AND ");
-        }
-
-        switch (field) {
-
-            case "title":
-                sql.append(" b.title LIKE ? ");
-                break;
-
-            case "author":
-                sql.append(" a.author_name LIKE ? ");
-                break;
-
-            case "category":
-                sql.append(" c.category_name LIKE ? ");
-                break;
-
-            default:
-                sql.append("""
-                (
-                    b.title LIKE ?
-                    OR a.author_name LIKE ?
-                    OR c.category_name LIKE ?
-                )
-            """);
-                params.add(keyword);
-                params.add(keyword);
-                params.add(keyword);
-                return;
-        }
-
-        params.add(keyword);
-    }
-
-    public ArrayList<Book> searchAdvancedPaging(String keyword, String type, int pageIndex, int pageSize) {
+    public ArrayList<Book> advancedSearchPaging(
+            String field1, String keyword1,
+            String logic1,
+            String field2, String keyword2,
+            String logic2,
+            String field3, String keyword3,
+            Double priceMin, Double priceMax,
+            boolean freeOnly,
+            int pageIndex, int pageSize) {
 
         ArrayList<Book> books = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder("""
-        SELECT 
+        SELECT
             b.book_id,
             b.title,
             b.cover_url,
             b.price,
+            b.isbn,
             b.status,
             b.created_at,
             a.author_id,
@@ -1125,32 +1085,22 @@ public class BookDBContext extends DBContext<Book> {
         WHERE 1=1
     """);
 
-        if (keyword != null && !keyword.trim().isEmpty()) {
+        ArrayList<Object> params = new ArrayList<>();
+        if (priceMin != null) {
+            sql.append(" AND b.price >= ? ");
+            params.add(priceMin);
+        }
 
-            switch (type) {
+        if (priceMax != null) {
+            sql.append(" AND b.price <= ? ");
+            params.add(priceMax);
+        }
+        buildCondition(sql, params, field1, keyword1, null);
+        buildCondition(sql, params, field2, keyword2, logic1);
+        buildCondition(sql, params, field3, keyword3, logic2);
 
-                case "title":
-                    sql.append(" AND b.title LIKE ? ");
-                    break;
-
-                case "author":
-                    sql.append(" AND a.author_name LIKE ? ");
-                    break;
-
-                case "category":
-                    sql.append(" AND c.category_name LIKE ? ");
-                    break;
-
-                default:
-                    sql.append("""
-                    AND (
-                        b.title LIKE ?
-                        OR a.author_name LIKE ?
-                        OR c.category_name LIKE ?
-                    )
-                """);
-                    break;
-            }
+        if (freeOnly) {
+            sql.append(" AND (b.price = 0 OR b.price IS NULL) ");
         }
 
         sql.append("""
@@ -1162,19 +1112,8 @@ public class BookDBContext extends DBContext<Book> {
 
             int index = 1;
 
-            if (keyword != null && !keyword.trim().isEmpty()) {
-
-                if ("all".equals(type)) {
-
-                    ps.setString(index++, "%" + keyword + "%");
-                    ps.setString(index++, "%" + keyword + "%");
-                    ps.setString(index++, "%" + keyword + "%");
-
-                } else {
-
-                    ps.setString(index++, "%" + keyword + "%");
-
-                }
+            for (Object p : params) {
+                ps.setObject(index++, p);
             }
 
             ps.setInt(index++, (pageIndex - 1) * pageSize);
@@ -1190,6 +1129,7 @@ public class BookDBContext extends DBContext<Book> {
                 b.setTitle(rs.getString("title"));
                 b.setCoverUrl(rs.getString("cover_url"));
                 b.setPrice(rs.getBigDecimal("price"));
+                b.setIsbn(rs.getInt("isbn"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
 
@@ -1213,7 +1153,69 @@ public class BookDBContext extends DBContext<Book> {
         return books;
     }
 
-    public int countSearchAdvanced(String keyword, String type) {
+    private void buildCondition(StringBuilder sql,
+            ArrayList<Object> params,
+            String field,
+            String keyword,
+            String logic) {
+
+        if (keyword == null || keyword.isBlank()) {
+            return;
+        }
+
+        if (logic == null) {
+            sql.append(" AND ");
+        } else {
+            sql.append(" ").append(logic).append(" ");
+        }
+
+        switch (field) {
+
+            case "title":
+                sql.append(" b.title LIKE ? ");
+                params.add("%" + keyword + "%");
+                break;
+
+            case "author":
+                sql.append(" a.author_name LIKE ? ");
+                params.add("%" + keyword + "%");
+                break;
+
+            case "category":
+                sql.append(" c.category_name LIKE ? ");
+                params.add("%" + keyword + "%");
+                break;
+
+            case "isbn":
+                sql.append(" CAST(b.isbn AS NVARCHAR) LIKE ? ");
+                params.add("%" + keyword + "%");
+                break;
+
+            default:
+                sql.append("""
+                (
+                    b.title LIKE ?
+                    OR a.author_name LIKE ?
+                    OR c.category_name LIKE ?
+                    OR CAST(b.isbn AS NVARCHAR) LIKE ?
+                )
+            """);
+
+                params.add("%" + keyword + "%");
+                params.add("%" + keyword + "%");
+                params.add("%" + keyword + "%");
+                params.add("%" + keyword + "%");
+        }
+    }
+
+    public int countAdvancedSearch(
+            String field1, String keyword1,
+            String logic1,
+            String field2, String keyword2,
+            String logic2,
+            String field3, String keyword3,
+            Double priceMin, Double priceMax,
+            boolean freeOnly) {
 
         StringBuilder sql = new StringBuilder("""
         SELECT COUNT(*)
@@ -1223,51 +1225,32 @@ public class BookDBContext extends DBContext<Book> {
         WHERE 1=1
     """);
 
-        if (keyword != null && !keyword.trim().isEmpty()) {
+        ArrayList<Object> params = new ArrayList<>();
 
-            switch (type) {
+        buildCondition(sql, params, field1, keyword1, null);
+        buildCondition(sql, params, field2, keyword2, logic1);
+        buildCondition(sql, params, field3, keyword3, logic2);
 
-                case "title":
-                    sql.append(" AND b.title LIKE ? ");
-                    break;
+        if (priceMin != null) {
+            sql.append(" AND b.price >= ? ");
+            params.add(priceMin);
+        }
 
-                case "author":
-                    sql.append(" AND a.author_name LIKE ? ");
-                    break;
+        if (priceMax != null) {
+            sql.append(" AND b.price <= ? ");
+            params.add(priceMax);
+        }
 
-                case "category":
-                    sql.append(" AND c.category_name LIKE ? ");
-                    break;
-
-                default:
-                    sql.append("""
-                    AND (
-                        b.title LIKE ?
-                        OR a.author_name LIKE ?
-                        OR c.category_name LIKE ?
-                    )
-                """);
-                    break;
-            }
+        if (freeOnly) {
+            sql.append(" AND (b.price = 0 OR b.price IS NULL) ");
         }
 
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
 
             int index = 1;
 
-            if (keyword != null && !keyword.trim().isEmpty()) {
-
-                if ("all".equals(type)) {
-
-                    ps.setString(index++, "%" + keyword + "%");
-                    ps.setString(index++, "%" + keyword + "%");
-                    ps.setString(index++, "%" + keyword + "%");
-
-                } else {
-
-                    ps.setString(index++, "%" + keyword + "%");
-
-                }
+            for (Object p : params) {
+                ps.setObject(index++, p);
             }
 
             ResultSet rs = ps.executeQuery();
@@ -1283,14 +1266,7 @@ public class BookDBContext extends DBContext<Book> {
         return 0;
     }
 
-    public int countAdvancedSearch(
-            String field1, String keyword1,
-            String logic1,
-            String field2, String keyword2,
-            String logic2,
-            String field3, String keyword3,
-            String logic3,
-            String field4, String keyword4) {
+    public int countSearchAdvanced(String keyword, String type) {
 
         StringBuilder sql = new StringBuilder("""
         SELECT COUNT(*)
@@ -1300,19 +1276,59 @@ public class BookDBContext extends DBContext<Book> {
         WHERE 1=1
     """);
 
-        ArrayList<String> params = new ArrayList<>();
+        boolean hasKeyword = keyword != null && !keyword.trim().isEmpty();
 
-        buildCondition(sql, params, field1, keyword1, null);
-        buildCondition(sql, params, field2, keyword2, logic1);
-        buildCondition(sql, params, field3, keyword3, logic2);
-        buildCondition(sql, params, field4, keyword4, logic3);
+        if (hasKeyword) {
+
+            switch (type) {
+
+                case "title":
+                    sql.append(" AND b.title LIKE ? ");
+                    break;
+
+                case "author":
+                    sql.append(" AND a.author_name LIKE ? ");
+                    break;
+
+                case "category":
+                    sql.append(" AND c.category_name LIKE ? ");
+                    break;
+
+                case "isbn":
+                    sql.append(" AND b.isbn LIKE ? ");
+                    break;
+
+                default:
+                    sql.append("""
+                    AND (
+                        b.title LIKE ?
+                        OR a.author_name LIKE ?
+                        OR c.category_name LIKE ?
+                        OR b.isbn LIKE ?
+                    )
+                """);
+                    break;
+            }
+        }
 
         try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
 
             int index = 1;
 
-            for (String p : params) {
-                ps.setString(index++, "%" + p + "%");
+            if (hasKeyword) {
+
+                if (type == null || type.equals("all")) {
+
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+                    ps.setString(index++, "%" + keyword + "%");
+
+                } else {
+
+                    ps.setString(index++, "%" + keyword + "%");
+
+                }
             }
 
             ResultSet rs = ps.executeQuery();
@@ -1409,8 +1425,7 @@ public class BookDBContext extends DBContext<Book> {
             String field2, String keyword2,
             String logic2,
             String field3, String keyword3,
-            String logic3,
-            String field4, String keyword4,
+            Double priceMin, Double priceMax,
             int pageIndex, int pageSize) {
 
         ArrayList<Book> books = new ArrayList<>();
@@ -1420,6 +1435,7 @@ public class BookDBContext extends DBContext<Book> {
             b.book_id,
             b.title,
             b.price,
+            b.isbn,
             b.status,
             b.created_at,
             b.cover_url,
@@ -1433,13 +1449,23 @@ public class BookDBContext extends DBContext<Book> {
         WHERE 1=1
     """);
 
-        ArrayList<String> params = new ArrayList<>();
+        ArrayList<Object> params = new ArrayList<>();
 
-        // ===== BUILD CONDITION =====
+        // ===== KEYWORD CONDITIONS =====
         buildCondition(sql, params, field1, keyword1, null);
         buildCondition(sql, params, field2, keyword2, logic1);
         buildCondition(sql, params, field3, keyword3, logic2);
-        buildCondition(sql, params, field4, keyword4, logic3);
+
+        // ===== PRICE FILTER =====
+        if (priceMin != null) {
+            sql.append(" AND b.price >= ? ");
+            params.add(priceMin);
+        }
+
+        if (priceMax != null) {
+            sql.append(" AND b.price <= ? ");
+            params.add(priceMax);
+        }
 
         sql.append("""
         ORDER BY b.created_at DESC
@@ -1450,8 +1476,8 @@ public class BookDBContext extends DBContext<Book> {
 
             int index = 1;
 
-            for (String p : params) {
-                ps.setString(index++, "%" + p + "%");
+            for (Object p : params) {
+                ps.setObject(index++, p);
             }
 
             ps.setInt(index++, (pageIndex - 1) * pageSize);
@@ -1466,6 +1492,7 @@ public class BookDBContext extends DBContext<Book> {
                 b.setBookId(rs.getInt("book_id"));
                 b.setTitle(rs.getString("title"));
                 b.setPrice(rs.getBigDecimal("price"));
+                b.setIsbn(rs.getInt("isbn"));
                 b.setStatus(rs.getString("status"));
                 b.setCreatedAt(rs.getTimestamp("created_at"));
                 b.setCoverUrl(rs.getString("cover_url"));
@@ -1490,6 +1517,58 @@ public class BookDBContext extends DBContext<Book> {
         return books;
     }
 
+//    public int countAdvancedSearch(
+//            String field1, String keyword1,
+//            String logic1,
+//            String field2, String keyword2,
+//            String logic2,
+//            String field3, String keyword3,
+//            Double priceMin, Double priceMax) {
+//
+//        StringBuilder sql = new StringBuilder("""
+//        SELECT COUNT(*)
+//        FROM Book b
+//        LEFT JOIN Author a ON b.author_id = a.author_id
+//        LEFT JOIN Category c ON b.category_id = c.category_id
+//        WHERE 1=1
+//    """);
+//
+//        ArrayList<Object> params = new ArrayList<>();
+//
+//        buildCondition(sql, params, field1, keyword1, null);
+//        buildCondition(sql, params, field2, keyword2, logic1);
+//        buildCondition(sql, params, field3, keyword3, logic2);
+//
+//        if (priceMin != null) {
+//            sql.append(" AND b.price >= ? ");
+//            params.add(priceMin);
+//        }
+//
+//        if (priceMax != null) {
+//            sql.append(" AND b.price <= ? ");
+//            params.add(priceMax);
+//        }
+//
+//        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+//
+//            int index = 1;
+//
+//            for (Object p : params) {
+//                ps.setObject(index++, p);
+//            }
+//
+//            ResultSet rs = ps.executeQuery();
+//
+//            if (rs.next()) {
+//                return rs.getInt(1);
+//            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return 0;
+//    }
     public Book getBookById(int id) {
 
         String sql = "SELECT * FROM Book WHERE book_id = ?";
@@ -1551,4 +1630,86 @@ public class BookDBContext extends DBContext<Book> {
 
         return null;
     }
+
+    public ArrayList<Book> searchAdvancedPaging(String keyword, String type, int page, int pageSize) {
+        ArrayList<Book> books = new ArrayList<>();
+
+        // Xây dựng câu SQL cơ bản
+        StringBuilder sql = new StringBuilder("""
+        SELECT 
+            b.book_id, b.title, b.price, b.status, b.created_at, b.cover_url,
+            a.author_id, a.author_name,
+            c.category_id, c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1 = 1
+    """);
+
+        // ===== FILTER =====
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            switch (type) {
+                case "title" ->
+                    sql.append(" AND b.title LIKE ? ");
+                case "author" ->
+                    sql.append(" AND a.author_name LIKE ? ");
+                case "category" ->
+                    sql.append(" AND c.category_name LIKE ? ");
+                default ->
+                    sql.append(" AND (b.title LIKE ? OR a.author_name LIKE ? OR c.category_name LIKE ?) ");
+            }
+        }
+
+        // ORDER & PAGING
+        sql.append(" ORDER BY b.created_at DESC ");
+        sql.append(" LIMIT ? OFFSET ? "); // Cú pháp MySQL
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            int index = 1;
+
+            // Set tham số cho Filter
+            if (keyword != null && !keyword.trim().isEmpty()) {
+                String searchVal = "%" + keyword + "%";
+                if ("all".equals(type) || type == null || (!type.equals("title") && !type.equals("author") && !type.equals("category"))) {
+                    ps.setString(index++, searchVal);
+                    ps.setString(index++, searchVal);
+                    ps.setString(index++, searchVal);
+                } else {
+                    ps.setString(index++, searchVal);
+                }
+            }
+
+            // Set tham số cho Paging
+            int offset = (page - 1) * pageSize;
+            ps.setInt(index++, pageSize);
+            ps.setInt(index, offset);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+                b.setCoverUrl(rs.getString("cover_url"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
 }
