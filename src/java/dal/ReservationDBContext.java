@@ -7,6 +7,47 @@ import java.util.List;
 
 public class ReservationDBContext extends DBContext {
 
+    public Reservation getReservationDetail(int reservationId) {
+
+        String sql = """
+        SELECT r.reservation_id,
+               r.reader_id,
+               rd.email,
+               b.title,
+               ri.quantity
+        FROM Reservation r
+        JOIN Reader rd ON r.reader_id = rd.reader_id
+        JOIN Reservation_Item ri ON r.reservation_id = ri.reservation_id
+        JOIN Book b ON ri.book_id = b.book_id
+        WHERE r.reservation_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, reservationId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+
+                Reservation r = new Reservation();
+
+                r.setReservationId(rs.getInt("reservation_id"));
+                r.setReaderId(rs.getInt("reader_id"));
+                r.setReaderEmail(rs.getString("email"));   // ⚠️ thêm field này
+                r.setBookTitle(rs.getString("title"));
+                r.setQuantity(rs.getInt("quantity"));
+
+                return r;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     public int fulfillReservation(int reservationId) throws SQLException {
 
         PreparedStatement ps = null;

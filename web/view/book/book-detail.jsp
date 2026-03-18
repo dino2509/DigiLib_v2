@@ -164,12 +164,40 @@
         padding:6px;
         margin-top:8px;
     }
+    .back-btn{
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        margin-bottom:20px;
+        padding:6px 12px;
+        border-radius:8px;
+        background:#f3f4f6;
+        color:#333;
+        text-decoration:none;
+        font-size:14px;
+        font-weight:500;
+    }
+
+    .back-btn:hover{
+        background:#ff7a00;
+        color:white;
+    }
 
 </style>
 
-
+<script>
+    function goBack() {
+        if (document.referrer && document.referrer !== window.location.href) {
+            window.history.back();
+        } else {
+            window.location.href = '<%=request.getContextPath()%>/books';
+        }
+    }
+</script>
 <div class="book-detail">
-
+    <a href="javascript:void(0)" onclick="goBack()" class="back-btn">
+        ← Quay lại
+    </a>
     <div class="detail-wrapper">
 
         <!-- COVER -->

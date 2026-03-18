@@ -17,7 +17,15 @@ public class Reservation {
 
     // Reservation status
     private String status;
+    private String readerEmail;
 
+    public String getReaderEmail() {
+        return readerEmail;
+    }
+
+    public void setReaderEmail(String readerEmail) {
+        this.readerEmail = readerEmail;
+    }
     // Time
     private Timestamp createdAt;
     private Timestamp expiresAt;

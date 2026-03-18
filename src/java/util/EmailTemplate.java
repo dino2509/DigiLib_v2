@@ -130,4 +130,47 @@ public class EmailTemplate {
 
         return getBaseTemplate("Borrow Request Rejected", content);
     }
+
+    // ===== RESERVATION FULFILLED =====
+    public static String reservationFulfilled(String bookTitle, int quantity) {
+
+        String content = """
+        <p>Your reservation has been 
+        <span class="success">FULFILLED</span>.</p>
+
+        <table style="margin-top:15px;">
+            <tr>
+                <td><b>Book:</b></td>
+                <td style="padding-left:10px;">%s</td>
+            </tr>
+            <tr>
+                <td><b>Quantity:</b></td>
+                <td style="padding-left:10px;">%s</td>
+            </tr>
+        </table>
+
+        <p style="margin-top:15px;">
+            Please proceed to borrow confirmation.
+        </p>
+    """.formatted(bookTitle, quantity);
+
+        return getBaseTemplate("Reservation Fulfilled", content);
+    }
+
+// ===== RESERVATION CANCELLED =====
+    public static String reservationCancelled(String bookTitle) {
+
+        String content = """
+        <p>Your reservation has been 
+        <span class="danger">CANCELLED</span>.</p>
+
+        <p><b>Book:</b> %s</p>
+
+        <p style="margin-top:15px;">
+            Please contact the library for more details.
+        </p>
+    """.formatted(bookTitle);
+
+        return getBaseTemplate("Reservation Cancelled", content);
+    }
 }
