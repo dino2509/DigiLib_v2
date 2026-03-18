@@ -19,7 +19,7 @@ public class ReservationsController extends HttpServlet {
         try {
 
             int page = 1;
-            int pageSize = 10;
+            int pageSize = 5;
 
             String pageParam = request.getParameter("page");
             String search = request.getParameter("search");

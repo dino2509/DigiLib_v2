@@ -164,35 +164,25 @@
           class="filter-bar">
 
         <span>Book ID:</span>
+        <input type="number" name="book_id" value="${bookId}"/>
 
-        <input type="number"
-               name="book_id"
-               value="${bookId}"/>
+        <span>Book Title:</span>
+        <input type="text" name="book_title" value="${bookTitle}" placeholder="Search book..."/>
+
+        <span>Copy Code:</span>
+        <input type="text" name="copy_code" value="${copyCode}" placeholder="Code"/>
 
         <span>Status:</span>
-
         <select name="status">
-
             <option value="">All</option>
+            <option value="AVAILABLE" ${status=='AVAILABLE'?'selected':''}>Available</option>
+            <option value="BORROWED" ${status=='BORROWED'?'selected':''}>Borrowed</option>
+        </select>
 
-            <option value="AVAILABLE"
-                    <c:if test="${status eq 'AVAILABLE'}">selected</c:if>>
-                        Available
-                    </option>
+        <button class="btn-filter">Filter</button>
 
-                    <option value="BORROWED"
-                    <c:if test="${status eq 'BORROWED'}">selected</c:if>>
-                        Borrowed
-                    </option>
-
-            </select>
-
-            <button class="btn-filter">Filter</button>
-
-            <a href="${pageContext.request.contextPath}/admin/bookcopies/list"
-           class="btn-clear">
-            Clear
-        </a>
+        <a href="${pageContext.request.contextPath}/admin/bookcopies/list"
+           class="btn-clear">Clear</a>
 
     </form>
 
@@ -292,13 +282,29 @@
 
             <c:forEach begin="1" end="${totalPages}" var="p">
 
-                <a class="page-btn <c:if test='${p == page}'>active</c:if>"
-                   href="${pageContext.request.contextPath}/admin/bookcopies/list?page=${p}
-                   <c:if test='${not empty bookId}'>&book_id=${bookId}</c:if>
-                   <c:if test='${not empty status}'>&status=${status}</c:if>">
+                <c:url var="pageUrl" value="/admin/bookcopies/list">
+                    <c:param name="page" value="${p}" />
 
-                   ${p}
+                    <c:if test="${not empty bookId}">
+                        <c:param name="book_id" value="${bookId}" />
+                    </c:if>
 
+                    <c:if test="${not empty status}">
+                        <c:param name="status" value="${status}" />
+                    </c:if>
+
+                    <c:if test="${not empty copyCode}">
+                        <c:param name="copy_code" value="${copyCode}" />
+                    </c:if>
+
+                    <c:if test="${not empty bookTitle}">
+                        <c:param name="book_title" value="${bookTitle}" />
+                    </c:if>
+                </c:url>
+
+                <a class="page-btn ${p == page ? 'active' : ''}"
+                   href="${pageUrl}">
+                    ${p}
                 </a>
 
             </c:forEach>

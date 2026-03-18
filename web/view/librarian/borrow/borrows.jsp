@@ -11,8 +11,6 @@
         box-shadow:0 2px 8px rgba(0,0,0,0.06);
     }
 
-    /* HEADER */
-
     .page-header{
         display:flex;
         justify-content:space-between;
@@ -24,8 +22,6 @@
         font-size:22px;
         color:#444;
     }
-
-    /* FILTER */
 
     .filter-box{
         display:flex;
@@ -53,8 +49,6 @@
     .btn-search:hover{
         background:#e56700;
     }
-
-    /* TABLE */
 
     .table-box{
         overflow-x:auto;
@@ -89,22 +83,16 @@
         background:#fff5ed;
     }
 
-    /* ID */
-
     .borrow-id{
         font-weight:600;
         color:#ff7a00;
     }
-
-    /* READER */
 
     .reader-cell{
         display:flex;
         gap:6px;
         align-items:center;
     }
-
-    /* STATUS */
 
     .status{
         padding:4px 10px;
@@ -125,8 +113,6 @@
         background:#d4edda;
         color:#155724;
     }
-
-    /* ACTION BUTTONS */
 
     .actions{
         display:flex;
@@ -158,27 +144,16 @@
         color:#333;
     }
 
-    /* EMPTY */
-
     .empty{
         text-align:center;
         padding:30px;
         color:#999;
     }
 
-    .empty i{
-        font-size:28px;
-        margin-bottom:8px;
-        display:block;
-    }
-
-    /* PAGINATION */
-
     .pagination{
         margin-top:25px;
         display:flex;
         justify-content:center;
-        align-items:center;
         gap:6px;
     }
 
@@ -188,13 +163,6 @@
         border-radius:4px;
         text-decoration:none;
         color:#333;
-        font-size:14px;
-        transition:0.2s;
-    }
-
-    .page-btn:hover{
-        background:#ff7a00;
-        color:white;
     }
 
     .page-btn.active{
@@ -204,8 +172,6 @@
     }
 
 </style>
-
-
 
 <div class="borrow-wrapper">
 
@@ -246,8 +212,6 @@
 
         </div>
 
-
-
         <div class="table-box">
 
             <table class="borrow-table">
@@ -272,13 +236,16 @@
 
                             <tr>
 
-                                <td class="borrow-id">
-                                    #${b.borrowId}
-                                </td>
+                                <td class="borrow-id">#${b.borrowId}</td>
 
                                 <td class="reader-cell">
                                     <i class="fa-solid fa-user"></i>
-                                    <span>${b.readerName}</span>
+                                    <div style="display:flex;flex-direction:column;">
+                                        <span>${b.readerName}</span>
+                                        <span style="font-size:12px;color:#888;">
+                                            ${b.bookTitle} - ${b.copyCode}
+                                        </span>
+                                    </div>
                                 </td>
 
                                 <td>
@@ -286,65 +253,75 @@
                                 </td>
 
                                 <td>
-
                                     <c:choose>
 
                                         <c:when test="${b.status == 'BORROWING'}">
 
-                                            <span class="status borrowing">
-                                                <i class="fa-solid fa-book"></i>
-                                                Borrowing
-                                            </span>
+                                            <c:choose>
+
+                                                <c:when test="${b.overdueDays > 0}">
+                                                    <span class="status" style="background:#f8d7da;color:#721c24;">
+                                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                                        Overdue (+${b.overdueDays} days)
+                                                    </span>
+                                                </c:when>
+
+                                                <c:otherwise>
+                                                    <span class="status borrowing">
+                                                        <i class="fa-solid fa-book"></i>
+                                                        Borrowing
+                                                    </span>
+                                                </c:otherwise>
+
+                                            </c:choose>
 
                                         </c:when>
 
                                         <c:when test="${b.status == 'RETURNED'}">
-
                                             <span class="status returned">
                                                 <i class="fa-solid fa-check"></i>
                                                 Returned
                                             </span>
-
                                         </c:when>
 
-                                        <c:otherwise>
-
-                                            <span class="status">
-                                                ${b.status}
-                                            </span>
-
-                                        </c:otherwise>
-
                                     </c:choose>
-
                                 </td>
 
                                 <td class="actions">
 
                                     <a class="btn view"
                                        href="${pageContext.request.contextPath}/librarian/borrow-detail?id=${b.borrowId}">
-
                                         <i class="fa-solid fa-eye"></i>
                                         Detail
-
                                     </a>
 
                                     <c:if test="${b.status == 'BORROWING'}">
 
-                                        <a class="btn return"
-                                           href="${pageContext.request.contextPath}/librarian/return?borrowId=${b.borrowId}">
+                                        <c:choose>
 
-                                            <i class="fa-solid fa-rotate-left"></i>
-                                            Return
+                                            <c:when test="${b.overdueDays > 0}">
+                                                <a class="btn return"
+                                                   style="background:#dc3545;"
+                                                   href="${pageContext.request.contextPath}/librarian/pay-fine-returns?id=${b.borrowId}">
+                                                    <i class="fa-solid fa-money-bill"></i>
+                                                    Pay Fine
+                                                </a>
+                                            </c:when>
 
-                                        </a>
+                                            <c:otherwise>
+                                                <a class="btn return"
+                                                   href="${pageContext.request.contextPath}/librarian/return?borrowId=${b.borrowId}">
+                                                    <i class="fa-solid fa-rotate-left"></i>
+                                                    Return
+                                                </a>
+                                            </c:otherwise>
+
+                                        </c:choose>
 
                                         <a class="btn extend"
                                            href="${pageContext.request.contextPath}/librarian/extend-borrow?borrowId=${b.borrowId}">
-
                                             <i class="fa-solid fa-clock"></i>
                                             Extend
-
                                         </a>
 
                                     </c:if>
@@ -360,15 +337,10 @@
                     <c:otherwise>
 
                         <tr>
-
                             <td colspan="5" class="empty">
-
                                 <i class="fa-solid fa-book-open"></i>
-
                                 <p>No borrow records found</p>
-
                             </td>
-
                         </tr>
 
                     </c:otherwise>
@@ -381,33 +353,18 @@
 
     </div>
 
-
-
-    <!-- Pagination -->
-
     <div class="pagination">
 
         <c:forEach begin="1" end="${totalPages}" var="i">
 
             <c:url var="pageUrl" value="/librarian/borrows">
-
                 <c:param name="page" value="${i}" />
-
-                <c:if test="${not empty search}">
-                    <c:param name="search" value="${search}" />
-                </c:if>
-
-                <c:if test="${not empty status}">
-                    <c:param name="status" value="${status}" />
-                </c:if>
-
+                <c:param name="search" value="${search}" />
+                <c:param name="status" value="${status}" />
             </c:url>
 
-            <a href="${pageUrl}"
-               class="page-btn ${i==currentPage?'active':''}">
-
+            <a href="${pageUrl}" class="page-btn ${i==currentPage?'active':''}">
                 ${i}
-
             </a>
 
         </c:forEach>

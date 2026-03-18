@@ -5,25 +5,54 @@ import java.sql.Timestamp;
 
 public class Fine {
 
+    // ========================
+    // BASIC INFO
+    // ========================
     private int fineId;
+
     private int readerId;
     private int borrowItemId;
     private int fineTypeId;
-    private String fineTypeName;
+
     private BigDecimal amount;
     private String reason;
-    private String status; // UNPAID / PAID
+    private String status; // UNPAID / PAID / CANCELLED
+
     private Timestamp createdAt;
     private Timestamp paidAt;
-    private Integer handledByEmployeeId;
 
-    // UI fields (join)
+    private Integer handledByEmployeeId;
+    private String readerEmail;
+
+    public String getReaderEmail() {
+        return readerEmail;
+    }
+
+    public void setReaderEmail(String readerEmail) {
+        this.readerEmail = readerEmail;
+    }
+
+    // ========================
+    // JOIN DATA (VIEW)
+    // ========================
     private String readerName;
+    private String fineTypeName;
+    private String employeeName;
+
     private String bookTitle;
     private String copyCode;
+
     private Timestamp dueDate;
     private Timestamp returnedAt;
 
+    // ========================
+    // COMPUTED FIELD
+    // ========================
+    private Integer overdueDays;
+
+    // ========================
+    // GETTERS & SETTERS
+    // ========================
     public int getFineId() {
         return fineId;
     }
@@ -54,14 +83,6 @@ public class Fine {
 
     public void setFineTypeId(int fineTypeId) {
         this.fineTypeId = fineTypeId;
-    }
-
-    public String getFineTypeName() {
-        return fineTypeName;
-    }
-
-    public void setFineTypeName(String fineTypeName) {
-        this.fineTypeName = fineTypeName;
     }
 
     public BigDecimal getAmount() {
@@ -120,6 +141,22 @@ public class Fine {
         this.readerName = readerName;
     }
 
+    public String getFineTypeName() {
+        return fineTypeName;
+    }
+
+    public void setFineTypeName(String fineTypeName) {
+        this.fineTypeName = fineTypeName;
+    }
+
+    public String getEmployeeName() {
+        return employeeName;
+    }
+
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
+    }
+
     public String getBookTitle() {
         return bookTitle;
     }
@@ -150,5 +187,27 @@ public class Fine {
 
     public void setReturnedAt(Timestamp returnedAt) {
         this.returnedAt = returnedAt;
+    }
+
+    public Integer getOverdueDays() {
+        return overdueDays;
+    }
+
+    public void setOverdueDays(Integer overdueDays) {
+        this.overdueDays = overdueDays;
+    }
+
+    // ========================
+    // HELPER METHOD (AUTO CALC)
+    // ========================
+    public int calculateOverdueDays() {
+        if (dueDate == null || returnedAt == null) {
+            return 0;
+        }
+
+        long diff = returnedAt.getTime() - dueDate.getTime();
+        long days = diff / (1000 * 60 * 60 * 24);
+
+        return (int) Math.max(days, 0);
     }
 }

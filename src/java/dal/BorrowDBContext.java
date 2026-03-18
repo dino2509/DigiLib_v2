@@ -17,6 +17,10 @@ import model.borrow.BorrowedBookItem;
 
 public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
+    public void setConnection(Connection conn) {
+        this.connection = conn;
+    }
+
     public void extendBorrowByBorrowId(int borrowId, Date newDueDate) {
 
         String sql = """
@@ -134,14 +138,12 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         return null;
     }
 
-    
     public void returnBorrow(int borrowId) {
 
         try {
 
             connection.setAutoCommit(false);
 
-            
             String sqlItems = """
         SELECT copy_id, due_date
         FROM Borrow_Item
@@ -267,7 +269,7 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
                 b = new Borrow();
 
                 b.setBorrowId(rs.getInt("borrow_id"));
-                b.setBorrowDate(rs.getTimestamp("borrow_date"));
+                b.setBorrowDate(rs.getDate("borrow_date"));
                 b.setStatus(rs.getString("status"));
                 b.setReaderName(rs.getString("full_name"));
             }
@@ -409,15 +411,28 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         int offset = (page - 1) * pageSize;
 
         StringBuilder sql = new StringBuilder("""
-        SELECT 
-            b.borrow_id,
-            r.full_name,
-            b.borrow_date,
-            b.status
-        FROM Borrow b
-        JOIN Reader r ON b.reader_id = r.reader_id
-        WHERE 1=1
-    """);
+    SELECT 
+        b.borrow_id,
+        r.full_name,
+        b.borrow_date,
+        b.status,
+        MIN(bi.due_date) AS due_date,
+        MAX(
+            CASE 
+                WHEN DATEDIFF(DAY, bi.due_date, GETDATE()) > 0 
+                THEN DATEDIFF(DAY, bi.due_date, GETDATE())
+                ELSE 0
+            END
+        ) AS overdue_days,
+        MIN(book.title) AS book_title,
+        MIN(bc.copy_code) AS copy_code
+    FROM Borrow b
+    JOIN Reader r ON b.reader_id = r.reader_id
+    LEFT JOIN Borrow_Item bi ON b.borrow_id = bi.borrow_id
+    LEFT JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+    LEFT JOIN Book book ON bc.book_id = book.book_id
+    WHERE 1=1
+""");
 
         if (search != null && !search.isEmpty()) {
             sql.append(" AND (r.full_name LIKE ? OR CAST(b.borrow_id AS VARCHAR) LIKE ?) ");
@@ -428,6 +443,7 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         }
 
         sql.append("""
+        GROUP BY b.borrow_id, r.full_name, b.borrow_date, b.status
         ORDER BY b.borrow_id DESC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """);
@@ -458,8 +474,13 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
                 b.setBorrowId(rs.getInt("borrow_id"));
                 b.setReaderName(rs.getString("full_name"));
-                b.setBorrowDate(rs.getTimestamp("borrow_date"));
+                b.setBorrowDate(rs.getDate("borrow_date"));
                 b.setStatus(rs.getString("status"));
+                b.setDueDate(rs.getTimestamp("due_date"));
+                b.setBookTitle(rs.getString("book_title"));
+                b.setCopyCode(rs.getString("copy_code"));
+                int overdue = rs.getInt("overdue_days");
+                b.setOverdueDays(Math.max(overdue, 0));
 
                 list.add(b);
             }
@@ -469,6 +490,120 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
         }
 
         return list;
+    }
+
+    public int getOverdueDaysByBorrowId(int borrowId) {
+
+        String sql = """
+        SELECT MAX(
+            CASE 
+                WHEN DATEDIFF(DAY, due_date, GETDATE()) > 0 
+                THEN DATEDIFF(DAY, due_date, GETDATE())
+                ELSE 0
+            END
+        ) AS overdue_days
+        FROM Borrow_Item
+        WHERE borrow_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, borrowId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("overdue_days");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public int getBorrowIdByFine(int fineId) {
+
+        String sql = """
+        SELECT TOP 1 b.borrow_id
+        FROM Fine f
+        JOIN Borrow_Item bi ON f.borrow_item_id = bi.borrow_item_id
+        JOIN Borrow b ON bi.borrow_id = b.borrow_id
+        WHERE f.fine_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, fineId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("borrow_id");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
+    public void returnAllItemsByBorrowId(int borrowId, Timestamp now) {
+
+        String sql = """
+        UPDATE Borrow_Item
+        SET returned_at = ?
+        WHERE borrow_id = ? AND returned_at IS NULL
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setTimestamp(1, now);
+            ps.setInt(2, borrowId);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateBookCopyAvailable(int borrowId) {
+
+        String sql = """
+        UPDATE bc
+        SET bc.status = 'AVAILABLE'
+        FROM BookCopy bc
+        JOIN Borrow_Item bi ON bc.copy_id = bi.copy_id
+        WHERE bi.borrow_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, borrowId);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void updateBorrowStatusReturned(int borrowId) {
+
+        String sql = """
+        UPDATE Borrow
+        SET status = 'RETURNED'
+        WHERE borrow_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, borrowId);
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public List<Borrow> getAllBorrows() {
@@ -496,7 +631,7 @@ public class BorrowDBContext extends DBContext<BorrowedBookItem> {
 
                 b.setBorrowId(rs.getInt("borrow_id"));
                 b.setReaderName(rs.getString("full_name"));
-                b.setBorrowDate(rs.getTimestamp("borrow_date"));
+                b.setBorrowDate(rs.getDate("borrow_date"));
                 b.setStatus(rs.getString("status"));
 
                 list.add(b);

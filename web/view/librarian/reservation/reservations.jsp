@@ -394,7 +394,7 @@
 
             </c:url>
 
-            <a href="${pageContext.request.contextPath}${pageUrl}"
+            <a href="${pageUrl}"
                class="${i==currentPage?'active':''}">
                 ${i}
             </a>

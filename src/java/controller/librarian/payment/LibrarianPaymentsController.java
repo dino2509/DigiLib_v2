@@ -1,7 +1,7 @@
 package controller.librarian.payment;
 
 import dao.PaymentDBContext;
-import jakarta.servlet.ServletException;
+import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
@@ -11,6 +11,8 @@ import model.Payment;
 @WebServlet("/librarian/payments")
 public class LibrarianPaymentsController extends HttpServlet {
 
+    private static final int PAGE_SIZE = 10;
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -18,41 +20,35 @@ public class LibrarianPaymentsController extends HttpServlet {
         PaymentDBContext paymentDB = new PaymentDBContext();
 
         int page = 1;
-        int pageSize = 10;
 
-        String pageParam = request.getParameter("page");
-        String search = request.getParameter("search");
-        String status = request.getParameter("status");
-
-        if (pageParam != null && !pageParam.isEmpty()) {
-            page = Integer.parseInt(pageParam);
+        try {
+            page = Integer.parseInt(request.getParameter("page"));
+        } catch (Exception ignored) {
         }
 
-        if (search != null && search.trim().isEmpty()) {
-            search = null;
-        }
+        String search = trimParam(request.getParameter("search"));
+        String status = trimParam(request.getParameter("status"));
 
-        if (status != null && status.trim().isEmpty()) {
-            status = null;
-        }
+        int total = paymentDB.countPayments(search, status);
+        int totalPages = (int) Math.ceil((double) total / PAGE_SIZE);
 
-        int totalPayments = paymentDB.countPayments(search, status);
-        int totalPages = (int) Math.ceil((double) totalPayments / pageSize);
-
-        List<Payment> payments = paymentDB.getPaymentsByPage(page, pageSize, search, status);
+        List<Payment> payments
+                = paymentDB.getPaymentsByPage(page, PAGE_SIZE, search, status);
 
         request.setAttribute("payments", payments);
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
-
         request.setAttribute("search", search);
         request.setAttribute("status", status);
 
-        request.setAttribute("pageTitle", "Payments");
-        request.setAttribute("activeMenu", "payments");
-        request.setAttribute("contentPage", "/view/librarian/payment/payments.jsp");
+        request.setAttribute("contentPage",
+                "/view/librarian/payment/payments.jsp");
 
         request.getRequestDispatcher("/include/librarian/layout.jsp")
                 .forward(request, response);
+    }
+
+    private String trimParam(String s) {
+        return (s == null || s.trim().isEmpty()) ? null : s.trim();
     }
 }

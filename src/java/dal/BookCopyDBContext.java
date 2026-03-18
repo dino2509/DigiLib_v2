@@ -7,7 +7,9 @@ import model.BookCopy;
 
 public class BookCopyDBContext extends DBContext<BookCopy> {
 
-    public ArrayList<BookCopy> listPaging(Integer bookId, String status, int page, int pageSize) {
+    public ArrayList<BookCopy> listPaging(Integer bookId, String status,
+            String copyCode, String bookTitle,
+            int page, int pageSize) {
 
         ArrayList<BookCopy> list = new ArrayList<>();
 
@@ -31,13 +33,20 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
             sql.append(" AND bc.status = ?");
         }
 
+        if (copyCode != null && !copyCode.isEmpty()) {
+            sql.append(" AND bc.copy_code LIKE ?");
+        }
+
+        if (bookTitle != null && !bookTitle.isEmpty()) {
+            sql.append(" AND b.title LIKE ?");
+        }
+
         sql.append("""
-        ORDER BY bc.copy_id
+        ORDER BY bc.copy_id DESC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """);
 
         try {
-
             PreparedStatement ps = connection.prepareStatement(sql.toString());
 
             int index = 1;
@@ -50,13 +59,20 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
                 ps.setString(index++, status);
             }
 
+            if (copyCode != null && !copyCode.isEmpty()) {
+                ps.setString(index++, "%" + copyCode + "%");
+            }
+
+            if (bookTitle != null && !bookTitle.isEmpty()) {
+                ps.setString(index++, "%" + bookTitle + "%");
+            }
+
             ps.setInt(index++, (page - 1) * pageSize);
             ps.setInt(index, pageSize);
 
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-
                 BookCopy c = new BookCopy();
 
                 c.setCopyId(rs.getInt("copy_id"));
@@ -76,7 +92,8 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
         return list;
     }
 
-    public int count(Integer bookId, String status) {
+    public int count(Integer bookId, String status,
+            String copyCode, String bookTitle) {
 
         StringBuilder sql = new StringBuilder("""
         SELECT COUNT(*)
@@ -93,8 +110,15 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
             sql.append(" AND bc.status = ?");
         }
 
-        try {
+        if (copyCode != null && !copyCode.isEmpty()) {
+            sql.append(" AND bc.copy_code LIKE ?");
+        }
 
+        if (bookTitle != null && !bookTitle.isEmpty()) {
+            sql.append(" AND b.title LIKE ?");
+        }
+
+        try {
             PreparedStatement ps = connection.prepareStatement(sql.toString());
 
             int index = 1;
@@ -105,6 +129,14 @@ public class BookCopyDBContext extends DBContext<BookCopy> {
 
             if (status != null && !status.isEmpty()) {
                 ps.setString(index++, status);
+            }
+
+            if (copyCode != null && !copyCode.isEmpty()) {
+                ps.setString(index++, "%" + copyCode + "%");
+            }
+
+            if (bookTitle != null && !bookTitle.isEmpty()) {
+                ps.setString(index++, "%" + bookTitle + "%");
             }
 
             ResultSet rs = ps.executeQuery();

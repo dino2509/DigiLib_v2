@@ -167,6 +167,82 @@ public class ReservationDBContext extends DBContext {
         return list;
     }
 
+    public int countByReader(int readerId) {
+
+        String sql = "SELECT COUNT(*) FROM Reservation WHERE reader_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, readerId);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public List<Reservation> getReservationsByReaderPaging(int readerId, int page, int pageSize) {
+
+        List<Reservation> list = new ArrayList<>();
+
+        String sql = """
+        SELECT r.reservation_id,
+               r.reader_id,
+               r.status,
+               r.created_at,
+               r.expires_at,
+               r.fulfilled_at,
+               r.note,
+               b.title,
+               ri.quantity
+        FROM Reservation r
+        JOIN Reservation_Item ri ON r.reservation_id = ri.reservation_id
+        JOIN Book b ON ri.book_id = b.book_id
+        WHERE r.reader_id = ?
+        ORDER BY r.created_at DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, readerId);
+            ps.setInt(2, (page - 1) * pageSize);
+            ps.setInt(3, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+
+                Reservation r = new Reservation();
+
+                r.setReservationId(rs.getInt("reservation_id"));
+                r.setReaderId(rs.getInt("reader_id"));
+                r.setStatus(rs.getString("status"));
+                r.setCreatedAt(rs.getTimestamp("created_at"));
+                r.setExpiresAt(rs.getTimestamp("expires_at"));
+                r.setFulfilledAt(rs.getTimestamp("fulfilled_at"));
+                r.setNote(rs.getString("note"));
+
+                r.setBookTitle(rs.getString("title"));
+                r.setQuantity(rs.getInt("quantity"));
+
+                list.add(r);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
     public void createReservation(int readerId, int bookId, int quantity) {
 
         try {

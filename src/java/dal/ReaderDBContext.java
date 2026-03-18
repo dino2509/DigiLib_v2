@@ -12,6 +12,44 @@ import java.util.logging.Logger;
 
 public class ReaderDBContext extends DBContext<Reader> {
 
+    public String getEmailById(int readerId) {
+        String sql = "SELECT email FROM Reader WHERE reader_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, readerId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getString("email");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public int getReaderIdByRequestId(int requestId) {
+        String sql = "SELECT reader_id FROM Borrow_Request WHERE request_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, requestId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("reader_id");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+
     // =========================
     // LIST ALL READERS
     // =========================

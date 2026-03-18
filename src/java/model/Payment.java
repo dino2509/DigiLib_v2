@@ -6,9 +6,16 @@ import java.sql.Timestamp;
 public class Payment {
 
     private int paymentId;
-    private int orderId;
+
+    // 🔥 Reference
+    private Integer orderId;   // nullable
+    private Integer fineId;    // nullable
+
+    private String type;       // ORDER | FINE
+
     private String readerName;
 
+    // 💰 Payment info
     private BigDecimal amount;
     private String paymentMethod;
     private String paymentStatus;
@@ -28,12 +35,28 @@ public class Payment {
         this.paymentId = paymentId;
     }
 
-    public int getOrderId() {
+    public Integer getOrderId() {
         return orderId;
     }
 
-    public void setOrderId(int orderId) {
+    public void setOrderId(Integer orderId) {
         this.orderId = orderId;
+    }
+
+    public Integer getFineId() {
+        return fineId;
+    }
+
+    public void setFineId(Integer fineId) {
+        this.fineId = fineId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public String getReaderName() {

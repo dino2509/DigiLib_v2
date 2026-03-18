@@ -416,6 +416,7 @@
     </div>
 
 </div>
+<!--              
 <div class="pagination">
 
     <c:if test="${totalPages > 0}">
@@ -433,7 +434,7 @@
 
     </c:if>
 
-</div>
+</div>-->
 
 <script>
 

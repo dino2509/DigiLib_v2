@@ -4,7 +4,6 @@ import dal.BorrowDBContext;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
-
 import model.borrow.Borrow;
 
 import java.io.IOException;
@@ -19,33 +18,34 @@ public class BorrowController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        int page = 1;
+        int pageSize = 10;
+
+        String pageParam = request.getParameter("page");
+        String search = request.getParameter("search");
+        String status = request.getParameter("status");
+
+        // normalize input
+        if (search == null) {
+            search = "";
+        }
+        if (status == null) {
+            status = "";
+        }
+
         try {
-
-            int page = 1;
-            int pageSize = 10;
-
-            String pageParam = request.getParameter("page");
-            String search = request.getParameter("search");
-            String status = request.getParameter("status");
-
-            // tránh null
-            if (search == null) {
-                search = "";
-            }
-            if (status == null) {
-                status = "";
-            }
-
-            // parse page
             if (pageParam != null && !pageParam.isEmpty()) {
-                try {
-                    page = Integer.parseInt(pageParam);
-                } catch (NumberFormatException e) {
+                page = Integer.parseInt(pageParam);
+                if (page <= 0) {
                     page = 1;
                 }
             }
+        } catch (NumberFormatException e) {
+            page = 1;
+        }
 
-            // total records
+        try {
+
             int totalRecords = dao.countBorrows(search, status);
             int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
 
@@ -53,16 +53,12 @@ public class BorrowController extends HttpServlet {
                 page = totalPages;
             }
 
-            // get data
-            List<Borrow> borrows
-                    = dao.getBorrowsByPage(search, status, page, pageSize);
+            List<Borrow> borrows = dao.getBorrowsByPage(search, status, page, pageSize);
 
-            // send data to JSP
             request.setAttribute("borrows", borrows);
             request.setAttribute("currentPage", page);
             request.setAttribute("totalPages", totalPages);
 
-            // giữ filter
             request.setAttribute("search", search);
             request.setAttribute("status", status);
 
@@ -74,10 +70,8 @@ public class BorrowController extends HttpServlet {
                     .forward(request, response);
 
         } catch (Exception e) {
-
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-
         }
     }
 }

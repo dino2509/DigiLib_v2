@@ -12,7 +12,6 @@
 
 </div>
 
-
 <div class="request-card">
 
     <div class="request-info">
@@ -33,8 +32,6 @@
 
 </div>
 
-
-
 <h3 class="section-title">Requested Books</h3>
 
 <div class="card">
@@ -42,7 +39,6 @@
     <table>
 
         <thead>
-
             <tr>
                 <th>Book</th>
                 <th>Author</th>
@@ -51,7 +47,6 @@
                 <th>Pages</th>
                 <th>Quantity</th>
             </tr>
-
         </thead>
 
         <tbody>
@@ -65,21 +60,14 @@
                         <img src="${pageContext.request.contextPath}/img/book/${item.coverUrl}" class="book-cover">
 
                         <div>
-
                             <div class="book-title">${item.bookTitle}</div>
-
-<!--                            <div class="book-summary">${item.summary}</div>-->
-
                         </div>
 
                     </td>
 
                     <td>${item.authorName}</td>
-
                     <td>${item.categoryName}</td>
-
                     <td>${item.isbn}</td>
-
                     <td>${item.totalPages}</td>
 
                     <td>
@@ -96,44 +84,28 @@
 
 </div>
 
-
-
 <div class="actions">
 
     <c:if test="${request.status == 'PENDING'}">
 
-        <button class="btn approve"
-                onclick="openApproveModal()">
-
-            <i class="fa-solid fa-check"></i>
-            Approve
-
+        <button class="btn approve" onclick="openApproveModal()">
+            <i class="fa-solid fa-check"></i> Approve
         </button>
 
-
-        <button class="btn reject"
-                onclick="openRejectModal()">
-
-            <i class="fa-solid fa-xmark"></i>
-            Reject
-
+        <button class="btn reject" onclick="openRejectModal()">
+            <i class="fa-solid fa-xmark"></i> Reject
         </button>
 
     </c:if>
 
-
     <a class="btn back"
        href="${pageContext.request.contextPath}/librarian/requests">
-
         ← Back
-
     </a>
 
 </div>
 
-
-
-<!-- APPROVE MODAL -->
+<!-- ================= APPROVE MODAL ================= -->
 
 <div id="approveModal" class="modal">
 
@@ -144,21 +116,20 @@
         <form method="post"
               action="${pageContext.request.contextPath}/librarian/request-approve">
 
-            <input type="hidden"
-                   name="requestId"
-                   value="${request.requestId}">
+            <!-- CORE -->
+            <input type="hidden" name="requestId" value="${request.requestId}">
+
+            <!-- BOOK DATA (multi support) -->
+            <c:forEach var="item" items="${items}">
+                <input type="hidden" name="titles" value="${item.bookTitle}">
+                <input type="hidden" name="isbns" value="${item.isbn}">
+            </c:forEach>
 
             <label>Due Date</label>
-
-            <input type="date"
-                   name="dueDate"
-                   required>
+            <input type="date" name="dueDate" required>
 
             <label>Note</label>
-
-            <textarea name="note"
-                      rows="3"
-                      placeholder="Optional note"></textarea>
+            <textarea name="note" rows="3" placeholder="Optional note"></textarea>
 
             <div class="modal-actions">
 
@@ -166,9 +137,7 @@
                     Confirm
                 </button>
 
-                <button type="button"
-                        class="btn cancel"
-                        onclick="closeApproveModal()">
+                <button type="button" class="btn cancel" onclick="closeApproveModal()">
                     Cancel
                 </button>
 
@@ -180,9 +149,7 @@
 
 </div>
 
-
-
-<!-- REJECT MODAL -->
+<!-- ================= REJECT MODAL ================= -->
 
 <div id="rejectModal" class="modal">
 
@@ -193,12 +160,16 @@
         <form method="post"
               action="${pageContext.request.contextPath}/librarian/request-reject">
 
-            <input type="hidden"
-                   name="requestId"
-                   value="${request.requestId}">
+            <!-- CORE -->
+            <input type="hidden" name="requestId" value="${request.requestId}">
+
+            <!-- BOOK DATA -->
+            <c:forEach var="item" items="${items}">
+                <input type="hidden" name="titles" value="${item.bookTitle}">
+                <input type="hidden" name="isbns" value="${item.isbn}">
+            </c:forEach>
 
             <label>Reason</label>
-
             <textarea name="note"
                       rows="4"
                       required
@@ -206,14 +177,11 @@
 
             <div class="modal-actions">
 
-                <button type="submit"
-                        class="btn reject">
+                <button type="submit" class="btn reject">
                     Reject
                 </button>
 
-                <button type="button"
-                        class="btn cancel"
-                        onclick="closeRejectModal()">
+                <button type="button" class="btn cancel" onclick="closeRejectModal()">
                     Cancel
                 </button>
 
@@ -225,10 +193,9 @@
 
 </div>
 
-
+<!-- ================= STYLE ================= -->
 
 <style>
-
     .page-header{
         display:flex;
         justify-content:space-between;
@@ -247,12 +214,10 @@
         background:#fff3cd;
         color:#ff9800;
     }
-
     .APPROVED{
         background:#d4edda;
         color:#28a745;
     }
-
     .REJECTED{
         background:#f8d7da;
         color:#dc3545;
@@ -272,10 +237,6 @@
         font-size:14px;
     }
 
-    .section-title{
-        margin-bottom:10px;
-    }
-
     .card{
         background:white;
         border-radius:8px;
@@ -287,19 +248,15 @@
         width:100%;
         border-collapse:collapse;
     }
-
     th{
         background:#ff7a00;
         color:white;
         padding:12px;
-        text-align:left;
     }
-
     td{
         padding:12px;
         border-bottom:1px solid #eee;
     }
-
     tr:hover{
         background:#fafafa;
     }
@@ -309,22 +266,14 @@
         gap:10px;
         align-items:center;
     }
-
     .book-cover{
         width:50px;
         height:70px;
         object-fit:cover;
         border-radius:4px;
     }
-
     .book-title{
         font-weight:bold;
-    }
-
-    .book-summary{
-        font-size:12px;
-        color:#777;
-        max-width:250px;
     }
 
     .qty{
@@ -353,17 +302,14 @@
         background:#28a745;
         color:white;
     }
-
     .reject{
         background:#dc3545;
         color:white;
     }
-
     .back{
         background:#777;
         color:white;
     }
-
     .cancel{
         background:#999;
         color:white;
@@ -398,27 +344,21 @@
     .modal-actions{
         text-align:right;
     }
-
 </style>
 
-
+<!-- ================= SCRIPT ================= -->
 
 <script>
-
     function openApproveModal() {
         document.getElementById("approveModal").style.display = "flex";
     }
-
     function closeApproveModal() {
         document.getElementById("approveModal").style.display = "none";
     }
-
     function openRejectModal() {
         document.getElementById("rejectModal").style.display = "flex";
     }
-
     function closeRejectModal() {
         document.getElementById("rejectModal").style.display = "none";
     }
-
 </script>

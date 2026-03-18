@@ -9,8 +9,6 @@
         --border-orange:#ffe0c2;
     }
 
-    /* container */
-
     .page-wrap{
         max-width:1100px;
         margin:auto;
@@ -21,36 +19,55 @@
         box-shadow:0 4px 14px rgba(0,0,0,0.06);
     }
 
-    /* header */
-
     .borrow-header{
         margin-bottom:25px;
         padding-bottom:15px;
         border-bottom:2px solid var(--border-orange);
+
+        /* 🔥 thêm flex để chứa nút */
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
     }
 
     .borrow-title{
         font-size:26px;
         font-weight:700;
         color:var(--main-orange);
-        margin-bottom:15px;
     }
 
-    /* info grid */
+    /* 🔥 BACK BUTTON */
+
+    .btn-back{
+        padding:8px 14px;
+        border-radius:6px;
+        background:#eee;
+        text-decoration:none;
+        font-size:13px;
+        color:#333;
+        display:flex;
+        align-items:center;
+        gap:6px;
+        transition:0.2s;
+    }
+
+    .btn-back:hover{
+        background:#ff7a00;
+        color:white;
+    }
 
     .info-grid{
         display:grid;
         grid-template-columns: repeat(2, 1fr);
         gap:12px 40px;
         font-size:14px;
+        margin-top:15px;
     }
 
     .info-label{
         color:#777;
         font-weight:600;
     }
-
-    /* status badge */
 
     .badge{
         padding:5px 12px;
@@ -73,8 +90,6 @@
         background:#ffe6e6;
         color:#d60000;
     }
-
-    /* table */
 
     .borrow-table{
         width:100%;
@@ -100,22 +115,16 @@
         background:#fff8f1;
     }
 
-    /* book cover */
-
     .book-cover{
         width:55px;
         border-radius:5px;
         border:1px solid #eee;
     }
 
-    /* title */
-
     .book-title{
         font-weight:600;
         color:#333;
     }
-
-    /* returned */
 
     .returned{
         color:#1c9c47;
@@ -133,57 +142,64 @@
 
     <div class="borrow-header">
 
+        <!-- LEFT -->
         <div class="borrow-title">
             📚 Borrow Detail
         </div>
 
-        <div class="info-grid">
+        <!-- 🔥 RIGHT: BACK BUTTON -->
+        <a class="btn-back"
+           href="${pageContext.request.contextPath}/librarian/borrows">
+            <i class="fa-solid fa-arrow-left"></i>
+            Back
+        </a>
 
-            <div>
-                <span class="info-label">Borrow ID:</span>
-                ${borrow.borrowId}
-            </div>
+    </div>
 
-            <div>
-                <span class="info-label">Borrow Date:</span>
-                ${borrow.borrowDate}
-            </div>
+    <div class="info-grid">
 
-            <div>
-                <span class="info-label">Reader:</span>
-                ${borrow.readerName}
-            </div>
+        <div>
+            <span class="info-label">Borrow ID:</span>
+            ${borrow.borrowId}
+        </div>
 
-            <div>
-                <span class="info-label">Email:</span>
-                ${borrow.readerEmail}
-            </div>
+        <div>
+            <span class="info-label">Borrow Date:</span>
+            ${borrow.borrowDate}
+        </div>
 
-            <div>
-                <span class="info-label">Status:</span>
+        <div>
+            <span class="info-label">Reader:</span>
+            ${borrow.readerName}
+        </div>
 
-                <c:choose>
+        <div>
+            <span class="info-label">Email:</span>
+            ${borrow.readerEmail}
+        </div>
 
-                    <c:when test="${borrow.status == 'BORROWING'}">
-                        <span class="badge badge-borrowing">BORROWING</span>
-                    </c:when>
+        <div>
+            <span class="info-label">Status:</span>
 
-                    <c:when test="${borrow.status == 'RETURNED'}">
-                        <span class="badge badge-returned">RETURNED</span>
-                    </c:when>
+            <c:choose>
 
-                    <c:otherwise>
-                        <span class="badge badge-overdue">${borrow.status}</span>
-                    </c:otherwise>
+                <c:when test="${borrow.status == 'BORROWING'}">
+                    <span class="badge badge-borrowing">BORROWING</span>
+                </c:when>
 
-                </c:choose>
+                <c:when test="${borrow.status == 'RETURNED'}">
+                    <span class="badge badge-returned">RETURNED</span>
+                </c:when>
 
-            </div>
+                <c:otherwise>
+                    <span class="badge badge-overdue">${borrow.status}</span>
+                </c:otherwise>
+
+            </c:choose>
 
         </div>
 
     </div>
-
 
     <table class="borrow-table">
 
@@ -213,13 +229,9 @@
 
                 </td>
 
-                <td>
-                    ${i.copyCode}
-                </td>
+                <td>${i.copyCode}</td>
 
-                <td>
-                    ${i.dueDate}
-                </td>
+                <td>${i.dueDate}</td>
 
                 <td>
 

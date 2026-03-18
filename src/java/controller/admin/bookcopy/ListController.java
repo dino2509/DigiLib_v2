@@ -21,52 +21,50 @@ public class ListController extends HttpServlet {
 
         String bookIdRaw = request.getParameter("book_id");
         String status = request.getParameter("status");
+        String copyCode = request.getParameter("copy_code");
+        String bookTitle = request.getParameter("book_title");
         String pageRaw = request.getParameter("page");
 
         Integer bookId = null;
 
-        if (bookIdRaw != null && !bookIdRaw.isEmpty()) {
-            try {
+        try {
+            if (bookIdRaw != null && !bookIdRaw.isEmpty()) {
                 bookId = Integer.parseInt(bookIdRaw);
-            } catch (NumberFormatException e) {
-                bookId = null;
             }
+        } catch (Exception ignored) {
         }
 
         // Pagination
         int page = 1;
         int pageSize = 10;
 
-        if (pageRaw != null) {
-            try {
+        try {
+            if (pageRaw != null) {
                 page = Integer.parseInt(pageRaw);
-            } catch (NumberFormatException e) {
-                page = 1;
             }
+        } catch (Exception ignored) {
         }
 
         if (page < 1) {
             page = 1;
         }
 
-        // Count total records
-        int totalRecords = bookCopyDB.count(bookId, status);
-
+        // Count
+        int totalRecords = bookCopyDB.count(bookId, status, copyCode, bookTitle);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
 
         if (totalPages == 0) {
             totalPages = 1;
         }
-
         if (page > totalPages) {
             page = totalPages;
         }
 
-        // Get paging data
-        ArrayList<BookCopy> bookCopies =
-                bookCopyDB.listPaging(bookId, status, page, pageSize);
+        // Data
+        ArrayList<BookCopy> bookCopies
+                = bookCopyDB.listPaging(bookId, status, copyCode, bookTitle, page, pageSize);
 
-        // Send data to JSP
+        // Set attribute
         request.setAttribute("bookCopies", bookCopies);
         request.setAttribute("page", page);
         request.setAttribute("totalPages", totalPages);
@@ -74,6 +72,8 @@ public class ListController extends HttpServlet {
 
         request.setAttribute("bookId", bookIdRaw);
         request.setAttribute("status", status);
+        request.setAttribute("copyCode", copyCode);
+        request.setAttribute("bookTitle", bookTitle);
 
         request.setAttribute("pageTitle", "Book Copy Management");
         request.setAttribute("activeMenu", "bookcopy");

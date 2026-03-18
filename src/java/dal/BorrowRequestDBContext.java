@@ -8,10 +8,58 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import model.BorrowInfo;
 import model.borrow.BorrowRequest;
 import model.borrow.BorrowRequestItem;
 
 public class BorrowRequestDBContext extends DBContext {
+
+    public BorrowInfo getBorrowInfo(int requestId) {
+        String sql = """
+        SELECT b.title, b.isbn
+        FROM Borrow_Request br
+        JOIN Borrow_Request_Item bri ON br.request_id = bri.request_id
+        JOIN Book b ON bri.book_id = b.book_id
+        WHERE br.request_id = ?
+    """;
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, requestId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                BorrowInfo info = new BorrowInfo();
+                info.setTitle(rs.getString("title"));
+                info.setIsbn(rs.getInt("isbn"));
+                return info;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public int getReaderIdByRequestId(int requestId) {
+        String sql = "SELECT reader_id FROM Borrow_Request WHERE request_id = ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setInt(1, requestId);
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt("reader_id");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
 
     public List<BorrowRequest> getAllRequests() {
 

@@ -1,18 +1,44 @@
 package model.borrow;
 
-import java.util.Date;
+import java.sql.Timestamp;
+import java.sql.Date;
 
 public class Borrow {
 
     private int borrowId;
     private int readerId;
-
+    private Integer overdueDays;
+    private Timestamp dueDate;
     private String readerName;
     private String readerEmail;
 
     private Date borrowDate;
     private String status;
     private String bookTitle;
+    private String copyCode;
+    public Integer getOverdueDays() {
+        return overdueDays;
+    }
+
+    public String getCopyCode() {
+        return copyCode;
+    }
+
+    public void setCopyCode(String copyCode) {
+        this.copyCode = copyCode;
+    }
+
+    public void setOverdueDays(Integer overdueDays) {
+        this.overdueDays = overdueDays;
+    }
+
+    public Timestamp getDueDate() {
+        return dueDate;
+    }
+
+    public void setDueDate(Timestamp dueDate) {
+        this.dueDate = dueDate;
+    }
 
     public String getBookTitle() {
         return bookTitle;
