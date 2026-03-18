@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import java.math.BigDecimal;
 
 @WebServlet("/librarian/return")
 public class ReturnBorrowController extends HttpServlet {
@@ -15,7 +16,26 @@ public class ReturnBorrowController extends HttpServlet {
             HttpServletResponse response)
             throws ServletException, IOException {
 
-        int borrowId = Integer.parseInt(request.getParameter("borrowId"));
+        String idRaw = request.getParameter("borrowId");
+
+        if (idRaw == null || idRaw.isEmpty()) {
+            throw new RuntimeException("borrowId is missing");
+        }
+
+        int borrowId = Integer.parseInt(idRaw);
+        String condition = request.getParameter("condition");
+        String fineRaw = request.getParameter("fineAmount");
+
+        if ("DAMAGED".equals(condition)) {
+
+            BigDecimal fine = BigDecimal.ZERO;
+
+            if (fineRaw != null && !fineRaw.isEmpty()) {
+                fine = new BigDecimal(fineRaw);
+            }
+
+//            dao.createDamageFine(borrowId, fine);
+        }
 
         dao.returnBorrow(borrowId);
 
@@ -27,5 +47,5 @@ public class ReturnBorrowController extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         doPost(req, resp);
     }
-    
+
 }

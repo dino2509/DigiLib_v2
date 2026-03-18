@@ -1,7 +1,7 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
-
+<%@taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions"%>
 <style>
 
     .borrow-wrapper{
@@ -171,6 +171,44 @@
         font-weight:bold;
     }
 
+    .modal{
+        display:none;
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background:rgba(0,0,0,0.5);
+        justify-content:center;
+        align-items:center;
+        z-index:999;
+    }
+
+    .modal-content{
+        background:white;
+        padding:25px;
+        border-radius:10px;
+        width:400px;
+        animation:fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn{
+        from{
+            transform:scale(0.9);
+            opacity:0;
+        }
+        to{
+            transform:scale(1);
+            opacity:1;
+        }
+    }
+
+    .form-control{
+        width:100%;
+        padding:8px;
+        border:1px solid #ddd;
+        border-radius:6px;
+    }
 </style>
 
 <div class="borrow-wrapper">
@@ -310,7 +348,11 @@
 
                                             <c:otherwise>
                                                 <a class="btn return"
-                                                   href="${pageContext.request.contextPath}/librarian/return?borrowId=${b.borrowId}">
+                                                   href="javascript:void(0)"
+                                                   data-id="${b.borrowId}"
+                                                   data-title="${b.bookTitle}"
+                                                   data-price="${b.bookPrice}"
+                                                   onclick="openReturnModalFromBtn(this)">
                                                     <i class="fa-solid fa-rotate-left"></i>
                                                     Return
                                                 </a>
@@ -372,3 +414,98 @@
     </div>
 
 </div>
+<div id="returnModal" class="modal">
+
+    <div class="modal-content">
+
+        <h3>📚 Return Book</h3>
+
+        <form method="post"
+              action="${pageContext.request.contextPath}/librarian/return">
+
+            <input type="hidden" name="borrowId" id="borrowId">
+
+            <p><b id="bookTitle"></b></p>
+
+            <!-- CONDITION -->
+
+            <label>Condition:</label>
+
+            <select id="condition" name="condition" onchange="toggleFine()">
+                <option value="OK">Good condition</option>
+                <option value="DAMAGED">Damaged / Lost</option>
+            </select>
+
+            <!-- FINE -->
+
+            <div id="fineBox" style="display:none; margin-top:10px;">
+
+                <label>Fine Amount:</label>
+
+                <input type="number"
+                       name="fineAmount"
+                       id="fineAmount"
+                       step="0.01"
+                       class="form-control"/>
+
+            </div>
+
+            <br>
+
+            <div style="display:flex; gap:10px;">
+
+                <button type="submit" class="btn return">
+                    Confirm Return
+                </button>
+
+                <button type="button"
+                        class="btn"
+                        onclick="closeModal()">
+                    Cancel
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+
+    function openReturnModalFromBtn(el) {
+
+        let borrowId = el.dataset.id;
+        let bookTitle = el.dataset.title;
+        let price = el.dataset.price;
+
+        if (!price)
+            price = 0;
+
+        document.getElementById("borrowId").value = borrowId;
+        document.getElementById("bookTitle").innerText = bookTitle;
+
+        document.getElementById("condition").value = "OK";
+        document.getElementById("fineBox").style.display = "none";
+        document.getElementById("fineAmount").value = price;
+
+        document.getElementById("returnModal").style.display = "flex";
+    }
+
+    function closeModal() {
+        document.getElementById("returnModal").style.display = "none";
+    }
+
+    function toggleFine() {
+
+        let condition = document.getElementById("condition").value;
+
+        if (condition === "DAMAGED") {
+            document.getElementById("fineBox").style.display = "block";
+        } else {
+            document.getElementById("fineBox").style.display = "none";
+        }
+    }
+
+</script>
