@@ -17,7 +17,8 @@ import jakarta.servlet.http.HttpSession;
 import model.Employee;
 import model.Reader;
 
-@WebFilter("/admin/*")
+@WebFilter({"/admin/*",
+        "/view/*"})
 public class AdminAuthorizationFilter implements Filter {
 
     @Override

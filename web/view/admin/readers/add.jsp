@@ -83,43 +83,64 @@
         text-decoration: underline;
     }
 </style>
+<%@ page contentType="text/html;charset=UTF-8" %>
+
+<style>
+    .avatar-preview {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .avatar-preview img {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fed7aa;
+    }
+</style>
 
 <div class="add-wrapper">
     <div class="add-card">
 
-        <div class="add-title">
-            ➕ Tạo Reader mới
-        </div>
+        <div class="add-title">➕ Tạo Reader mới</div>
+
+        <!-- ERROR -->
+        <c:if test="${not empty error}">
+            <div style="color:red; margin-bottom:10px;">
+                ${error}
+            </div>
+        </c:if>
 
         <form action="${pageContext.request.contextPath}/admin/readers/add"
-              method="post">
+              method="post"
+              enctype="multipart/form-data"
+              onsubmit="return validateForm()">
+
+            <!-- AVATAR -->
+            <div class="avatar-preview">
+                <img id="previewAvatar"
+                     src="${pageContext.request.contextPath}/img/book/no-cover.png">
+            </div>
+
+            <label>Avatar</label>
+            <input type="file"
+                   name="avatar"
+                   id="avatar"
+                   class="form-control"
+                   accept="image/*">
 
             <label>Họ tên</label>
-            <input type="text"
-                   name="full_name"
-                   class="form-control"
-                   placeholder="Nhập họ tên"
-                   required>
+            <input type="text" name="full_name" class="form-control" required>
 
             <label>Email</label>
-            <input type="email"
-                   name="email"
-                   class="form-control"
-                   placeholder="example@email.com"
-                   required>
+            <input type="email" name="email" class="form-control" required>
 
             <label>Mật khẩu</label>
-            <input type="password"
-                   name="password"
-                   class="form-control"
-                   placeholder="Nhập mật khẩu"
-                   required>
+            <input type="password" name="password" class="form-control" required>
 
             <label>Phone</label>
-            <input type="text"
-                   name="phone"
-                   class="form-control"
-                   placeholder="Số điện thoại">
+            <input type="text" name="phone" class="form-control">
 
             <label>Status</label>
             <select name="status" class="form-select">
@@ -127,25 +148,74 @@
                 <option value="inactive">Inactive</option>
             </select>
 
-            <label>Role</label>
-            <select name="role_id" class="form-select">
-                <option value="3">Reader</option>
-                <option value="2">Librarian</option>
-                <option value="1">Admin</option>
-            </select>
+            <!-- ROLE FIX -->
+            <input type="hidden" name="role_id" value="3">
 
             <div class="form-actions">
-                <button type="submit" class="btn-save">
-                    💾 Tạo
-                </button>
+                <button type="submit" class="btn-save">💾 Tạo</button>
 
                 <a href="${pageContext.request.contextPath}/admin/readers"
-                   class="btn-back">
-                    ⬅ Quay lại
-                </a>
+                   class="btn-back">⬅ Quay lại</a>
             </div>
-
         </form>
-
     </div>
 </div>
+
+<script>
+    function validateForm() {
+
+        let name = document.querySelector("[name='full_name']").value.trim();
+        let email = document.querySelector("[name='email']").value.trim();
+        let password = document.querySelector("[name='password']").value;
+        let phone = document.querySelector("[name='phone']").value.trim();
+        let file = document.getElementById("avatar").files[0];
+
+        if (name.length < 3) {
+            alert("Tên phải >= 3 ký tự");
+            return false;
+        }
+
+        let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            alert("Email không hợp lệ");
+            return false;
+        }
+
+        if (password.length < 6) {
+            alert("Mật khẩu >= 6 ký tự");
+            return false;
+        }
+
+        if (phone && !/^[0-9]{9,11}$/.test(phone)) {
+            alert("SĐT không hợp lệ");
+            return false;
+        }
+
+        if (file) {
+            if (file.size > 20 * 1024 * 1024) {
+                alert("Avatar < 20MB");
+                return false;
+            }
+
+            if (!file.type.startsWith("image/")) {
+                alert("Chỉ cho phép ảnh");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+// PREVIEW
+    document.getElementById("avatar").addEventListener("change", function (e) {
+        const file = e.target.files[0];
+        if (!file)
+            return;
+
+        const reader = new FileReader();
+        reader.onload = function (ev) {
+            document.getElementById("previewAvatar").src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+</script>

@@ -13,6 +13,59 @@ import java.util.logging.Logger;
 
 public class ReaderDBContext extends DBContext<Reader> {
 
+    public ArrayList<Reader> search(String keyword, int offset, int limit) {
+        ArrayList<Reader> list = new ArrayList<>();
+
+        String sql = """
+        SELECT * FROM Reader
+        WHERE full_name LIKE ? OR email LIKE ?
+        ORDER BY reader_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword + "%");
+            ps.setString(2, "%" + keyword + "%");
+            ps.setInt(3, offset);
+            ps.setInt(4, limit);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(mapReader(rs));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int count(String keyword) {
+        String sql = """
+        SELECT COUNT(*) FROM Reader
+        WHERE full_name LIKE ? OR email LIKE ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, "%" + keyword + "%");
+            ps.setString(2, "%" + keyword + "%");
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     public List<Reader> getAllReaders() {
 
         List<Reader> list = new ArrayList<>();
@@ -121,6 +174,24 @@ public class ReaderDBContext extends DBContext<Reader> {
         return null;
     }
 
+    public boolean existsByEmail(String email) {
+
+        String sql = "SELECT 1 FROM Reader WHERE email = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, email);
+            ResultSet rs = ps.executeQuery();
+
+            return rs.next(); // có record => true
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
     // =========================
     // INSERT READER
     // =========================
@@ -128,8 +199,8 @@ public class ReaderDBContext extends DBContext<Reader> {
     public void insert(Reader r) {
         String sql = """
             INSERT INTO Reader
-            (full_name, email, password_hash, phone, avatar, status, role_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (full_name, email, password_hash, phone, avatar, status, role_id, [created_at])
+            VALUES (?, ?, ?, ?, ?, ?, ?, GETDATE())
         """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {

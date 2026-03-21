@@ -98,98 +98,112 @@
     }
 </style>
 
+
 <div class="edit-wrapper">
     <div class="edit-card">
 
-        <div class="edit-title">
-            ✏ Cập nhật Reader
-        </div>
+        <div class="edit-title">✏ Cập nhật Reader</div>
+
+        <c:if test="${not empty error}">
+            <div style="color:red; margin-bottom:10px;">
+                ${error}
+            </div>
+        </c:if>
 
         <form action="${pageContext.request.contextPath}/admin/readers/edit"
-              method="post">
+              method="post"
+              enctype="multipart/form-data"
+              onsubmit="return validateForm()">
 
-            <!-- Hidden ID -->
             <input type="hidden" name="reader_id" value="${reader.readerId}"/>
 
-            <!-- Full name -->
+            <!-- AVATAR PREVIEW -->
+            <div class="avatar-preview">
+                <img id="previewAvatar"
+                     src="${not empty reader.avatar 
+                           ? pageContext.request.contextPath.concat('/img/avatar/').concat(reader.avatar)
+                           : pageContext.request.contextPath.concat('/img/book/no-cover.png')}">
+            </div>
+
+            <label>Change Avatar</label>
+            <input type="file" name="avatar" id="avatar" class="form-control" accept="image/*">
+
+            <!-- FULL NAME -->
             <label>Họ tên</label>
-            <input type="text"
-                   name="full_name"
-                   class="form-control"
-                   value="${reader.fullName}"
-                   required>
+            <input type="text" name="full_name" class="form-control"
+                   value="${reader.fullName}" required>
 
-            <!-- Email -->
+            <!-- EMAIL -->
             <label>Email</label>
-            <input type="email"
-                   name="email"
-                   class="form-control"
-                   value="${reader.email}"
-                   required>
+            <input type="email" name="email" class="form-control"
+                   value="${reader.email}" required>
 
-            <!-- Phone -->
+            <!-- PHONE -->
             <label>Phone</label>
-            <input type="text"
-                   name="phone"
-                   class="form-control"
+            <input type="text" name="phone" class="form-control"
                    value="${reader.phone}">
 
-            <!-- Avatar -->
-            <label>Avatar URL</label>
-            <input type="text"
-                   name="avatar"
-                   class="form-control"
-                   value="${reader.avatar}">
-
-            <c:if test="${not empty reader.avatar}">
-                <div class="avatar-preview">
-                    <img src="${reader.avatar}" alt="Avatar">
-                </div>
-            </c:if>
-
-            <!-- Status -->
+            <!-- STATUS -->
             <label>Status</label>
             <select name="status" class="form-select">
-                <option value="active"
-                        <c:if test="${reader.status == 'active'}">selected</c:if>>
-                    Active
-                </option>
-                <option value="inactive"
-                        <c:if test="${reader.status == 'inactive'}">selected</c:if>>
-                    Inactive
-                </option>
+                <option value="active" ${reader.status == 'active' ? 'selected' : ''}>Active</option>
+                <option value="inactive" ${reader.status == 'inactive' ? 'selected' : ''}>Inactive</option>
             </select>
 
-            <!-- Role -->
-            <label>Role</label>
-            <select name="role_id" class="form-select">
-                <option value="3"
-                        <c:if test="${reader.roleId == 3}">selected</c:if>>
-                    Reader
-                </option>
-                <option value="2"
-                        <c:if test="${reader.roleId == 2}">selected</c:if>>
-                    Librarian
-                </option>
-                <option value="1"
-                        <c:if test="${reader.roleId == 1}">selected</c:if>>
-                    Admin
-                </option>
-            </select>
+            <!-- ROLE FIX -->
+            <input type="hidden" name="role_id" value="3">
 
-            <!-- ACTIONS -->
             <div class="form-actions">
-                <button type="submit" class="btn-save">
-                    💾 Cập nhật
-                </button>
-
+                <button type="submit" class="btn-save">💾 Cập nhật</button>
                 <a href="${pageContext.request.contextPath}/admin/readers"
-                   class="btn-back">
-                    ⬅ Quay lại
-                </a>
+                   class="btn-back">⬅ Quay lại</a>
             </div>
 
         </form>
-
     </div>
 </div>
+
+<script>
+function validateForm() {
+
+    let name = document.querySelector("[name='full_name']").value.trim();
+    let phone = document.querySelector("[name='phone']").value.trim();
+    let file = document.getElementById("avatar").files[0];
+
+    if (name.length < 3) {
+        alert("Tên phải >= 3 ký tự");
+        return false;
+    }
+
+    if (phone && !/^[0-9]{9,11}$/.test(phone)) {
+        alert("SĐT không hợp lệ");
+        return false;
+    }
+
+    if (file) {
+        if (file.size > 20 * 1024 * 1024) {
+            alert("Avatar < 20MB");
+            return false;
+        }
+
+        if (!file.type.startsWith("image/")) {
+            alert("Chỉ cho phép ảnh");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+// PREVIEW
+document.getElementById("avatar").addEventListener("change", function(e){
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        document.getElementById("previewAvatar").src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+});
+</script>

@@ -163,7 +163,19 @@
             + Add Reader
         </a>
     </div>
+    <form method="get" style="margin-bottom:20px; display:flex; gap:10px;">
+        <input type="text"
+               name="keyword"
+               value="${keyword}"
+               placeholder="Search by name or email..."
+               style="flex:1; padding:10px; border-radius:8px; border:1px solid #ddd;">
 
+        <button type="submit"
+                style="padding:10px 20px; border:none; border-radius:8px;
+                background:#ea580c; color:#fff;">
+            🔍 Search
+        </button>
+    </form>
     <!-- TABLE -->
     <table>
         <thead>
@@ -230,5 +242,27 @@
             </c:if>
         </tbody>
     </table>
+
+</div>
+
+<div style="margin-top:20px; text-align:center;">
+
+    <c:forEach begin="1" end="${totalPage}" var="i">
+
+        <a href="?page=${i}&keyword=${keyword}"
+           style="
+           padding:8px 14px;
+           margin:0 4px;
+           border-radius:8px;
+           text-decoration:none;
+           background:${i == page ? '#ea580c' : '#fff'};
+           color:${i == page ? '#fff' : '#ea580c'};
+           border:1px solid #ea580c;
+           font-weight:600;
+           ">
+            ${i}
+        </a>
+
+    </c:forEach>
 
 </div>

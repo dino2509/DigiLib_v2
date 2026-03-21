@@ -2,6 +2,27 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 
 <style>
+
+    .btn-read{
+        display:inline-block;
+        background:linear-gradient(135deg,#fb923c,#ea580c);
+        color:white;
+        padding:10px 20px;
+        border-radius:999px;
+        font-weight:600;
+        text-decoration:none;
+        transition:0.2s;
+    }
+
+    .btn-read:hover{
+        transform:translateY(-1px);
+        box-shadow:0 8px 20px rgba(234,88,12,0.4);
+    }
+
+    .no-content{
+        color:#9ca3af;
+        font-style:italic;
+    }
     .detail-wrap {
         max-width: 1100px;
         margin: 0 auto;
@@ -187,7 +208,7 @@
             </div>
         </div>
     </div>
-                <div class="section">
+    <div class="section">
         <div class="section-title"># ISBN</div>
         <div class="section-content">${book.isbn}</div>
     </div>
@@ -207,7 +228,28 @@
     <!-- CONTENT -->
     <div class="section">
         <div class="section-title">📂 Nội dung</div>
-        <div class="section-content">${book.contentPath}</div>
+
+        <div class="section-content">
+
+            <c:choose>
+
+
+                <c:when test="${not empty book.contentPath}">
+                    <a href="${pageContext.request.contextPath}/read?id=${book.bookId}"
+                       class="btn-read">
+                        📖 Đọc ngay
+                    </a>
+                </c:when>
+
+                <c:otherwise>
+                    <span class="no-content">
+                        ❌ Không có bản xem
+                    </span>
+                </c:otherwise>
+
+            </c:choose>
+
+        </div>
     </div>
 
     <!-- META -->
