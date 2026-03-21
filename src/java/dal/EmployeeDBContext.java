@@ -13,113 +13,115 @@ import model.Employee;
 import model.Reader;
 
 public class EmployeeDBContext extends DBContext<Employee> {
-public ArrayList<Employee> searchPaging(String keyword, int pageIndex, int pageSize) {
 
-    ArrayList<Employee> list = new ArrayList<>();
+    public ArrayList<Employee> searchPaging(String keyword, int pageIndex, int pageSize) {
 
-    // ===== NORMALIZE KEYWORD =====
-    if (keyword != null) {
-        keyword = keyword.trim().replaceAll("\\s+", " ");
-        if (keyword.isEmpty()) {
-            keyword = null;
+        ArrayList<Employee> list = new ArrayList<>();
+
+        // ===== NORMALIZE KEYWORD =====
+        if (keyword != null) {
+            keyword = keyword.trim().replaceAll("\\s+", " ");
+            if (keyword.isEmpty()) {
+                keyword = null;
+            }
         }
-    }
 
-    StringBuilder sql = new StringBuilder("""
+        StringBuilder sql = new StringBuilder("""
         SELECT employee_id, full_name, email, phone, status, created_at, role_id
         FROM Employee
         WHERE 1=1
     """);
 
-    if (keyword != null) {
-        sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
-    }
+        if (keyword != null) {
+            sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
+        }
 
-    sql.append("""
+        sql.append("""
         ORDER BY employee_id DESC
         OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
     """);
 
-    try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
 
-        int i = 1;
+            int i = 1;
 
-        if (keyword != null) {
-            ps.setString(i++, "%" + keyword + "%");
-            ps.setString(i++, "%" + keyword + "%");
-        }
-
-        ps.setInt(i++, (pageIndex - 1) * pageSize);
-        ps.setInt(i, pageSize);
-
-        ResultSet rs = ps.executeQuery();
-
-        while (rs.next()) {
-            Employee e = new Employee();
-
-            e.setEmployeeId(rs.getInt("employee_id"));
-            e.setFullName(rs.getString("full_name"));
-            e.setEmail(rs.getString("email"));
-            e.setPhone(rs.getString("phone"));
-            e.setStatus(rs.getString("status"));
-
-            if (rs.getTimestamp("created_at") != null) {
-                e.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            if (keyword != null) {
+                ps.setString(i++, "%" + keyword + "%");
+                ps.setString(i++, "%" + keyword + "%");
             }
 
-            e.setRoleId(rs.getInt("role_id"));
+            ps.setInt(i++, (pageIndex - 1) * pageSize);
+            ps.setInt(i, pageSize);
 
-            list.add(e);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Employee e = new Employee();
+
+                e.setEmployeeId(rs.getInt("employee_id"));
+                e.setFullName(rs.getString("full_name"));
+                e.setEmail(rs.getString("email"));
+                e.setPhone(rs.getString("phone"));
+                e.setStatus(rs.getString("status"));
+
+                if (rs.getTimestamp("created_at") != null) {
+                    e.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                }
+
+                e.setRoleId(rs.getInt("role_id"));
+
+                list.add(e);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return list;
     }
 
-    return list;
-}
+    public int countSearch(String keyword) {
 
-public int countSearch(String keyword) {
-
-    // ===== NORMALIZE KEYWORD =====
-    if (keyword != null) {
-        keyword = keyword.trim().replaceAll("\\s+", " ");
-        if (keyword.isEmpty()) {
-            keyword = null;
+        // ===== NORMALIZE KEYWORD =====
+        if (keyword != null) {
+            keyword = keyword.trim().replaceAll("\\s+", " ");
+            if (keyword.isEmpty()) {
+                keyword = null;
+            }
         }
-    }
 
-    StringBuilder sql = new StringBuilder("""
+        StringBuilder sql = new StringBuilder("""
         SELECT COUNT(*)
         FROM Employee
         WHERE 1=1
     """);
 
-    if (keyword != null) {
-        sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
-    }
-
-    try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
-
-        int i = 1;
-
         if (keyword != null) {
-            ps.setString(i++, "%" + keyword + "%");
-            ps.setString(i++, "%" + keyword + "%");
+            sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
         }
 
-        ResultSet rs = ps.executeQuery();
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
 
-        if (rs.next()) {
-            return rs.getInt(1);
+            int i = 1;
+
+            if (keyword != null) {
+                ps.setString(i++, "%" + keyword + "%");
+                ps.setString(i++, "%" + keyword + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        return 0;
     }
 
-    return 0;
-}
     // =========================
     // LIST ALL EMPLOYEES
     // =========================
@@ -145,19 +147,48 @@ public int countSearch(String keyword) {
     // =========================
     @Override
     public Employee get(int id) {
-        String sql = "SELECT * FROM Employee WHERE employee_id = ?";
+
+        String sql = """
+        SELECT e.*, r.role_name
+        FROM Employee e
+        LEFT JOIN Role r ON e.role_id = r.role_id
+        WHERE e.employee_id = ?
+    """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
             ps.setInt(1, id);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-                return mapEmployee(rs);
+
+                Employee e = new Employee();
+
+                e.setEmployeeId(rs.getInt("employee_id"));
+                e.setFullName(rs.getString("full_name"));
+                e.setEmail(rs.getString("email"));
+                e.setPasswordHash(rs.getString("password_hash"));
+                e.setPhone(rs.getString("phone"));          // ✅ NEW
+                e.setAvatar(rs.getString("avatar"));        // ✅ NEW
+                e.setStatus(rs.getString("status"));
+                e.setRoleId(rs.getInt("role_id"));
+
+                // nếu bạn có field roleName
+//                e.setRoleName(rs.getString("role_name"));
+
+                // convert time
+                if (rs.getTimestamp("created_at") != null) {
+                    e.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                }
+
+                return e;
             }
+
         } catch (SQLException ex) {
             Logger.getLogger(EmployeeDBContext.class.getName())
-                    .log(Level.SEVERE, null, ex);
+                    .log(Level.SEVERE, "Get Employee failed", ex);
         }
+
         return null;
     }
 
@@ -166,19 +197,25 @@ public int countSearch(String keyword) {
     // =========================
     @Override
     public void insert(Employee e) {
+
         String sql = """
-            INSERT INTO Employee
-            (full_name, email, password_hash, status, role_id)
-            VALUES (?, ?, ?, ?, ?)
-        """;
+        INSERT INTO Employee
+        (full_name, email, password_hash, phone, avatar, status, role_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
 
             ps.setString(1, e.getFullName());
             ps.setString(2, e.getEmail());
             ps.setString(3, e.getPasswordHash());
-            ps.setString(4, e.getStatus());
-            ps.setInt(5, e.getRoleId());
+            ps.setString(4, e.getPhone());
+            ps.setString(5, e.getAvatar());
+            ps.setString(6, e.getStatus());
+            ps.setInt(7, e.getRoleId());
+
+            // convert LocalDateTime -> Timestamp
+            ps.setTimestamp(8, Timestamp.valueOf(e.getCreatedAt()));
 
             ps.executeUpdate();
 
@@ -198,7 +235,8 @@ public int countSearch(String keyword) {
             SET full_name = ?,
                 email = ?,
                 status = ?,
-                role_id = ?
+                role_id = ?,
+                     phone = ?
             WHERE employee_id = ?
         """;
 
@@ -208,7 +246,8 @@ public int countSearch(String keyword) {
             ps.setString(2, e.getEmail());
             ps.setString(3, e.getStatus());
             ps.setInt(4, e.getRoleId());
-            ps.setInt(5, e.getEmployeeId());
+            ps.setString(5, e.getPhone());
+            ps.setInt(6, e.getEmployeeId());
 
             ps.executeUpdate();
 

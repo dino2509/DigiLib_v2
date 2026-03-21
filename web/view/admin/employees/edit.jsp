@@ -41,22 +41,22 @@
         border: 1px solid #e5e7eb;
     }
 
-    .form-control[readonly] {
-        background: #f3f4f6;
-        color: #6b7280;
+    .avatar-preview {
+        text-align: center;
+        margin-bottom: 15px;
     }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #f97316;
-        box-shadow: 0 0 0 3px rgba(249,115,22,0.2);
-        outline: none;
+    .avatar-preview img {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #fed7aa;
     }
 
     .form-actions {
         display: flex;
         justify-content: space-between;
-        align-items: center;
         margin-top: 22px;
         padding-top: 16px;
         border-top: 1px dashed #fed7aa;
@@ -67,63 +67,66 @@
         color: #fff;
         padding: 10px 30px;
         border-radius: 999px;
-        font-size: 14px;
         font-weight: 600;
         border: none;
-        cursor: pointer;
-    }
-
-    .btn-save:hover {
-        box-shadow: 0 6px 18px rgba(234,88,12,0.45);
     }
 
     .btn-back {
         color: #ea580c;
         font-weight: 600;
         text-decoration: none;
-        font-size: 14px;
-    }
-
-    .btn-back:hover {
-        text-decoration: underline;
     }
 </style>
-
+<c:if test="${not empty error}">
+    <div style="color:red; margin-bottom:10px;">
+        ${error}
+    </div>
+</c:if>
 <div class="edit-wrapper">
     <div class="edit-card">
 
-        <div class="edit-title">
-            ✏ Edit Employee
-        </div>
+        <div class="edit-title">✏ Edit Employee</div>
 
         <form action="${pageContext.request.contextPath}/admin/employees/edit"
-              method="post">
+              method="post"
+              enctype="multipart/form-data"
+              onsubmit="return validateEditForm()">
 
-            <!-- ID -->
-            <input type="hidden"
-                   name="employee_id"
-                   value="${employee.employeeId}"/>
+            <input type="hidden" name="employee_id" value="${employee.employeeId}"/>
+
+            <!-- AVATAR -->
+            <div class="avatar-preview">
+                <c:choose>
+                    <c:when test="${not empty employee.avatar}">
+                        <img src="${pageContext.request.contextPath}/img/avatar/${employee.avatar}">
+                    </c:when>
+                    <c:otherwise>
+                        <img src="${pageContext.request.contextPath}/img/book/no-cover.png">
+                    </c:otherwise>
+                </c:choose>
+            </div>
+
+            <label>Change Avatar</label>
+            <input type="file" name="avatar" class="form-control" accept="image/*">
 
             <!-- FULL NAME -->
             <label>Full Name</label>
-            <input type="text"
-                   name="full_name"
-                   class="form-control"
-                   value="${employee.fullName}"
-                   required/>
+            <input type="text" name="full_name" class="form-control"
+                   value="${employee.fullName}" required/>
 
-            <!-- EMAIL (READONLY) -->
+            <!-- PHONE -->
+            <label>Phone</label>
+            <input type="text" name="phone" class="form-control"
+                   value="${employee.phone}"/>
+
+            <!-- EMAIL -->
             <label>Email</label>
-            <input type="text"
-                   class="form-control"
-                   value="${employee.email}"
-                   readonly/>
+            <input type="text" class="form-control"
+                   value="${employee.email}" readonly/>
 
             <!-- ROLE -->
             <label>Role</label>
-            <select name="role_id"
-                    class="form-select"
-                    required>
+            <select name="role_id" class="form-select" required>
                 <c:forEach items="${roles}" var="r">
                     <c:if test="${r.roleId ne 3}">
                         <option value="${r.roleId}"
@@ -137,29 +140,57 @@
             <!-- STATUS -->
             <label>Status</label>
             <select name="status" class="form-select">
-                <option value="active"
-                        <c:if test="${employee.status == 'active'}">selected</c:if>>
-                            Active
-                        </option>
-                        <option value="inactive"
-                        <c:if test="${employee.status == 'inactive'}">selected</c:if>>
-                            Inactive
-                        </option>
-                </select>
+                <option value="active" ${employee.status == 'active' ? 'selected' : ''}>Active</option>
+                <option value="inactive" ${employee.status == 'inactive' ? 'selected' : ''}>Inactive</option>
+            </select>
 
-                <!-- ACTIONS -->
-                <div class="form-actions">
-                    <button type="submit" class="btn-save">
-                        💾 Update
-                    </button>
-
-                    <a href="${pageContext.request.contextPath}/admin/employees"
-                   class="btn-back">
-                    ⬅ Cancel
-                </a>
+            <div class="form-actions">
+                <button type="submit" class="btn-save">💾 Update</button>
+                <a href="${pageContext.request.contextPath}/admin/employees" class="btn-back">⬅ Cancel</a>
             </div>
 
         </form>
-
     </div>
 </div>
+<script>
+    function validateEditForm() {
+
+        let name = document.querySelector("input[name='full_name']").value.trim();
+        let phone = document.querySelector("input[name='phone']").value.trim();
+        let file = document.querySelector("input[name='avatar']").files[0];
+
+// NAME
+        if (name.length < 3) {
+            alert("Full name must be at least 3 characters");
+            return false;
+        }
+
+// PHONE (optional nhưng phải đúng format)
+        if (phone) {
+            let phoneRegex = /^[0-9]{9,11}$/;
+            if (!phoneRegex.test(phone)) {
+                alert("Phone must be 9-11 digits");
+                return false;
+            }
+        }
+
+// AVATAR
+        if (file) {
+            let maxSize = 20 * 1024 * 1024;
+
+            if (file.size > maxSize) {
+                alert("Avatar must be under 20MB");
+                return false;
+            }
+
+            let allowed = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+
+            if (!allowed.includes(file.type)) {
+                alert("Only image files allowed (jpg, png, gif, webp)");
+                return false;
+            }
+        }
+
+        return true;
+    }
+</script>

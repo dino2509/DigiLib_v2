@@ -88,6 +88,7 @@
 
         <form action="${pageContext.request.contextPath}/admin/employees/add"
               method="post"
+              enctype="multipart/form-data"
               onsubmit="return validateForm()">
 
             <label>Full Name</label>
@@ -110,7 +111,19 @@
                    id="password"
                    class="form-control"
                    required>
+            <label>Phone</label>
+            <input type="text"
+                   name="phone"
+                   id="phone"
+                   class="form-control"
+                   placeholder="Enter phone number">
 
+            <label>Avatar</label>
+            <input type="file"
+                   name="avatar"
+                   id="avatar"
+                   class="form-control"
+                   accept="image/*">
             <label>Status</label>
             <select name="status" class="form-select">
                 <option value="active">Active</option>
@@ -151,6 +164,8 @@
         let name = document.getElementById("fullName").value.trim();
         let email = document.getElementById("email").value.trim();
         let password = document.getElementById("password").value;
+        let phone = document.getElementById("phone").value.trim();
+        let avatar = document.getElementById("avatar").files[0];
 
         if (name.length < 3) {
             alert("Full name must be at least 3 characters");
@@ -158,7 +173,6 @@
         }
 
         let emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
         if (!emailRegex.test(email)) {
             alert("Invalid email format");
             return false;
@@ -169,8 +183,22 @@
             return false;
         }
 
-        return true;
+        // validate phone (optional)
+        if (phone && phone.length < 9) {
+            alert("Invalid phone number");
+            return false;
+        }
 
+        // validate avatar size < 20MB
+        if (avatar) {
+            let maxSize = 20 * 1024 * 1024;
+            if (avatar.size > maxSize) {
+                alert("Avatar must be under 20MB");
+                return false;
+            }
+        }
+
+        return true;
     }
 
 </script>
