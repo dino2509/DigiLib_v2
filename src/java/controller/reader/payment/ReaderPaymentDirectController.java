@@ -1,4 +1,4 @@
-package controller.reader.order;
+package controller.reader.payment;
 
 import dao.OrderDBContext;
 import dao.PaymentDBContext;
