@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
+import model.Reader;
 
 @WebServlet("/reader/cart-remove")
 public class CartRemoveController extends HttpServlet {
@@ -12,11 +13,30 @@ public class CartRemoveController extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        int cartItemId = Integer.parseInt(request.getParameter("cartItemId"));
+        HttpSession session = request.getSession();
+        Reader reader = (Reader) session.getAttribute("user");
 
-        CartDBContext dao = new CartDBContext();
+        if (reader == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
 
-        dao.removeCartItem(cartItemId);
+        String idRaw = request.getParameter("cartItemId");
+
+        if (idRaw == null || idRaw.isEmpty()) {
+            response.sendRedirect(request.getContextPath() + "/reader/cart");
+            return;
+        }
+
+        int cartItemId = Integer.parseInt(idRaw);
+
+        CartDBContext cartDAO = new CartDBContext();
+
+        boolean success = cartDAO.removeCartItem(cartItemId);
+
+        if (!success) {
+            session.setAttribute("error", "Không thể xoá sản phẩm!");
+        }
 
         response.sendRedirect(request.getContextPath() + "/reader/cart");
     }

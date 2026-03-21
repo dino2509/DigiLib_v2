@@ -3,9 +3,41 @@
 <%@taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 
-
 <style>
+    /* MODAL */
 
+    .modal{
+        position:fixed;
+        top:0;
+        left:0;
+        width:100%;
+        height:100%;
+        background:rgba(0,0,0,0.4);
+        display:none;
+        justify-content:center;
+        align-items:center;
+        z-index:999;
+    }
+
+    .modal-content{
+        background:white;
+        padding:20px;
+        border-radius:8px;
+        width:350px;
+        box-shadow:0 5px 20px rgba(0,0,0,0.2);
+        animation:fadeIn 0.2s ease;
+    }
+
+    @keyframes fadeIn{
+        from{
+            transform:scale(0.9);
+            opacity:0;
+        }
+        to{
+            transform:scale(1);
+            opacity:1;
+        }
+    }
     .extend-wrapper{
         padding:20px;
     }
@@ -40,7 +72,7 @@
         background:#ff7a00;
         color:white;
         border:none;
-        padding:6px 10px;
+        padding:6px 12px;
         border-radius:4px;
         cursor:pointer;
     }
@@ -78,6 +110,11 @@
         background:#fafafa;
     }
 
+    /* highlight pending */
+    .pending-row{
+        background:#fffaf0;
+    }
+
     /* STATUS */
 
     .badge{
@@ -106,7 +143,7 @@
 
     .actions form{
         display:flex;
-        gap:6px;
+        gap:8px;
     }
 
     .btn{
@@ -176,13 +213,24 @@
         border-color:#ff7a00;
     }
 
+    /* small text */
+    .sub{
+        font-size:11px;
+        color:#888;
+    }
+
 </style>
 
+<c:if test="${not empty sessionScope.error}">
+    <div style="color:red; margin-bottom:10px;">
+        ${sessionScope.error}
+    </div>
+    <c:remove var="error" scope="session"/>
+</c:if>
 
 <div class="extend-wrapper">
 
     <h2 class="page-title">Borrow Extend Requests</h2>
-
 
     <!-- FILTER BAR -->
 
@@ -226,7 +274,6 @@
         </div>
 
 
-
         <div class="extend-card">
 
             <table class="extend-table">
@@ -234,8 +281,8 @@
                 <thead>
 
                     <tr>
+                        <th>ID</th>
                         <th>Book</th>
-                        <th>Copy Code</th>
                         <th>Old Due</th>
                         <th>Requested Due</th>
                         <th>Requested At</th>
@@ -253,72 +300,81 @@
 
                         <c:forEach var="e" items="${extendList}">
 
-                            <tr>
+                            <tr class="${e.status eq 'PENDING' ? 'pending-row' : ''}">
 
+                                <!-- ID -->
                                 <td>
-                                    <strong>${e.bookTitle}</strong>
+                                    <strong>#${e.extendId}</strong><br>
+                                    <span class="sub">Item: ${e.borrowItemId}</span>
                                 </td>
 
-                                <td>${e.copyCode}</td>
-
+                                <!-- BOOK + COPY -->
                                 <td>
-                                    <fmt:formatDate value="${e.oldDueDate}" pattern="yyyy-MM-dd"/>
+                                    <strong>${e.bookTitle}</strong><br>
+                                    <span class="sub">${e.copyCode}</span>
                                 </td>
 
+                                <!-- OLD -->
                                 <td>
-                                    <fmt:formatDate value="${e.requestedDueDate}" pattern="yyyy-MM-dd"/>
+                                    <fmt:formatDate value="${e.oldDueDate}" pattern="dd/MM/yyyy"/>
                                 </td>
 
+                                <!-- REQUEST -->
                                 <td>
-                                    <fmt:formatDate value="${e.requestedAt}" pattern="yyyy-MM-dd HH:mm"/>
+                                    <fmt:formatDate value="${e.requestedDueDate}" pattern="dd/MM/yyyy"/>
                                 </td>
 
+                                <!-- TIME -->
+                                <td>
+                                    <fmt:formatDate value="${e.requestedAt}" pattern="dd/MM/yyyy HH:mm"/>
+                                </td>
+
+                                <!-- STATUS -->
                                 <td>
 
                                     <c:choose>
 
                                         <c:when test="${e.status eq 'PENDING'}">
-                                            <span class="badge badge-pending">Pending</span>
+                                            <span class="badge badge-pending">⏳ Pending</span>
                                         </c:when>
 
                                         <c:when test="${e.status eq 'APPROVED'}">
-                                            <span class="badge badge-approved">Approved</span>
+                                            <span class="badge badge-approved">✔ Approved</span>
                                         </c:when>
 
                                         <c:when test="${e.status eq 'REJECTED'}">
-                                            <span class="badge badge-rejected">Rejected</span>
+                                            <span class="badge badge-rejected">✖ Rejected</span>
                                         </c:when>
 
                                     </c:choose>
 
                                 </td>
 
+                                <!-- ACTION -->
                                 <td class="actions">
 
                                     <c:if test="${e.status eq 'PENDING'}">
 
+                                        <!-- APPROVE -->
                                         <form method="post"
-                                              action="${pageContext.request.contextPath}/librarian/process-extend">
+                                              action="${pageContext.request.contextPath}/librarian/process-extend"
+                                              style="display:inline">
 
-                                            <input type="hidden"
-                                                   name="extendId"
-                                                   value="${e.extendId}">
+                                            <input type="hidden" name="extendId" value="${e.extendId}">
+                                            <input type="hidden" name="action" value="approve">
 
                                             <button class="btn btn-approve"
-                                                    name="action"
-                                                    value="approve"
                                                     onclick="return confirm('Approve this extend request?')">
-                                                Approve
-                                            </button>
-
-                                            <button class="btn btn-reject"
-                                                    name="action"
-                                                    value="reject"
-                                                    onclick="return confirm('Reject this extend request?')">
-                                                Reject
+                                                ✔ Approve
                                             </button>
 
                                         </form>
+
+                                        <!-- REJECT BUTTON -->
+                                        <button class="btn btn-reject"
+                                                onclick="openRejectModal(${e.extendId})">
+                                            ✖ Reject
+                                        </button>
 
                                     </c:if>
 
@@ -327,7 +383,6 @@
                                     </c:if>
 
                                 </td>
-
                             </tr>
 
                         </c:forEach>
@@ -353,7 +408,6 @@
     </div>
 
 
-
     <!-- PAGINATION -->
 
     <div class="pagination">
@@ -374,7 +428,7 @@
 
             </c:url>
 
-            <a href="${pageContext.request.contextPath}${pageUrl}"
+            <a href="${pageUrl}"
                class="${i==currentPage?'active':''}">
                 ${i}
             </a>
@@ -384,3 +438,84 @@
     </div>
 
 </div>
+<div id="rejectModal" class="modal">
+
+    <div class="modal-content">
+
+        <form method="post"
+              action="${pageContext.request.contextPath}/librarian/process-extend"
+              onsubmit="return validateRejectModal()">
+
+            <input type="hidden" name="extendId" id="rejectExtendId">
+            <input type="hidden" name="action" value="reject">
+
+            <h3 style="margin-bottom:10px;">Reject Extend Request</h3>
+
+            <label>Reason (required)</label>
+
+            <textarea name="note"
+                      id="rejectNote"
+                      placeholder="Enter reason..."
+                      required
+                      style="width:100%; height:80px; margin-top:5px;"></textarea>
+
+            <br><br>
+
+            <button class="btn btn-reject">
+                Confirm Reject
+            </button>
+
+            <button type="button"
+                    onclick="closeRejectModal()"
+                    style="margin-left:10px;">
+                Cancel
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+<script>
+
+    function openRejectModal(extendId) {
+        document.getElementById("rejectExtendId").value = extendId;
+        document.getElementById("rejectNote").value = "";
+        document.getElementById("rejectModal").style.display = "flex";
+
+        // focus textarea
+        setTimeout(() => {
+            document.getElementById("rejectNote").focus();
+        }, 100);
+    }
+
+    function closeRejectModal() {
+        document.getElementById("rejectModal").style.display = "none";
+    }
+
+    function validateRejectModal() {
+
+        let note = document.getElementById("rejectNote").value.trim();
+
+        if (note === "") {
+            alert("Please enter a reason!");
+            return false;
+        }
+
+        if (note.length < 5) {
+            alert("Reason must be at least 5 characters!");
+            return false;
+        }
+
+        return confirm("Confirm reject?");
+    }
+
+// click outside → close
+    window.onclick = function (event) {
+        let modal = document.getElementById("rejectModal");
+        if (event.target === modal) {
+            modal.style.display = "none";
+        }
+    }
+
+</script>

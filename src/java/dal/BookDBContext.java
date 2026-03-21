@@ -11,6 +11,260 @@ import java.util.List;
 
 public class BookDBContext extends DBContext<Book> {
 
+    public ArrayList<Book> searchPaging(String keyword,
+            Integer isbn,
+            Integer authorId,
+            Integer categoryId,
+            String status,
+            int pageIndex,
+            int pageSize) {
+
+        ArrayList<Book> books = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT 
+            b.book_id,
+            b.title,
+            b.isbn,
+            b.price,
+            b.status,
+            b.created_at,
+            a.author_id,
+            a.author_name,
+            c.category_id,
+            c.category_name
+        FROM Book b
+        LEFT JOIN Author a ON b.author_id = a.author_id
+        LEFT JOIN Category c ON b.category_id = c.category_id
+        WHERE 1=1
+    """);
+
+        boolean isPartialIsbn = false;
+        String isbnStr = null;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql.append(" AND b.title LIKE ? ");
+        }
+
+        if (isbn != null) {
+            isbnStr = String.valueOf(isbn);
+
+            if (isbnStr.length() >= 6) {
+                sql.append(" AND b.isbn = ? "); // exact
+            } else {
+                sql.append(" AND CAST(b.isbn AS NVARCHAR) LIKE ? "); // partial
+                isPartialIsbn = true;
+            }
+        }
+
+        if (authorId != null) {
+            sql.append(" AND b.author_id = ? ");
+        }
+
+        if (categoryId != null) {
+            sql.append(" AND b.category_id = ? ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND b.status = ? ");
+        }
+
+        sql.append("""
+        ORDER BY b.book_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """);
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int i = 1;
+
+            if (keyword != null && !keyword.isEmpty()) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+
+            if (isbn != null) {
+                if (isPartialIsbn) {
+                    ps.setString(i++, "%" + isbnStr + "%");
+                } else {
+                    ps.setInt(i++, isbn);
+                }
+            }
+
+            if (authorId != null) {
+                ps.setInt(i++, authorId);
+            }
+
+            if (categoryId != null) {
+                ps.setInt(i++, categoryId);
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(i++, status);
+            }
+
+            ps.setInt(i++, (pageIndex - 1) * pageSize);
+            ps.setInt(i, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Book b = new Book();
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setIsbn(rs.getInt("isbn"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setCreatedAt(rs.getTimestamp("created_at"));
+
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                b.setAuthor(a);
+
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                b.setCategory(c);
+
+                books.add(b);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return books;
+    }
+
+    public int countSearch(String keyword,
+            Integer isbn,
+            Integer authorId,
+            Integer categoryId,
+            String status) {
+
+        StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(*)
+        FROM Book b
+        WHERE 1=1
+    """);
+
+        boolean isPartialIsbn = false;
+        String isbnStr = null;
+
+        if (keyword != null && !keyword.isEmpty()) {
+            sql.append(" AND b.title LIKE ? ");
+        }
+
+        if (isbn != null) {
+            isbnStr = String.valueOf(isbn);
+
+            if (isbnStr.length() >= 6) {
+                sql.append(" AND b.isbn = ? ");
+            } else {
+                sql.append(" AND CAST(b.isbn AS NVARCHAR) LIKE ? ");
+                isPartialIsbn = true;
+            }
+        }
+
+        if (authorId != null) {
+            sql.append(" AND b.author_id = ? ");
+        }
+
+        if (categoryId != null) {
+            sql.append(" AND b.category_id = ? ");
+        }
+
+        if (status != null && !status.isEmpty()) {
+            sql.append(" AND b.status = ? ");
+        }
+
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+            int i = 1;
+
+            if (keyword != null && !keyword.isEmpty()) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+
+            if (isbn != null) {
+                if (isPartialIsbn) {
+                    ps.setString(i++, "%" + isbnStr + "%");
+                } else {
+                    ps.setInt(i++, isbn);
+                }
+            }
+
+            if (authorId != null) {
+                ps.setInt(i++, authorId);
+            }
+
+            if (categoryId != null) {
+                ps.setInt(i++, categoryId);
+            }
+
+            if (status != null && !status.isEmpty()) {
+                ps.setString(i++, status);
+            }
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
+    public List<Book> getAllBooks() {
+
+        List<Book> list = new ArrayList<>();
+
+        String sql = """
+        SELECT book_id, title, price, status, isbn
+        FROM Book
+        WHERE status = 'ACTIVE'
+        ORDER BY title
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Book b = new Book();
+
+                b.setBookId(rs.getInt("book_id"));
+                b.setTitle(rs.getString("title"));
+                b.setPrice(rs.getBigDecimal("price"));
+                b.setStatus(rs.getString("status"));
+                b.setIsbn(rs.getInt("isbn"));
+                list.add(b);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return list;
+    }
+
+    public int countAvailableCopies(int bookId) {
+        String sql = "SELECT COUNT(*) FROM BookCopy WHERE book_id = ? AND status = 'AVAILABLE'";
+        try {
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setInt(1, bookId);
+            ResultSet rs = stm.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     // ================== LIST ALL (ADMIN) ==================
     public ArrayList<Book> listAll() {
         ArrayList<Book> books = new ArrayList<>();
@@ -171,8 +425,8 @@ public class BookDBContext extends DBContext<Book> {
             INSERT INTO Book
             (title, summary, description, cover_url, content_path,
              price, currency, total_pages, preview_pages, status,
-             author_id, category_id, created_by, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE())
+             author_id, category_id, created_by, created_at, isbn)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, GETDATE(), ?)
         """;
 
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
@@ -190,6 +444,7 @@ public class BookDBContext extends DBContext<Book> {
             ps.setInt(11, b.getAuthor().getAuthor_id());
             ps.setInt(12, b.getCategory().getCategory_id());
             ps.setInt(13, b.getCreate_by().getEmployeeId());
+            ps.setInt(14, b.getIsbn());
 
             ps.executeUpdate();
 
@@ -215,6 +470,7 @@ public class BookDBContext extends DBContext<Book> {
             author_id = ?,
             category_id = ?,
             updated_by = ?,
+            isbn = ?,
             
             updated_at = GETDATE()
         WHERE book_id = ?
@@ -232,14 +488,14 @@ public class BookDBContext extends DBContext<Book> {
             ps.setString(8, b.getStatus());
             ps.setInt(9, b.getAuthor().getAuthor_id());
             ps.setInt(10, b.getCategory().getCategory_id());
-
+            ps.setInt(12, b.getIsbn());
             // ===== UPDATED BY (BẮT BUỘC PHẢI CÓ) =====
             if (b.getUpdate_by() == null) {
                 throw new IllegalStateException("Book.update_by is null");
             }
             ps.setInt(11, b.getUpdate_by().getEmployeeId());
 
-            ps.setInt(12, b.getBookId());
+            ps.setInt(13, b.getBookId());
 
             ps.executeUpdate();
 

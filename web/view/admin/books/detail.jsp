@@ -187,6 +187,10 @@
             </div>
         </div>
     </div>
+                <div class="section">
+        <div class="section-title"># ISBN</div>
+        <div class="section-content">${book.isbn}</div>
+    </div>
 
     <!-- SUMMARY -->
     <div class="section">

@@ -4,118 +4,147 @@
 <style>
     .page-wrap {
         max-width: 1200px;
-        margin: 0 auto;
-        background: #ffffff;
-        padding: 28px 30px;
+        margin: auto;
+        background: #fff;
+        padding: 28px;
         border-radius: 18px;
-        border: 1px solid #fed7aa;
-        box-shadow: 0 16px 36px rgba(0,0,0,0.08);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
     }
 
+    /* HEADER */
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 22px;
+        margin-bottom: 20px;
     }
 
     .page-header h2 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 700;
         color: #ea580c;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        font-weight: 700;
     }
 
     .btn-add {
-        background: linear-gradient(135deg, #f97316, #ea580c);
+        background: linear-gradient(135deg,#f97316,#ea580c);
         color: #fff;
-        padding: 10px 22px;
+        padding: 10px 18px;
         border-radius: 999px;
-        font-size: 14px;
-        font-weight: 600;
         text-decoration: none;
+        font-weight: 600;
     }
 
-    .btn-add:hover {
-        box-shadow: 0 6px 18px rgba(249,115,22,0.45);
-        color: #fff;
+    /* SEARCH */
+    .search-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-box input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 999px;
+        border: 1px solid #ddd;
+    }
+
+    .search-box button {
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: none;
+        background: #f97316;
+        color: white;
+        font-weight: 600;
     }
 
     /* TABLE */
     table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 14px;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #fff7ed;
     }
 
     thead th {
-        background: #fff7ed;
+        padding: 12px;
         color: #9a3412;
-        font-weight: 700;
-        padding: 14px 12px;
-        border-bottom: 2px solid #fed7aa;
-        text-align: left;
+        font-size: 13px;
     }
 
     tbody td {
-        padding: 14px 12px;
-        border-bottom: 1px solid #f1f1f1;
-        vertical-align: middle;
+        padding: 14px;
+        border-bottom: 1px solid #eee;
     }
 
     tbody tr:hover {
         background: #fff7ed;
     }
 
+    /* BADGE */
+    .badge {
+        background: #fff7ed;
+        padding: 4px 10px;
+        border-radius: 999px;
+        color: #c2410c;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    /* BIO */
     .bio {
         color: #4b5563;
         font-size: 13px;
-        line-height: 1.4;
     }
 
     .bio-empty {
-        font-style: italic;
         color: #9ca3af;
+        font-style: italic;
     }
 
     /* ACTION */
     .action-btn {
-        padding: 6px 14px;
-        font-size: 13px;
+        padding: 6px 12px;
         border-radius: 999px;
-        text-decoration: none;
         color: #fff;
+        font-size: 12px;
+        text-decoration: none;
         font-weight: 600;
-        margin-right: 6px;
     }
 
     .btn-edit {
         background: #f59e0b;
     }
-
     .btn-delete {
         background: #dc2626;
     }
 
-    .btn-edit:hover {
-        background: #d97706;
-        color: #fff;
-    }
-
-    .btn-delete:hover {
-        background: #b91c1c;
-        color: #fff;
-    }
-
-    .empty-row {
+    /* EMPTY */
+    .empty {
         text-align: center;
-        padding: 30px;
+        padding: 40px;
         color: #6b7280;
-        font-style: italic;
+    }
+
+    /* PAGINATION */
+    .pagination {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .pagination a {
+        padding: 8px 14px;
+        margin: 0 3px;
+        border-radius: 999px;
+        text-decoration: none;
+        background: #f3f4f6;
+        color: #333;
+        font-weight: 600;
+    }
+
+    .pagination a.active {
+        background: #f97316;
+        color: white;
     }
 </style>
 
@@ -127,16 +156,23 @@
 
         <a href="${pageContext.request.contextPath}/admin/authors?action=add"
            class="btn-add">
-            + Add New Author
+            + Add Author
         </a>
     </div>
+
+    <!-- SEARCH -->
+    <form method="get" class="search-box">
+        <input type="text" name="search" value="${search}"
+               placeholder="Search author...">
+        <button>Search</button>
+    </form>
 
     <!-- TABLE -->
     <table>
         <thead>
             <tr>
                 <th width="80">ID</th>
-                <th width="220">Author Name</th>
+                <th width="220">Name</th>
                 <th>Bio</th>
                 <th width="180">Actions</th>
             </tr>
@@ -145,7 +181,8 @@
         <tbody>
             <c:forEach items="${authors}" var="a">
                 <tr>
-                    <td>${a.author_id}</td>
+                    <td><span class="badge">#${a.author_id}</span></td>
+
                     <td><strong>${a.author_name}</strong></td>
 
                     <td>
@@ -167,7 +204,7 @@
 
                         <a class="action-btn btn-delete"
                            href="${pageContext.request.contextPath}/admin/authors?action=delete&id=${a.author_id}"
-                           onclick="return confirm('Are you sure you want to delete this author?')">
+                           onclick="return confirm('Delete this author?')">
                             Delete
                         </a>
                     </td>
@@ -176,12 +213,25 @@
 
             <c:if test="${empty authors}">
                 <tr>
-                    <td colspan="4" class="empty-row">
-                        No authors found.
+                    <td colspan="4" class="empty">
+                        📭 No authors found <br>
+                        <small>Try another keyword</small>
                     </td>
                 </tr>
             </c:if>
         </tbody>
     </table>
+
+    <!-- PAGINATION -->
+    <c:if test="${totalPages > 1}">
+        <div class="pagination">
+            <c:forEach begin="1" end="${totalPages}" var="i">
+                <a href="?page=${i}&search=${search}"
+                   class="${i == page ? 'active' : ''}">
+                    ${i}
+                </a>
+            </c:forEach>
+        </div>
+    </c:if>
 
 </div>

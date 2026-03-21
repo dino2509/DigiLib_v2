@@ -8,6 +8,58 @@ import java.util.logging.Logger;
 
 public class AuthorDBContext extends DBContext<Author> {
 
+    public ArrayList<Author> search(String search, int page, int pageSize) {
+        ArrayList<Author> list = new ArrayList<>();
+
+        String sql = """
+        SELECT * FROM Author
+        WHERE author_name LIKE ?
+        ORDER BY author_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, "%" + search + "%");
+            ps.setInt(2, (page - 1) * pageSize);
+            ps.setInt(3, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Author a = new Author();
+                a.setAuthor_id(rs.getInt("author_id"));
+                a.setAuthor_name(rs.getString("author_name"));
+                a.setBio(rs.getString("bio"));
+                list.add(a);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int count(String search) {
+        String sql = "SELECT COUNT(*) FROM Author WHERE author_name LIKE ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, "%" + search + "%");
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     // =========================
     // LIST ALL AUTHORS
     // =========================
@@ -16,8 +68,7 @@ public class AuthorDBContext extends DBContext<Author> {
         ArrayList<Author> authors = new ArrayList<>();
         String sql = "SELECT author_id, author_name, bio FROM Author";
 
-        try (PreparedStatement ps = connection.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 Author a = new Author();

@@ -231,7 +231,16 @@
                     <label>Tiêu đề</label>
                     <input name="title" value="${book.title}" class="form-control" required>
                 </div>
-
+                <div class="col-md-6 form-group">
+                    <label>ISBN</label>
+                    <input type="text"
+                           name="isbn"
+                           id="isbnInput"
+                           value="${book.isbn}"
+                           class="form-control"
+                           placeholder="Nhập ISBN">
+                    <div id="isbnError" class="field-error"></div>
+                </div>
                 <div class="col-md-6 form-group">
                     <label>Giá</label>
                     <input type="number" step="0.01" name="price" value="${book.price}" class="form-control">
@@ -360,8 +369,42 @@
 
         let coverValid = true;
         let pdfValid = true;
+        let isbnValid = true;
 
-        // ===== PREVIEW ẢNH (giữ nguyên chức năng cũ) =====
+        // =========================
+        // ISBN VALIDATE
+        // =========================
+        $('#isbnInput').on('input', function () {
+
+            isbnValid = true;
+
+            const val = $(this).val().trim();
+            const errorBox = $('#isbnError');
+
+            errorBox.text('');
+            $(this).removeClass('input-error');
+
+            if (!val)
+                return;
+
+            if (!/^\d+$/.test(val)) {
+                errorBox.text('❌ ISBN chỉ được chứa số');
+                $(this).addClass('input-error');
+                isbnValid = false;
+                return;
+            }
+
+            if (val.length < 6 || val.length > 13) {
+                errorBox.text('❌ ISBN phải từ 6 - 13 chữ số');
+                $(this).addClass('input-error');
+                isbnValid = false;
+                return;
+            }
+        });
+
+        // =========================
+        // COVER VALIDATE (20MB)
+        // =========================
         $('#coverUpload').on('change', function (e) {
 
             coverValid = true;
@@ -375,34 +418,33 @@
             if (!file)
                 return;
 
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            const maxSize = 2 * 1024 * 1024; // 2MB
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+            const maxSize = 20 * 1024 * 1024; // ✅ 20MB
 
-            // Check MIME
             if (!allowedTypes.includes(file.type)) {
-                errorBox.text('❌ Chỉ cho phép JPG, PNG, WEBP');
+                errorBox.text('❌ Chỉ cho phép JPG, PNG, WEBP, GIF');
                 $(this).addClass('input-error');
                 coverValid = false;
                 this.value = '';
                 return;
             }
 
-            // Check size
             if (file.size > maxSize) {
-                errorBox.text('❌ Ảnh không được vượt quá 2MB');
+                errorBox.text('❌ Ảnh tối đa 20MB');
                 $(this).addClass('input-error');
                 coverValid = false;
                 this.value = '';
                 return;
             }
 
-            // Preview
             const reader = new FileReader();
             reader.onload = e => $('#previewImg').attr('src', e.target.result);
             reader.readAsDataURL(file);
         });
 
-        // ===== VALIDATE PDF =====
+        // =========================
+        // PDF VALIDATE (50MB)
+        // =========================
         $('#pdfUpload').on('change', function (e) {
 
             pdfValid = true;
@@ -416,7 +458,7 @@
             if (!file)
                 return;
 
-            const maxSize = 20 * 1024 * 1024; // 20MB
+            const maxSize = 50 * 1024 * 1024; // ✅ 50MB
 
             if (file.type !== 'application/pdf') {
                 errorBox.text('❌ Chỉ được upload file PDF');
@@ -427,18 +469,18 @@
             }
 
             if (file.size > maxSize) {
-                errorBox.text('❌ PDF không được vượt quá 20MB');
+                errorBox.text('❌ PDF tối đa 50MB');
                 $(this).addClass('input-error');
                 pdfValid = false;
                 this.value = '';
                 return;
             }
 
-            // Check magic number
             const reader = new FileReader();
             reader.onload = function (e) {
                 const arr = new Uint8Array(e.target.result).subarray(0, 4);
                 const header = String.fromCharCode(...arr);
+
                 if (header !== "%PDF") {
                     errorBox.text('❌ File không phải PDF hợp lệ');
                     $('#pdfUpload').addClass('input-error');
@@ -449,12 +491,29 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // ===== CHẶN SUBMIT NẾU LỖI =====
+        // =========================
+        // SUBMIT
+        // =========================
         $('form').on('submit', function (e) {
-            if (!coverValid || !pdfValid) {
+
+            if (!isbnValid) {
+                alert("ISBN không hợp lệ!");
                 e.preventDefault();
-                alert("Vui lòng sửa lỗi trước khi cập nhật.");
+                return;
             }
+
+            if (!coverValid) {
+                alert("Ảnh bìa không hợp lệ!");
+                e.preventDefault();
+                return;
+            }
+
+            if (!pdfValid) {
+                alert("File PDF không hợp lệ!");
+                e.preventDefault();
+                return;
+            }
+
         });
 
     });

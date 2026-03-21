@@ -194,6 +194,12 @@
         }
     }
 </script>
+<c:if test="${not empty sessionScope.error}">
+    <div style="background:#ffe6e6;color:#e74c3c;padding:10px;border-radius:8px;margin-bottom:15px;">
+        ${sessionScope.error}
+    </div>
+    <c:remove var="error" scope="session"/>
+</c:if>
 <div class="book-detail">
     <a href="javascript:void(0)" onclick="goBack()" class="back-btn">
         ← Quay lại

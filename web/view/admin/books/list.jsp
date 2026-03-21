@@ -1,465 +1,313 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 
+<div class="container">
 
-<script>
-    function goToPage() {
-        let input = document.getElementById("pageInput");
-        let page = parseInt(input.value);
-        let total = ${totalPages};
+    <!-- HEADER -->
+    <div class="header">
+        <div>
+            <h2>📚 Book Management</h2>
+            <span class="sub">Manage your library books</span>
+        </div>
 
-        if (isNaN(page) || page < 1) {
-            page = 1;
-        } else if (page > total) {
-            page = total;
-        }
-
-        const params = new URLSearchParams(window.location.search);
-        params.set("page", page);
-
-        window.location.href = "?" + params.toString();
-    }
-</script>
-<div class="page-header">
-    <h2>📚 Book Management</h2>
-
-    <div style="display:flex; gap:14px; align-items:center;">
-
-        <!-- SEARCH FORM -->
-        <form method="get"
-              action="${pageContext.request.contextPath}/admin/books/list"
-              class="search-bar">
-
-            <!-- KEYWORD -->
-            <input type="text"
-                   name="keyword"
-                   placeholder="🔍 Search book..."
-                   value="${param.keyword}">
-
-            <!-- AUTHOR -->
-            <select name="author_id">
-                <option value="">All Authors</option>
-                <c:forEach items="${authors}" var="a">
-                    <option value="${a.author_id}"
-                            ${param.author_id == a.author_id ? 'selected' : ''}>
-                        ${a.author_name}
-                    </option>
-                </c:forEach>
-            </select>
-
-            <!-- CATEGORY -->
-            <select name="category_id">
-                <option value="">All Categories</option>
-                <c:forEach items="${categories}" var="c">
-                    <option value="${c.category_id}"
-                            ${param.category_id == c.category_id ? 'selected' : ''}>
-                        ${c.category_name}
-                    </option>
-                </c:forEach>
-            </select>
-
-            <!-- STATUS -->
-            <select name="status">
-                <option value="">All Status</option>
-                <option value="Active"
-                        ${param.status == 'Active' ? 'selected' : ''}>
-                    Active
-                </option>
-                <option value="Inactive"
-                        ${param.status == 'Inactive' ? 'selected' : ''}>
-                    Inactive
-                </option>
-            </select>
-
-            <button type="submit">
-                Search
-            </button>
-        </form>
-
-        <!-- ADD BOOK -->
         <a href="${pageContext.request.contextPath}/admin/books?action=add"
-           class="btn-orange">
-            + Add New Book
-        </a>
+           class="btn-primary">+ Add Book</a>
     </div>
-</div>
 
+    <!-- FILTER -->
+    <form method="get" class="filter">
 
+        <input type="text" name="keyword"
+               placeholder="Search title..."
+               value="${keyword}">
 
-<!-- TABLE -->
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Title</th>
-            <th>Price</th>
-            <th>Category</th>
-            <th>Author</th>
-            <th>Status</th>
-            <th>Created At</th>
-            <th width="160">Actions</th>
-        </tr>
-    </thead>
+        <input type="number" name="isbn"
+               placeholder="ISBN..."
+               value="${isbn}">
 
-    <tbody>
-        <c:forEach var="b" items="${books}">
-            <tr class="clickable-row"
-                onclick="window.location = '${pageContext.request.contextPath}/admin/books/detail?id=${b.bookId}'">
+        <select name="author_id">
+            <option value="">Author</option>
+            <c:forEach items="${authors}" var="a">
+                <option value="${a.author_id}"
+                        ${authorId == a.author_id ? 'selected' : ''}>
+                    ${a.author_name}
+                </option>
+            </c:forEach>
+        </select>
 
-                <td>${b.bookId}</td>
-                <td>${b.title}</td>
+        <select name="category_id">
+            <option value="">Category</option>
+            <c:forEach items="${categories}" var="c">
+                <option value="${c.category_id}"
+                        ${categoryId == c.category_id ? 'selected' : ''}>
+                    ${c.category_name}
+                </option>
+            </c:forEach>
+        </select>
 
-                <td>
-                    <c:if test="${b.price != null}">
-                        ${b.price} ${b.currency}
-                    </c:if>
-                </td>
+        <select name="status">
+            <option value="">Status</option>
+            <option value="ACTIVE" ${status=='ACTIVE'?'selected':''}>Active</option>
+            <option value="INACTIVE" ${status=='INACTIVE'?'selected':''}>Inactive</option>
+        </select>
 
-                <td>${b.category.category_name}</td>
-                <td>${b.author.author_name}</td>
+        <button class="btn-search">Search</button>
 
-                <td>
-                    <span class="status ${b.status}">
-                        ${b.status}
-                    </span>
-                </td>
+    </form>
 
-                <td>${b.createdAt}</td>
+    <!-- TABLE -->
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Book</th>
+                    <th>ISBN</th>
+                    <th>Price</th>
+                    <th>Category</th>
+                    <th>Author</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th></th>
+                </tr>
+            </thead>
 
-                <!-- ACTIONS (STOP PROPAGATION) -->
-                <td onclick="event.stopPropagation();">
-                    <a class="btn-action btn-delete"
-                       title="Xóa"
-                       href="${pageContext.request.contextPath}/admin/books?action=delete&id=${b.bookId}"
-                       onclick="return confirm('Bạn có chắc muốn xóa sách này?');">
-                        🗑
-                    </a>
-                </td>
-            </tr>
-        </c:forEach>
+            <tbody>
+                <c:forEach var="b" items="${books}">
+                    <tr onclick="location.href = '${pageContext.request.contextPath}/admin/books/detail?id=${b.bookId}'">
 
-        <c:if test="${empty books}">
-            <tr>
-                <td colspan="8" style="text-align:center; padding:20px;">
-                    Không có sách nào
-                </td>
-            </tr>
-        </c:if>
-    </tbody>
-</table>
+                        <td class="id">#${b.bookId}</td>
 
-<c:if test="${totalPages > 1}">
-    <nav class="mt-4">
-        <ul class="pagination pagination-custom justify-content-center">
+                        <td class="title">
+                            <strong>${b.title}</strong>
+                        </td>
 
-            <!-- FIRST -->
-            <li class="page-item ${pageIndex == 1 ? 'disabled' : ''}">
-                <a class="page-link"
-                   href="?page=1&keyword=${keyword}&author_id=${authorId}&category_id=${categoryId}">
-                    &laquo;&laquo;
-                </a>
-            </li>
+                        <td>
+                            <c:choose>
+                                <c:when test="${b.isbn != null}">
+                                    <span class="badge">${b.isbn}</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <span class="muted">N/A</span>
+                                </c:otherwise>
+                            </c:choose>
+                        </td>
+
+                        <td>
+                            <c:if test="${b.price != null}">
+                                ${b.price} ${b.currency}
+                            </c:if>
+                        </td>
+
+                        <td>${b.category.category_name}</td>
+                        <td>${b.author.author_name}</td>
+
+                        <td>
+                            <span class="status ${b.status}">
+                                ${b.status}
+                            </span>
+                        </td>
+
+                        <td>
+                            <fmt:formatDate value="${b.createdAt}" pattern="dd/MM/yyyy"/>
+                        </td>
+
+                        <td onclick="event.stopPropagation();">
+                            <a class="btn-delete"
+                               href="${pageContext.request.contextPath}/admin/books?action=delete&id=${b.bookId}"
+                               onclick="return confirm('Delete book?')">
+                                🗑
+                            </a>
+                        </td>
+
+                    </tr>
+                </c:forEach>
+
+                <c:if test="${empty books}">
+                    <tr>
+                        <td colspan="9" class="empty">
+                            📭 No books found
+                        </td>
+                    </tr>
+                </c:if>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- PAGINATION (FIXED) -->
+    <c:if test="${totalPages > 1}">
+        <div class="pagination">
 
             <!-- PREV -->
-            <li class="page-item ${pageIndex == 1 ? 'disabled' : ''}">
-                <a class="page-link"
-                   href="?page=${pageIndex - 1}&keyword=${keyword}&author_id=${authorId}&category_id=${categoryId}">
-                    &laquo;
-                </a>
-            </li>
+            <a class="${pageIndex == 1 ? 'disabled' : ''}"
+               href="?page=${pageIndex-1}&keyword=${keyword}&isbn=${isbn}&author_id=${authorId}&category_id=${categoryId}&status=${status}">
+                ←
+            </a>
 
-            <!-- PAGE RANGE -->
-            <c:set var="start" value="${pageIndex - 2 < 1 ? 1 : pageIndex - 2}" />
-            <c:set var="end" value="${pageIndex + 2 > totalPages ? totalPages : pageIndex + 2}" />
+            <!-- RANGE -->
+            <c:set var="start" value="${pageIndex-2 < 1 ? 1 : pageIndex-2}" />
+            <c:set var="end" value="${pageIndex+2 > totalPages ? totalPages : pageIndex+2}" />
 
             <c:forEach begin="${start}" end="${end}" var="i">
-                <li class="page-item ${i == pageIndex ? 'active' : ''}">
-                    <a class="page-link"
-                       href="?page=${i}&keyword=${keyword}&author_id=${authorId}&category_id=${categoryId}">
-                        ${i}
-                    </a>
-                </li>
+                <a class="${i == pageIndex ? 'active' : ''}"
+                   href="?page=${i}&keyword=${keyword}&isbn=${isbn}&author_id=${authorId}&category_id=${categoryId}&status=${status}">
+                    ${i}
+                </a>
             </c:forEach>
 
             <!-- NEXT -->
-            <li class="page-item ${pageIndex == totalPages ? 'disabled' : ''}">
-                <a class="page-link"
-                   href="?page=${pageIndex + 1}&keyword=${keyword}&author_id=${authorId}&category_id=${categoryId}">
-                    &raquo;
-                </a>
-            </li>
+            <a class="${pageIndex == totalPages ? 'disabled' : ''}"
+               href="?page=${pageIndex+1}&keyword=${keyword}&isbn=${isbn}&author_id=${authorId}&category_id=${categoryId}&status=${status}">
+                →
+            </a>
 
-            <!-- LAST -->
-            <li class="page-item ${pageIndex == totalPages ? 'disabled' : ''}">
-                <a class="page-link"
-                   href="?page=${totalPages}&keyword=${keyword}&author_id=${authorId}&category_id=${categoryId}">
-                    &raquo;&raquo;
-                </a>
-            </li>
-
-        </ul>
-    </nav>
-</c:if>
-
-
+        </div>
+    </c:if>
 
 </div>
 
 <style>
-    .page-container {
-        background: #ffffff;
-        padding: 28px 30px;
-        border-radius: 18px;
-        border: 1px solid #fed7aa;
-        box-shadow: 0 18px 40px rgba(0,0,0,0.08);
+    .container{
+        background:#fff;
+        padding:30px;
+        border-radius:20px;
+        box-shadow:0 10px 30px rgba(0,0,0,0.05);
     }
 
     /* HEADER */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
+    .header{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:20px;
     }
 
-    .page-header h2 {
-        color: #c2410c; /* cam trầm */
-        font-weight: 700;
-        margin: 0;
-        font-size: 24px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    .sub{
+        font-size:13px;
+        color:#6b7280;
     }
 
-    /* ADD BUTTON */
-    .btn-orange {
-        background: linear-gradient(135deg, #fb923c, #ea580c);
-        color: #fff;
-        border-radius: 999px;
-        padding: 10px 24px;
-        text-decoration: none;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.2s ease;
+    /* FILTER */
+    .filter{
+        display:grid;
+        grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto;
+        gap:10px;
+        margin-bottom:20px;
     }
 
-    .btn-orange:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 8px 20px rgba(234,88,12,0.45);
-        color: #fff;
+    .filter input, .filter select{
+        height:42px;
+        border-radius:10px;
+        border:1px solid #ddd;
+        padding:0 12px;
+    }
+
+    /* BUTTON */
+    .btn-primary{
+        background:#f97316;
+        color:white;
+        padding:10px 18px;
+        border-radius:999px;
+        text-decoration:none;
+        font-weight:600;
+    }
+
+    .btn-search{
+        background:#111827;
+        color:white;
+        border:none;
+        border-radius:10px;
     }
 
     /* TABLE */
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        background: #fff;
-        border-radius: 14px;
-        overflow: hidden;
-        font-size: 14px;
+    .table-wrap{
+        overflow:auto;
     }
 
-    thead th {
-        background: #fff7ed;
-        color: #9a3412;
-        padding: 14px 14px;
-        font-weight: 700;
-        border-bottom: 2px solid #fed7aa;
-        text-align: left;
+    table{
+        width:100%;
+        border-collapse:collapse;
     }
 
-    tbody td {
-        padding: 14px 14px;
-        border-bottom: 1px solid #f3f4f6;
-        vertical-align: middle;
+    thead{
+        background:#f9fafb;
     }
 
-    tbody tr:hover {
-        background: #fff7ed;
+    th{
+        text-align:left;
+        padding:14px;
+        font-size:13px;
+        color:#6b7280;
     }
 
-    /* STATUS BADGE */
-    .status {
-        padding: 6px 16px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 700;
-        color: #fff;
-        display: inline-block;
-        text-transform: capitalize;
+    td{
+        padding:14px;
     }
 
-    .ACTIVE {
-        background: #22c55e;
+    tbody tr{
+        border-top:1px solid #f1f1f1;
+        cursor:pointer;
     }
 
-    .INACTIVE {
-        background: #9ca3af;
+    tbody tr:hover{
+        background:#f9fafb;
     }
 
-    /* ACTION BUTTON */
-    .btn-action {
-        padding: 6px 16px;
-        border-radius: 999px;
-        font-size: 13px;
-        text-decoration: none;
-        color: #fff;
-        font-weight: 600;
-        margin-right: 6px;
-        transition: all 0.15s ease;
+    /* BADGE */
+    .badge{
+        background:#f3f4f6;
+        padding:4px 10px;
+        border-radius:999px;
+        font-size:12px;
     }
 
-    .btn-edit {
-        background: #f59e0b;
+    /* STATUS */
+    .status{
+        padding:4px 10px;
+        border-radius:999px;
+        font-size:12px;
+        color:white;
     }
 
-    .btn-delete {
-        background: #ef4444;
+    .ACTIVE{
+        background:#22c55e;
+    }
+    .INACTIVE{
+        background:#9ca3af;
     }
 
-    .btn-edit:hover {
-        background: #d97706;
-        transform: translateY(-1px);
+    .muted{
+        color:#9ca3af;
     }
 
-    .btn-delete:hover {
-        background: #dc2626;
-        transform: translateY(-1px);
+    /* PAGINATION */
+    .pagination{
+        margin-top:20px;
+        display:flex;
+        justify-content:center;
+        gap:6px;
     }
 
-    .Active {
-        color: green;
-
+    .pagination a{
+        padding:6px 12px;
+        border-radius:8px;
+        background:#f3f4f6;
+        text-decoration:none;
     }
 
-    .Inactive {
-        color: gray;
+    .pagination a.active{
+        background:#f97316;
+        color:white;
     }
 
-    /* SEARCH BAR */
-    /* SEARCH BAR */
-    .search-bar {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: nowrap;
+    .pagination a.disabled{
+        opacity:0.3;
+        pointer-events:none;
     }
 
-    /* keyword */
-    .search-bar input {
-        width: 260px;              /* rộng hơn */
-        height: 42px;
-        padding: 0 14px;
-        border-radius: 999px;
-        border: 1px solid #fed7aa;
-        font-size: 14px;
+    .empty{
+        text-align:center;
+        padding:40px;
     }
-
-    /* filter select */
-    .search-bar select {
-        width: 130px;              /* THU GỌN */
-        height: 42px;
-        padding: 0 12px;
-        border-radius: 999px;
-        border: 1px solid #fed7aa;
-        font-size: 13px;
-        background: #fff;
-    }
-
-    /* button */
-    .search-bar button {
-        height: 42px;
-        padding: 0 18px;
-        border-radius: 999px;
-        border: none;
-        background: linear-gradient(135deg, #fb923c, #ea580c);
-        color: #fff;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .search-bar button:hover {
-        box-shadow: 0 8px 20px rgba(234,88,12,0.45);
-        transform: translateY(-1px);
-    }
-
-
-    .clickable-row {
-        cursor: pointer;
-    }
-
-    .clickable-row:hover {
-        background: #fff3e0;
-    }
-
-
-    .pagination {
-        display: flex !important;
-        justify-content: center;
-        padding-left: 0;
-        list-style: none;
-    }
-
-    .pagination .page-item {
-        display: inline-block !important;
-    }
-
-    .pagination .page-link {
-        color: #ea580c;
-        border-radius: 8px;
-        margin: 0 2px;
-        border: 1px solid #fed7aa;
-    }
-
-    .pagination .page-item.active .page-link {
-        background: linear-gradient(135deg, #fb923c, #ea580c);
-        border-color: #ea580c;
-        color: #fff;
-    }
-
-    .pagination .page-link:hover {
-        background-color: #fff7ed;
-    }
-
-    .pagination-custom .page-item.disabled .page-link {
-        pointer-events: none;
-        cursor: not-allowed;
-        opacity: 0.4;
-    }
-
-
-    .pagination-custom .page-link {
-        color: #ea580c;
-        border-radius: 999px;
-        margin: 0 4px;
-        padding: 6px 14px;
-        border: 1px solid #fed7aa;
-        font-weight: 600;
-        transition: all 0.15s ease;
-    }
-
-    .pagination-custom .page-link:hover {
-        background: #fff7ed;
-        color: #c2410c;
-    }
-
-    .pagination-custom .page-item.active .page-link {
-        background: linear-gradient(135deg, #fb923c, #ea580c);
-        border-color: transparent;
-        color: #fff;
-    }
-
-    .pagination-custom .page-item.disabled .page-link {
-        color: #9ca3af;
-        background: #f9fafb;
-        border-color: #e5e7eb;
-        pointer-events: none;
-    }
-
-
 </style>
-
-

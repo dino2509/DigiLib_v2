@@ -65,7 +65,7 @@
 
                 <!-- CONTENT (CHỈ PHẦN NÀY THAY ĐỔI) -->
                 <div class="content-wrapper">
-                    <jsp:include page="${contentPage}" />
+                    <jsp:include page="${pageContext.request.contextPath}${contentPage}" />
                 </div>
 
             </div>

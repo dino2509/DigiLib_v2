@@ -15,10 +15,10 @@ public class ReaderCartController extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // lấy reader từ session
         HttpSession session = request.getSession();
         Reader reader = (Reader) session.getAttribute("user");
 
+        // 🔒 Check login
         if (reader == null) {
             response.sendRedirect(request.getContextPath() + "/login");
             return;
@@ -26,21 +26,19 @@ public class ReaderCartController extends HttpServlet {
 
         CartDBContext cartDAO = new CartDBContext();
 
-        // lấy cart của reader
         int cartId = cartDAO.getCartIdByReader(reader.getReaderId());
 
-        // lấy danh sách item
-        List<CartItem> cartItems = cartDAO.getCartItems(cartId);
+        // ❌ KHÔNG PAGING → lấy full
+        List<CartItem> cartItems = cartDAO.getCartItemsFull(cartId);
 
-        // gửi dữ liệu sang JSP
         request.setAttribute("cartItems", cartItems);
 
-        // layout system của project
+        // layout
         request.setAttribute("pageTitle", "My Cart");
         request.setAttribute("activeMenu", "cart");
         request.setAttribute("contentPage", "/view/reader/cart/cart.jsp");
 
-        request.getRequestDispatcher("/include/reader/layout.jsp").forward(request, response);
+        request.getRequestDispatcher("/include/reader/layout.jsp")
+                .forward(request, response);
     }
-
 }

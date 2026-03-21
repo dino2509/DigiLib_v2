@@ -8,6 +8,58 @@ import java.util.logging.Logger;
 
 public class CategoryDBContext extends DBContext<Category> {
 
+    public ArrayList<Category> search(String search, int page, int pageSize) {
+        ArrayList<Category> list = new ArrayList<>();
+
+        String sql = """
+        SELECT * FROM Category
+        WHERE category_name LIKE ?
+        ORDER BY category_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """;
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, "%" + search + "%");
+            ps.setInt(2, (page - 1) * pageSize);
+            ps.setInt(3, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                Category c = new Category();
+                c.setCategory_id(rs.getInt("category_id"));
+                c.setCategory_name(rs.getString("category_name"));
+                c.setDescription(rs.getString("description"));
+                list.add(c);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public int count(String search) {
+        String sql = "SELECT COUNT(*) FROM Category WHERE category_name LIKE ?";
+
+        try {
+            PreparedStatement ps = connection.prepareStatement(sql);
+            ps.setString(1, "%" + search + "%");
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return 0;
+    }
+
     // =========================
     // LIST ALL CATEGORIES
     // =========================

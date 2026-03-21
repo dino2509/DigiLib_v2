@@ -7,10 +7,42 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class ReaderDBContext extends DBContext<Reader> {
+
+    public List<Reader> getAllReaders() {
+
+        List<Reader> list = new ArrayList<>();
+
+        String sql = """
+        SELECT reader_id, full_name, email
+        FROM Reader
+        WHERE status = 'ACTIVE'
+        ORDER BY full_name
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+
+                Reader r = new Reader();
+
+                r.setReaderId(rs.getInt("reader_id"));
+                r.setFullName(rs.getString("full_name"));
+                r.setEmail(rs.getString("email"));
+
+                list.add(r);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return list;
+    }
 
     public String getEmailById(int readerId) {
         String sql = "SELECT email FROM Reader WHERE reader_id = ?";

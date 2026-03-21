@@ -22,14 +22,28 @@ public class ReaderOrdersController extends HttpServlet {
             return;
         }
 
+        int page = 1;
+        int pageSize = 10;
+
+        try {
+            page = Integer.parseInt(request.getParameter("page"));
+        } catch (Exception e) {
+        }
+
         OrderDBContext dao = new OrderDBContext();
 
-        List<OrderItem> orders = dao.getOrdersByReader(reader.getReaderId());
+        int totalOrders = dao.countOrdersByReader(reader.getReaderId());
+        int totalPages = (int) Math.ceil((double) totalOrders / pageSize);
+
+        List<OrderItem> orders = dao.getOrdersByReaderPaging(
+                reader.getReaderId(), page, pageSize
+        );
 
         request.setAttribute("orders", orders);
-
-        request.setAttribute("pageTitle", "My Orders");
-        request.setAttribute("activeMenu", "orders");
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+         request.setAttribute("activeMenu", "orders");
+        
         request.setAttribute("contentPage", "/view/reader/order/orders.jsp");
 
         request.getRequestDispatcher("/include/reader/layout.jsp").forward(request, response);

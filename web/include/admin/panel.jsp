@@ -90,13 +90,13 @@
     </div>
 
     <!-- SYSTEM -->
-    <div class="section">
+<!--    <div class="section">
         <div class="section-title">System</div>
         <a href="${pageContext.request.contextPath}/admin/notifications"
            class="${activeMenu == 'notification' ? 'active' : ''}">
             🔔 Notifications
         </a>
-    </div>
+    </div>-->
 
     <!-- MANAGEMENT -->
     <div class="section">

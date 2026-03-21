@@ -10,9 +10,13 @@ public class CartItem {
     private int quantity;
     private Timestamp addedAt;
 
+    // BOOK INFO
     private String bookTitle;
+    private String authorName;
+    private String coverUrl;
+
     private double price;
-    private double total;
+    private String currency;
 
     public CartItem() {
     }
@@ -65,17 +69,40 @@ public class CartItem {
         this.bookTitle = bookTitle;
     }
 
+    public String getAuthorName() {
+        return authorName;
+    }
+
+    public void setAuthorName(String authorName) {
+        this.authorName = authorName;
+    }
+
+    public String getCoverUrl() {
+        return coverUrl;
+    }
+
+    public void setCoverUrl(String coverUrl) {
+        this.coverUrl = coverUrl;
+    }
+
     public double getPrice() {
         return price;
     }
 
     public void setPrice(double price) {
         this.price = price;
-        this.total = price * quantity;
     }
 
+    public String getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    // 🔥 TÍNH TOTAL ĐÚNG CÁCH (KHÔNG LƯU CỨNG)
     public double getTotal() {
-        return total;
+        return price * quantity;
     }
-
 }

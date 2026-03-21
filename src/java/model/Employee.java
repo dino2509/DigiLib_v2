@@ -1,7 +1,6 @@
 package model;
 
 import java.io.Serializable;
-
 import java.time.LocalDateTime;
 
 public class Employee implements Serializable {
@@ -13,16 +12,21 @@ public class Employee implements Serializable {
     private String status;
     private LocalDateTime createdAt;
     private int roleId;
-    
 
-    // Constructor rỗng (bắt buộc cho JDBC / JavaBean)
+    // ✅ NEW FIELDS
+    private String phone;
+    private String avatar;
+
+    // =====================
+    // CONSTRUCTORS
+    // =====================
     public Employee() {
     }
 
-    // Constructor đầy đủ
     public Employee(int employeeId, String fullName, String email,
-                    String passwordHash, String status,
-                    LocalDateTime createdAt, int roleId) {
+            String passwordHash, String status,
+            LocalDateTime createdAt, int roleId,
+            String phone, String avatar) {
         this.employeeId = employeeId;
         this.fullName = fullName;
         this.email = email;
@@ -30,9 +34,13 @@ public class Employee implements Serializable {
         this.status = status;
         this.createdAt = createdAt;
         this.roleId = roleId;
+        this.phone = phone;
+        this.avatar = avatar;
     }
 
-    // Getter & Setter
+    // =====================
+    // GETTER & SETTER
+    // =====================
     public int getEmployeeId() {
         return employeeId;
     }
@@ -87,5 +95,22 @@ public class Employee implements Serializable {
 
     public void setRoleId(int roleId) {
         this.roleId = roleId;
+    }
+
+    // ===== NEW =====
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 }

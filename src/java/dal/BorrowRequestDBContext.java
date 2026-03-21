@@ -14,6 +14,72 @@ import model.borrow.BorrowRequestItem;
 
 public class BorrowRequestDBContext extends DBContext {
 
+    public int createBorrowRequests(int readerId, String note) {
+
+        String sql = """
+        INSERT INTO Borrow_Request (reader_id, status, requested_at, note)
+        OUTPUT INSERTED.request_id
+        VALUES (?, 'PENDING', GETDATE(), ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, readerId);
+            ps.setString(2, note);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+        return -1;
+    }
+    public boolean createBorrowRequest(int readerId, String note) {
+
+        String sql = """
+        INSERT INTO Borrow_Request
+        (reader_id, status, requested_at, note)
+        VALUES (?, 'PENDING', GETDATE(), ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, readerId);
+            ps.setString(2, note);
+
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    public void addRequestItem(int requestId, int bookId, int quantity) {
+
+        String sql = """
+        INSERT INTO Borrow_Request_Item (request_id, book_id, quantity)
+        VALUES (?, ?, ?)
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, requestId);
+            ps.setInt(2, bookId);
+            ps.setInt(3, quantity);
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public BorrowInfo getBorrowInfo(int requestId) {
         String sql = """
         SELECT b.title, b.isbn
@@ -236,27 +302,7 @@ public class BorrowRequestDBContext extends DBContext {
         return -1;
     }
 
-    public boolean createBorrowRequest(int readerId, String note) {
 
-        String sql = """
-        INSERT INTO Borrow_Request
-        (reader_id, status, requested_at, note)
-        VALUES (?, 'PENDING', GETDATE(), ?)
-    """;
-
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-
-            ps.setInt(1, readerId);
-            ps.setString(2, note);
-
-            return ps.executeUpdate() > 0;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
-    }
 
     public int getLastBorrowRequestId(int readerId) {
 

@@ -8,6 +8,52 @@ import model.CartItem;
 
 public class CartDBContext extends DBContext<CartItem> {
 
+    public List<CartItem> getCartItemsFull(int cartId) {
+        List<CartItem> list = new ArrayList<>();
+
+        String sql = """
+        SELECT ci.cart_item_id,
+               ci.quantity,
+               b.book_id,
+               b.title,
+               b.price,
+               b.currency,
+               b.cover_url,
+               a.author_name
+        FROM Cart_Item ci
+        JOIN Book b ON ci.book_id = b.book_id
+        JOIN Author a ON b.author_id = a.author_id
+        WHERE ci.cart_id = ?
+        ORDER BY ci.cart_item_id DESC
+    """;
+
+        try {
+            PreparedStatement stm = connection.prepareStatement(sql);
+            stm.setInt(1, cartId);
+            ResultSet rs = stm.executeQuery();
+
+            while (rs.next()) {
+                CartItem item = new CartItem();
+
+                item.setCartItemId(rs.getInt("cart_item_id"));
+                item.setQuantity(rs.getInt("quantity"));
+
+                item.setBookTitle(rs.getString("title"));
+                item.setPrice(rs.getDouble("price"));
+                item.setCurrency(rs.getString("currency"));
+                item.setCoverUrl(rs.getString("cover_url"));
+                item.setAuthorName(rs.getString("author_name"));
+
+                list.add(item);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
     // lấy cart của reader
     public int getCartIdByReader(int readerId) {
 
@@ -156,8 +202,24 @@ public class CartDBContext extends DBContext<CartItem> {
         }
     }
 
+    public void updateQuantity(int cartItemId, int quantity) {
+
+        String sql = "UPDATE Cart_Item SET quantity = ? WHERE cart_item_id = ?";
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, quantity);
+            ps.setInt(2, cartItemId);
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     // xóa cart item
-    public void removeCartItem(int cartItemId) {
+    public boolean removeCartItem(int cartItemId) {
 
         String sql = "DELETE FROM Cart_Item WHERE cart_item_id = ?";
 
@@ -165,11 +227,15 @@ public class CartDBContext extends DBContext<CartItem> {
 
             ps.setInt(1, cartItemId);
 
-            ps.executeUpdate();
+            int rows = ps.executeUpdate();
+
+            return rows > 0; // ✔ biết có xoá thành công không
 
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        return false;
     }
 
     // abstract methods (không dùng)

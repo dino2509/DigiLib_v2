@@ -219,7 +219,7 @@
 
             <!-- BORROW -->
 
-            <div class="menu ${activeMenu=='borrowRequests' || activeMenu=='borrows' || activeMenu=='extensions' ? 'open' : ''}">
+            <div class="menu ${activeMenu=='borrowRequests' || activeMenu=='borrows' || activeMenu=='extensions' || activeMenu=='request-add' ? 'open' : ''}">
 
                 <div class="menu-header">
                     <span><i class="fa-solid fa-right-left"></i> Borrow</span>
@@ -227,6 +227,10 @@
                 </div>
 
                 <div class="submenu">
+                    <a href="${pageContext.request.contextPath}/librarian/request/add"
+                       class="${activeMenu=='request-add'?'active':''}">
+                        Add Request
+                    </a>
 
                     <a href="${pageContext.request.contextPath}/librarian/requests"
                        class="${activeMenu=='borrowRequests'?'active':''}">
@@ -242,6 +246,8 @@
                        class="${activeMenu=='extensions'?'active':''}">
                         Extensions
                     </a>
+                        
+                        
 
                 </div>
 
@@ -294,7 +300,7 @@
 
             <!-- READERS -->
 
-            <div class="menu ${activeMenu=='readers' || activeMenu=='history' ? 'open' : ''}">
+<!--            <div class="menu ${activeMenu=='readers' || activeMenu=='history' ? 'open' : ''}">
 
                 <div class="menu-header">
                     <span><i class="fa-solid fa-user"></i> Readers</span>
@@ -315,7 +321,7 @@
 
                 </div>
 
-            </div>
+            </div>-->
 
             <!-- FINES -->
 
@@ -333,17 +339,17 @@
                         Fines
                     </a>
 
-                    <a href="${pageContext.request.contextPath}/librarian/fine-types"
+<!--                    <a href="${pageContext.request.contextPath}/librarian/fine-types"
                        class="${activeMenu=='fineTypes'?'active':''}">
                         Fine Types
-                    </a>
+                    </a>-->
 
                 </div>
 
             </div>
 
             <!-- SYSTEM -->
-
+<!--
             <div class="menu ${activeMenu=='notifications' || activeMenu=='employees' ? 'open' : ''}">
 
                 <div class="menu-header">
@@ -365,7 +371,7 @@
 
                 </div>
 
-            </div>
+            </div>-->
 
         </div>
 

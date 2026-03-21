@@ -8,15 +8,16 @@
         background: #ffffff;
         padding: 28px 30px;
         border-radius: 18px;
-        border: 1px solid #fed7aa;
-        box-shadow: 0 16px 36px rgba(0,0,0,0.08);
+        border: 1px solid #f3f4f6;
+        box-shadow: 0 16px 40px rgba(0,0,0,0.06);
     }
 
+    /* HEADER */
     .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 22px;
+        margin-bottom: 20px;
     }
 
     .page-header h2 {
@@ -24,15 +25,12 @@
         font-size: 24px;
         font-weight: 700;
         color: #ea580c;
-        display: flex;
-        align-items: center;
-        gap: 10px;
     }
 
     .btn-add {
         background: linear-gradient(135deg, #f97316, #ea580c);
         color: #fff;
-        padding: 10px 22px;
+        padding: 10px 20px;
         border-radius: 999px;
         font-size: 14px;
         font-weight: 600;
@@ -40,82 +38,133 @@
     }
 
     .btn-add:hover {
-        box-shadow: 0 6px 18px rgba(249,115,22,0.45);
-        color: #fff;
+        box-shadow: 0 6px 18px rgba(249,115,22,0.4);
+    }
+
+    /* SEARCH */
+    .search-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+
+    .search-box input {
+        flex: 1;
+        padding: 10px 14px;
+        border-radius: 999px;
+        border: 1px solid #e5e7eb;
+        outline: none;
+    }
+
+    .search-box button {
+        padding: 10px 18px;
+        border: none;
+        border-radius: 999px;
+        background: #f97316;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
     }
 
     /* TABLE */
     table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 14px;
+        border-collapse: collapse;
+    }
+
+    thead {
+        background: #fff7ed;
     }
 
     thead th {
-        background: #fff7ed;
-        color: #9a3412;
-        font-weight: 700;
-        padding: 14px 12px;
-        border-bottom: 2px solid #fed7aa;
+        padding: 14px;
         text-align: left;
+        font-size: 13px;
+        color: #9a3412;
     }
 
     tbody td {
-        padding: 14px 12px;
-        border-bottom: 1px solid #f1f1f1;
-        vertical-align: middle;
+        padding: 14px;
+        border-bottom: 1px solid #f3f4f6;
     }
 
     tbody tr:hover {
         background: #fff7ed;
     }
 
+    /* BADGE ID */
+    .badge-id {
+        background: #fff7ed;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-weight: 600;
+        color: #c2410c;
+        font-size: 12px;
+    }
+
+    /* DESCRIPTION */
     .desc {
         color: #4b5563;
         font-size: 13px;
-        line-height: 1.4;
     }
 
     .desc-empty {
-        font-style: italic;
         color: #9ca3af;
+        font-style: italic;
     }
 
     /* ACTION */
     .action-btn {
-        padding: 6px 14px;
-        font-size: 13px;
+        padding: 6px 12px;
         border-radius: 999px;
+        font-size: 12px;
         text-decoration: none;
-        color: #fff;
+        color: white;
         font-weight: 600;
-        margin-right: 6px;
+        margin-right: 5px;
     }
 
     .btn-edit {
         background: #f59e0b;
     }
-
     .btn-delete {
         background: #dc2626;
     }
 
     .btn-edit:hover {
         background: #d97706;
-        color: #fff;
     }
-
     .btn-delete:hover {
         background: #b91c1c;
-        color: #fff;
     }
 
+    /* EMPTY */
     .empty-row {
         text-align: center;
-        padding: 30px;
+        padding: 40px;
         color: #6b7280;
-        font-style: italic;
+    }
+
+    /* PAGINATION */
+    .pagination {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .pagination a {
+        display: inline-block;
+        margin: 0 4px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        text-decoration: none;
+        font-weight: 600;
+        background: #f3f4f6;
+        color: #374151;
+    }
+
+    .pagination a.active {
+        background: #f97316;
+        color: white;
     }
 </style>
 
@@ -127,16 +176,24 @@
 
         <a href="${pageContext.request.contextPath}/admin/categories?action=add"
            class="btn-add">
-            + Add New Category
+            + Add Category
         </a>
     </div>
+
+    <!-- SEARCH -->
+    <form method="get" class="search-box">
+        <input type="text" name="search" value="${search}"
+               placeholder="Search category...">
+
+        <button type="submit">Search</button>
+    </form>
 
     <!-- TABLE -->
     <table>
         <thead>
             <tr>
-                <th width="80">ID</th>
-                <th width="220">Category Name</th>
+                <th width="90">ID</th>
+                <th width="220">Category</th>
                 <th>Description</th>
                 <th width="180">Actions</th>
             </tr>
@@ -145,8 +202,13 @@
         <tbody>
             <c:forEach items="${categories}" var="c">
                 <tr>
-                    <td>${c.category_id}</td>
-                    <td><strong>${c.category_name}</strong></td>
+                    <td>
+                        <span class="badge-id">#${c.category_id}</span>
+                    </td>
+
+                    <td>
+                        <strong>${c.category_name}</strong>
+                    </td>
 
                     <td>
                         <c:choose>
@@ -167,7 +229,7 @@
 
                         <a class="action-btn btn-delete"
                            href="${pageContext.request.contextPath}/admin/categories?action=delete&id=${c.category_id}"
-                           onclick="return confirm('Are you sure you want to delete this category?')">
+                           onclick="return confirm('Delete this category?')">
                             Delete
                         </a>
                     </td>
@@ -177,11 +239,24 @@
             <c:if test="${empty categories}">
                 <tr>
                     <td colspan="4" class="empty-row">
-                        No categories found.
+                        📭 No categories found <br>
+                        <small>Try search or add new category</small>
                     </td>
                 </tr>
             </c:if>
         </tbody>
     </table>
+
+    <!-- PAGINATION -->
+    <c:if test="${totalPages > 1}">
+        <div class="pagination">
+            <c:forEach begin="1" end="${totalPages}" var="i">
+                <a href="?page=${i}&search=${search}"
+                   class="${i == page ? 'active' : ''}">
+                    ${i}
+                </a>
+            </c:forEach>
+        </div>
+    </c:if>
 
 </div>

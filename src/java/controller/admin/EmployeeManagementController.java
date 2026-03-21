@@ -30,7 +30,7 @@ public class EmployeeManagementController extends HttpServlet {
             switch (action) {
                 case "add":
                     request.getRequestDispatcher("/admin/employees/add")
-                           .forward(request, response);
+                            .forward(request, response);
                     break;
 
                 case "edit":
@@ -42,6 +42,7 @@ public class EmployeeManagementController extends HttpServlet {
                     break;
 
                 default:
+                    
                     listEmployees(request, response);
             }
         }
@@ -68,10 +69,11 @@ public class EmployeeManagementController extends HttpServlet {
     private void listEmployees(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        ArrayList<Employee> employees = employeeDB.list();
-        request.setAttribute("employees", employees);
-        request.getRequestDispatcher("/admin/employees/list")
-               .forward(request, response);
+//        ArrayList<Employee> employees = employeeDB.list();
+//        request.setAttribute("employees", employees);
+        response.sendRedirect(request.getContextPath() + "/admin/employees/list");
+//        request.getRequestDispatcher("/admin/employees/list")
+//               .forward(request, response);
     }
 
     // =========================
@@ -85,7 +87,7 @@ public class EmployeeManagementController extends HttpServlet {
 
         request.setAttribute("employee", employee);
         request.getRequestDispatcher("/admin/employees/edit")
-               .forward(request, response);
+                .forward(request, response);
     }
 
     // =========================

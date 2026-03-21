@@ -339,6 +339,75 @@ AND status IN ('PENDING','APPROVED')
         }
     }
 
+    public BorrowExtend getExtendById(int extendId) {
+
+        String sql = """
+        SELECT 
+            be.extend_id,
+            be.borrow_item_id,
+            be.old_due_date,
+            be.requested_due_date,
+            be.approved_due_date,
+            be.status,
+            be.requested_at,
+            be.decision_note,
+
+            b.title AS book_title,
+            bc.copy_code,
+            b.isbn,
+
+            r.email
+
+        FROM Borrow_Extend be
+        JOIN Borrow_Item bi ON be.borrow_item_id = bi.borrow_item_id
+        JOIN BookCopy bc ON bi.copy_id = bc.copy_id
+        JOIN Book b ON bc.book_id = b.book_id
+        JOIN Borrow br ON bi.borrow_id = br.borrow_id
+        JOIN Reader r ON br.reader_id = r.reader_id
+
+        WHERE be.extend_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setInt(1, extendId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+
+                if (rs.next()) {
+                    BorrowExtend e = new BorrowExtend();
+
+                    // ===== BASIC =====
+                    e.setExtendId(rs.getInt("extend_id"));
+                    e.setBorrowItemId(rs.getInt("borrow_item_id"));
+
+                    e.setOldDueDate(rs.getTimestamp("old_due_date"));
+                    e.setRequestedDueDate(rs.getTimestamp("requested_due_date"));
+                    e.setApprovedDueDate(rs.getTimestamp("approved_due_date"));
+
+                    e.setStatus(rs.getString("status"));
+                    e.setRequestedAt(rs.getTimestamp("requested_at"));
+
+                    // ===== EXTRA =====
+                    e.setDecisionNote(rs.getString("decision_note"));
+
+                    e.setBookTitle(rs.getString("book_title"));
+                    e.setCopyCode(rs.getString("copy_code"));
+                    e.setIsbn(rs.getInt("isbn"));
+
+                    e.setReaderEmail(rs.getString("email"));
+
+                    return e;
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     @Override
     public ArrayList<BorrowExtendRequest> list() {
         return listForLibrarian("all", "all", 200);
@@ -444,6 +513,30 @@ AND status IN ('PENDING','APPROVED')
             }
 
             e.printStackTrace();
+        }
+    }
+
+    public void rejectExtend(int extendId, int empId, String note) {
+
+        String sql = """
+        UPDATE Borrow_Extend
+        SET status = 'REJECTED',
+            decision_note = ?,
+            processed_at = GETDATE(),
+            approved_by_employee_id = ?
+        WHERE extend_id = ?
+    """;
+
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+
+            ps.setString(1, note);
+            ps.setInt(2, empId);
+            ps.setInt(3, extendId);
+
+            ps.executeUpdate();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

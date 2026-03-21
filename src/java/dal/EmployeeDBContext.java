@@ -1,6 +1,6 @@
 package dal;
 
-import java.security.Timestamp;
+import java.sql.*;
 import model.Employee;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,7 +13,113 @@ import model.Employee;
 import model.Reader;
 
 public class EmployeeDBContext extends DBContext<Employee> {
+public ArrayList<Employee> searchPaging(String keyword, int pageIndex, int pageSize) {
 
+    ArrayList<Employee> list = new ArrayList<>();
+
+    // ===== NORMALIZE KEYWORD =====
+    if (keyword != null) {
+        keyword = keyword.trim().replaceAll("\\s+", " ");
+        if (keyword.isEmpty()) {
+            keyword = null;
+        }
+    }
+
+    StringBuilder sql = new StringBuilder("""
+        SELECT employee_id, full_name, email, phone, status, created_at, role_id
+        FROM Employee
+        WHERE 1=1
+    """);
+
+    if (keyword != null) {
+        sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
+    }
+
+    sql.append("""
+        ORDER BY employee_id DESC
+        OFFSET ? ROWS FETCH NEXT ? ROWS ONLY
+    """);
+
+    try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+        int i = 1;
+
+        if (keyword != null) {
+            ps.setString(i++, "%" + keyword + "%");
+            ps.setString(i++, "%" + keyword + "%");
+        }
+
+        ps.setInt(i++, (pageIndex - 1) * pageSize);
+        ps.setInt(i, pageSize);
+
+        ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            Employee e = new Employee();
+
+            e.setEmployeeId(rs.getInt("employee_id"));
+            e.setFullName(rs.getString("full_name"));
+            e.setEmail(rs.getString("email"));
+            e.setPhone(rs.getString("phone"));
+            e.setStatus(rs.getString("status"));
+
+            if (rs.getTimestamp("created_at") != null) {
+                e.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+            }
+
+            e.setRoleId(rs.getInt("role_id"));
+
+            list.add(e);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return list;
+}
+
+public int countSearch(String keyword) {
+
+    // ===== NORMALIZE KEYWORD =====
+    if (keyword != null) {
+        keyword = keyword.trim().replaceAll("\\s+", " ");
+        if (keyword.isEmpty()) {
+            keyword = null;
+        }
+    }
+
+    StringBuilder sql = new StringBuilder("""
+        SELECT COUNT(*)
+        FROM Employee
+        WHERE 1=1
+    """);
+
+    if (keyword != null) {
+        sql.append(" AND (full_name LIKE ? OR email LIKE ?) ");
+    }
+
+    try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+
+        int i = 1;
+
+        if (keyword != null) {
+            ps.setString(i++, "%" + keyword + "%");
+            ps.setString(i++, "%" + keyword + "%");
+        }
+
+        ResultSet rs = ps.executeQuery();
+
+        if (rs.next()) {
+            return rs.getInt(1);
+        }
+
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
+    return 0;
+}
     // =========================
     // LIST ALL EMPLOYEES
     // =========================

@@ -22,72 +22,85 @@ public class ListController extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
-
-        // ===== FILTER PARAMS =====
         String keyword = req.getParameter("keyword");
-        
-        String keyResult = null;
 
         if (keyword != null) {
-            keyword = keyword.trim().replaceAll("\\s+", " ");
-            if (!keyword.isEmpty()) {
-                keyResult = keyword;
+            keyword = keyword.trim();
+
+            // bỏ khoảng trắng dư (nhiều space → 1 space)
+            keyword = keyword.replaceAll("\\s+", " ");
+
+            // giới hạn độ dài (tránh spam / lỗi query)
+            if (keyword.length() > 100) {
+                keyword = keyword.substring(0, 100);
+            }
+
+            // nếu rỗng sau trim → set null
+            if (keyword.isEmpty()) {
+                keyword = null;
             }
         }
+        // ===== FILTER =====
         Integer authorId = null;
         Integer categoryId = null;
 
+        String isbnRaw = req.getParameter("isbn");
+        Integer isbn = null;
+
+        if (isbnRaw != null && !isbnRaw.trim().isEmpty()) {
+            try {
+                isbn = Integer.parseInt(isbnRaw.trim());
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid ISBN input: " + isbnRaw);
+            }
+        }
+
         try {
-            String a = req.getParameter("author_id");
-            if (a != null && !a.isEmpty()) {
-                authorId = Integer.parseInt(a);
+
+            if (req.getParameter("author_id") != null && !req.getParameter("author_id").isEmpty()) {
+                authorId = Integer.parseInt(req.getParameter("author_id"));
             }
 
-            String c = req.getParameter("category_id");
-            if (c != null && !c.isEmpty()) {
-                categoryId = Integer.parseInt(c);
+            if (req.getParameter("category_id") != null && !req.getParameter("category_id").isEmpty()) {
+                categoryId = Integer.parseInt(req.getParameter("category_id"));
             }
-           
-        } catch (Exception e) {
-            // ignore parse error
+        } catch (Exception ignored) {
         }
-         String status = req.getParameter("status");
+
+        String status = req.getParameter("status");
+
         // ===== PAGING =====
         int pageSize = 10;
         int pageIndex = 1;
 
-        String pageRaw = req.getParameter("page");
-        if (pageRaw != null) {
-            try {
-                pageIndex = Integer.parseInt(pageRaw);
-            } catch (Exception e) {
-                pageIndex = 1;
-            }
+        try {
+            pageIndex = Integer.parseInt(req.getParameter("page"));
+        } catch (Exception ignored) {
         }
 
         // ===== DATA =====
-        int totalRecords = bookDB.countSearch(keyResult, authorId, categoryId, status);
+        int totalRecords = bookDB.countSearch(keyword, isbn, authorId, categoryId, status);
         int totalPages = (int) Math.ceil((double) totalRecords / pageSize);
 
-        ArrayList<Book> books = bookDB.searchPaging(keyResult, authorId, categoryId, status, pageIndex, pageSize);
-               
+        ArrayList<Book> books = bookDB.searchPaging(
+                keyword, isbn, authorId, categoryId, status, pageIndex, pageSize
+        );
 
-        // ===== LOAD FILTER DATA =====
+        // ===== FILTER DATA =====
         CategoryDBContext cateDB = new CategoryDBContext();
         AuthorDBContext authDB = new AuthorDBContext();
 
-        ArrayList<Category> categories = cateDB.list();
-        ArrayList<Author> authors = authDB.list();
+        req.setAttribute("categories", cateDB.list());
+        req.setAttribute("authors", authDB.list());
 
-        // ===== SET ATTRIBUTES =====
+        // ===== DATA =====
         req.setAttribute("books", books);
 
-        req.setAttribute("categories", categories);
-        req.setAttribute("authors", authors);
-
         req.setAttribute("keyword", keyword);
+        req.setAttribute("isbn", isbn);
         req.setAttribute("authorId", authorId);
         req.setAttribute("categoryId", categoryId);
+        req.setAttribute("status", status);
 
         req.setAttribute("pageIndex", pageIndex);
         req.setAttribute("totalPages", totalPages);
@@ -97,13 +110,6 @@ public class ListController extends HttpServlet {
         req.setAttribute("activeMenu", "book");
         req.setAttribute("contentPage", "../../view/admin/books/list.jsp");
 
-        req.getRequestDispatcher("/include/admin/layout.jsp")
-                .forward(req, resp);
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
-            throws ServletException, IOException {
-        doGet(req, resp);
+        req.getRequestDispatcher("/include/admin/layout.jsp").forward(req, resp);
     }
 }

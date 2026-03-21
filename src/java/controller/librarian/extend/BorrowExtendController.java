@@ -21,7 +21,7 @@ public class BorrowExtendController extends HttpServlet {
         try {
 
             int page = 1;
-            int pageSize = 6;
+            int pageSize = 10;
 
             String pageParam = request.getParameter("page");
             String search = request.getParameter("search");
@@ -52,7 +52,7 @@ public class BorrowExtendController extends HttpServlet {
             request.setAttribute("status", status);
 
             request.setAttribute("pageTitle", "Borrow Extend Requests");
-            request.setAttribute("activeMenu", "extend");
+            request.setAttribute("activeMenu", "extensions");
             request.setAttribute("contentPage",
                     "/view/librarian/borrow/borrow_extend.jsp");
 

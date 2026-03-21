@@ -88,4 +88,33 @@ public class BorrowExtend {
     public void setCopyCode(String copyCode) {
         this.copyCode = copyCode;
     }
+    private String readerEmail;
+    private int isbn;
+    private String decisionNote;
+
+    public String getReaderEmail() {
+        return readerEmail;
+    }
+
+    public void setReaderEmail(String readerEmail) {
+        this.readerEmail = readerEmail;
+    }
+
+    public int getIsbn() {
+        return isbn;
+    }
+
+    public void setIsbn(int isbn) {
+        this.isbn = isbn;
+    }
+
+   
+
+    public String getDecisionNote() {
+        return decisionNote;
+    }
+
+    public void setDecisionNote(String decisionNote) {
+        this.decisionNote = decisionNote;
+    }
 }

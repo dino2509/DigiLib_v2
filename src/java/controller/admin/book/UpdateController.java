@@ -78,7 +78,6 @@ public class UpdateController extends HttpServlet {
     // HANDLE UPDATE
     // =========================
     @Override
-
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -99,11 +98,25 @@ public class UpdateController extends HttpServlet {
         String title = request.getParameter("title");
         String summary = request.getParameter("summary");
         String description = request.getParameter("description");
-        String coverUrl = request.getParameter("cover_url");
-//        String contentPath = request.getParameter("content_path");
         String priceStr = request.getParameter("price");
         String currency = request.getParameter("currency");
         String status = request.getParameter("status");
+
+        // ===== ISBN =====
+        Integer isbn = null;
+        String isbnRaw = request.getParameter("isbn");
+
+        if (isbnRaw != null && !isbnRaw.trim().isEmpty()) {
+            if (!isbnRaw.matches("\\d{6,13}")) {
+                errors.add("ISBN phải từ 6-13 chữ số");
+            } else {
+                try {
+                    isbn = Integer.parseInt(isbnRaw);
+                } catch (Exception e) {
+                    errors.add("ISBN không hợp lệ");
+                }
+            }
+        }
 
         // ======================
         // VALIDATE
@@ -112,13 +125,6 @@ public class UpdateController extends HttpServlet {
             errors.add("Title phải có ít nhất 3 ký tự");
         }
 
-//        if (summary == null || summary.trim().isEmpty()) {
-//            errors.add("Summary không được để trống");
-//        }
-//
-//        if (description == null || description.trim().isEmpty()) {
-//            errors.add("Description không được để trống");
-//        }
         BigDecimal price = null;
         if (priceStr != null && !priceStr.trim().isEmpty()) {
             try {
@@ -135,7 +141,6 @@ public class UpdateController extends HttpServlet {
             errors.add("Currency không hợp lệ");
         }
 
-//      
         int authorId = Integer.parseInt(request.getParameter("author_id"));
         if (authorDB.get(authorId) == null) {
             errors.add("Author không tồn tại");
@@ -147,7 +152,55 @@ public class UpdateController extends HttpServlet {
         }
 
         // ======================
-        // IF ERROR → BACK TO FORM
+        // FILE VALIDATION (NEW RULE)
+        // ======================
+        Part pdfPart = request.getPart("content_upload");
+        Part coverPart = request.getPart("cover_upload");
+
+        // ===== PDF 50MB =====
+        if (pdfPart != null && pdfPart.getSize() > 0) {
+
+            long MAX_PDF_SIZE = 50 * 1024 * 1024; // ✅ 50MB
+            String contentType = pdfPart.getContentType();
+
+            if (pdfPart.getSize() > MAX_PDF_SIZE) {
+                errors.add("PDF không được vượt quá 50MB");
+            }
+
+            if (contentType == null || !contentType.equals("application/pdf")) {
+                errors.add("Chỉ được upload file PDF");
+            }
+
+            String name = pdfPart.getSubmittedFileName().toLowerCase();
+            if (!name.endsWith(".pdf")) {
+                errors.add("File phải có định dạng .pdf");
+            }
+        }
+
+        // ===== IMAGE 20MB =====
+        if (coverPart != null && coverPart.getSize() > 0) {
+
+            long MAX_IMG_SIZE = 20 * 1024 * 1024; // ✅ 20MB
+            String contentType = coverPart.getContentType();
+
+            if (coverPart.getSize() > MAX_IMG_SIZE) {
+                errors.add("Ảnh không được vượt quá 20MB");
+            }
+
+            if (contentType == null || !contentType.startsWith("image/")) {
+                errors.add("Chỉ được upload file ảnh");
+            }
+
+            String name = coverPart.getSubmittedFileName().toLowerCase();
+            if (!(name.endsWith(".jpg") || name.endsWith(".jpeg")
+                    || name.endsWith(".png") || name.endsWith(".webp")
+                    || name.endsWith(".gif"))) {
+                errors.add("Định dạng ảnh không hợp lệ");
+            }
+        }
+
+        // ======================
+        // IF ERROR
         // ======================
         if (!errors.isEmpty()) {
             Book book = bookDB.get(bookId);
@@ -167,19 +220,22 @@ public class UpdateController extends HttpServlet {
         }
 
         // ======================
-        // UPDATE
+        // UPDATE OBJECT
         // ======================
         Book b = new Book();
         b.setBookId(bookId);
         b.setTitle(title);
         b.setSummary(summary);
         b.setDescription(description);
-        b.setCoverUrl(coverUrl);
-//        b.setContentPath(contentPath);
         b.setPrice(price);
         b.setCurrency(currency);
         b.setStatus(status);
         b.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+        b.setUpdate_by(emp);
+
+        if (isbn != null) {
+            b.setIsbn(isbn); // ✅ SET ISBN
+        }
 
         Author a = new Author();
         a.setAuthor_id(authorId);
@@ -189,43 +245,11 @@ public class UpdateController extends HttpServlet {
         c.setCategory_id(categoryId);
         b.setCategory(c);
 
-        b.setUpdate_by(emp);
-
-        // =========================
-// UPLOAD PDF FILE
-// =========================
-        Part pdfPart = request.getPart("content_upload");
-
+        // ======================
+        // SAVE PDF
+        // ======================
         if (pdfPart != null && pdfPart.getSize() > 0) {
 
-            String contentType = pdfPart.getContentType();
-            long MAX_PDF_SIZE = 20 * 1024 * 1024;
-
-            // 1️⃣ Check dung lượng
-            if (pdfPart.getSize() > MAX_PDF_SIZE) {
-                errors.add("PDF không được vượt quá 20MB");
-            }
-
-            // 2️⃣ Check MIME
-            if (contentType == null || !contentType.equals("application/pdf")) {
-                errors.add("Chỉ được upload file PDF");
-            }
-
-            String originalFileName = Paths.get(pdfPart.getSubmittedFileName())
-                    .getFileName()
-                    .toString();
-
-            if (!originalFileName.toLowerCase().endsWith(".pdf")) {
-                errors.add("File phải có định dạng .pdf");
-            }
-
-            if (!errors.isEmpty()) {
-                request.setAttribute("errors", errors);
-                loadFormAgain(request, response);
-                return;
-            }
-
-            // 📂 Thư mục lưu PDF
             String uploadDir = getServletContext().getRealPath("/")
                     .replace("build\\web", "web\\pdf");
 
@@ -234,87 +258,43 @@ public class UpdateController extends HttpServlet {
                 dir.mkdirs();
             }
 
-            // Rename tránh trùng
-            String fileNameNew = "book_" + System.currentTimeMillis() + ".pdf";
+            String fileName = "book_" + System.currentTimeMillis() + ".pdf";
+            pdfPart.write(uploadDir + File.separator + fileName);
 
-            pdfPart.write(uploadDir + File.separator + fileNameNew);
-
-            b.setContentPath(fileNameNew);
+            b.setContentPath(fileName);
 
         } else {
-            // Không upload mới → giữ file cũ
-            Book old = bookDB.get(bookId);
-            b.setContentPath(old.getContentPath());
+            b.setContentPath(bookDB.get(bookId).getContentPath());
         }
 
-        Part coverPart = request.getPart("cover_upload");
-        String selectedCover = request.getParameter("cover_select");
-
+        // ======================
+        // SAVE IMAGE
+        // ======================
         if (coverPart != null && coverPart.getSize() > 0) {
-            String contentType = coverPart.getContentType();
 
-            long MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-
-            // 1️⃣ Check dung lượng
-            if (coverPart.getSize() > MAX_FILE_SIZE) {
-                request.setAttribute("error", "Ảnh không được vượt quá 2MB!");
-                loadFormAgain(request, response);
-                return;
-            }
-            if (contentType == null || !contentType.startsWith("image/")) {
-                request.setAttribute("error", "Chỉ được upload file ảnh!");
-                loadFormAgain(request, response);
-                return;
-            }
-
-            String fileName = Paths.get(coverPart.getSubmittedFileName())
-                    .getFileName()
-                    .toString()
-                    .toLowerCase();
-
-            if (!(fileName.endsWith(".jpg")
-                    || fileName.endsWith(".jpeg")
-                    || fileName.endsWith(".png")
-                    || fileName.endsWith(".gif")
-                    || fileName.endsWith(".webp"))) {
-
-                request.setAttribute("error", "Định dạng ảnh không hợp lệ!");
-
-                request.setAttribute("error", "Chỉ được upload file ảnh!");
-                loadFormAgain(request, response);
-                return;
-            }
-
-            String uploadDir
-                    = getServletContext().getRealPath("/") // build/web
-                            .replace("build\\web", "web\\img\\book");
+            String uploadDir = getServletContext().getRealPath("/")
+                    .replace("build\\web", "web\\img\\book");
 
             File dir = new File(uploadDir);
             if (!dir.exists()) {
                 dir.mkdirs();
             }
 
-            String originalFileName = Paths.get(coverPart.getSubmittedFileName())
-                    .getFileName()
-                    .toString();
+            String original = coverPart.getSubmittedFileName();
+            String ext = original.substring(original.lastIndexOf("."));
 
-            String extension = originalFileName.substring(
-                    originalFileName.lastIndexOf(".")
-            );
+            String fileName = "book_" + System.currentTimeMillis() + ext;
+            coverPart.write(uploadDir + File.separator + fileName);
 
-            String fileNameNew = "book_" + System.currentTimeMillis() + extension;
+            b.setCoverUrl(fileName);
 
-            coverPart.write(uploadDir + File.separator + fileNameNew);
-
-            // 👉 CHỈ LƯU TÊN FILE
-            b.setCoverUrl(fileNameNew);
-        } else if (selectedCover != null && !selectedCover.isEmpty()) {
-            b.setCoverUrl(selectedCover);
         } else {
-            Book old = bookDB.get(bookId);
-            b.setCoverUrl(old.getCoverUrl());
+            b.setCoverUrl(bookDB.get(bookId).getCoverUrl());
         }
 
+        // ======================
+        // UPDATE DB
+        // ======================
         bookDB.update(b);
 
         response.sendRedirect(request.getContextPath() + "/admin/books");
